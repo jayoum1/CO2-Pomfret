@@ -1,0 +1,501 @@
+Plot,TreeID,Species,Year,DBH,GapYears,PrevDBH,GrowthRate,GrowthType
+Middle,401,Beech,2024,3.19,,,,initial
+Middle,401,Beech,2025,3.2,1.0,3.19,0.0031347962382445864,normal
+Middle,416 (was 683),Sugar Maple,2022,2.25,,,,initial
+Middle,416 (was 683),Sugar Maple,2023,5.96,1.0,2.25,1.6488888888888888,normal
+Middle,416 (was 683),Sugar Maple,2024,2.88,1.0,5.96,-0.5167785234899329,normal
+Middle,416 (was 683),Sugar Maple,2025,3.2,1.0,2.88,0.11111111111111122,normal
+Middle,417 (was 654),Sugar Maple,2022,6.87,,,,initial
+Middle,417 (was 654),Sugar Maple,2023,7.02,1.0,6.87,0.0218340611353711,normal
+Middle,417 (was 654),Sugar Maple,2024,7.07,1.0,7.02,0.007122507122507224,normal
+Middle,417 (was 654),Sugar Maple,2025,7.3,1.0,7.07,0.03253182461103247,normal
+Middle,479,Sugar Maple,2024,5.69,,,,initial
+Middle,479,Sugar Maple,2025,5.9,1.0,5.69,0.036906854130052714,normal
+Middle,510,Beech,2024,1.5,,,,initial
+Middle,510,Beech,2025,1.5,1.0,1.5,0.0,normal
+Middle,516 (was 679),Sugar Maple,2022,3.0,,,,initial
+Middle,516 (was 679),Sugar Maple,2023,3.0,1.0,3.0,0.0,normal
+Middle,516 (was 679),Sugar Maple,2024,3.06,1.0,3.0,0.020000000000000018,normal
+Middle,516 (was 679),Sugar Maple,2025,3.2,1.0,3.06,0.04575163398692814,normal
+Middle,596,Red Maple,2024,1.44,,,,initial
+Middle,596,Red Maple,2025,1.52,1.0,1.44,0.05555555555555561,normal
+Middle,601,red oak,2022,21.94,,,,initial
+Middle,601,red oak,2023,21.69,1.0,21.94,-0.011394712853236098,normal
+Middle,601,red oak,2024,23.75,1.0,21.69,0.09497464269248496,normal
+Middle,601,red oak,2025,23.8,1.0,23.75,0.0021052631578947667,normal
+Middle,602,sugar maple,2022,0.28,,,,initial
+Middle,602,sugar maple,2023,1.48,1.0,0.28,4.285714285714286,normal
+Middle,602,sugar maple,2024,2.44,1.0,1.48,0.6486486486486487,normal
+Middle,602,sugar maple,2025,2.5,1.0,2.44,0.024590163934426253,normal
+Middle,603,sugar maple,2022,6.53,,,,initial
+Middle,603,sugar maple,2023,6.84,1.0,6.53,0.047473200612557366,normal
+Middle,603,sugar maple,2024,10.63,1.0,6.84,0.5540935672514621,normal
+Middle,603,sugar maple,2025,10.67,1.0,10.63,0.003762935089369628,normal
+Middle,604,sugar maple,2022,5.69,,,,initial
+Middle,604,sugar maple,2023,5.94,1.0,5.69,0.04393673110720562,normal
+Middle,604,sugar maple,2024,6.88,1.0,5.94,0.15824915824915817,normal
+Middle,604,sugar maple,2025,7.0,1.0,6.88,0.017441860465116296,normal
+Middle,605,Red Oak,2022,48.5,,,,initial
+Middle,605,Red Oak,2023,48.54,1.0,48.5,0.0008247422680412195,normal
+Middle,605,Red Oak,2024,48.6,1.0,48.54,0.0012360939431397256,normal
+Middle,605,Red Oak,2025,50.3,1.0,48.6,0.03497942386831267,normal
+Middle,606,Sugar maple,2022,2.25,,,,initial
+Middle,606,Sugar maple,2023,1.05,1.0,2.25,-0.5333333333333333,normal
+Middle,606,Sugar maple,2024,3.18,1.0,1.05,2.0285714285714285,normal
+Middle,606,Sugar maple,2025,3.3,1.0,3.18,0.03773584905660367,normal
+Middle,607,Sugar maple,2022,0.63,,,,initial
+Middle,607,Sugar maple,2023,0.84,1.0,0.63,0.33333333333333326,normal
+Middle,607,Sugar maple,2024,1.81,1.0,0.84,1.1547619047619049,normal
+Middle,607,Sugar maple,2025,1.8,1.0,1.81,-0.005524861878453044,normal
+Middle,608,Sugar maple,2022,2.25,,,,initial
+Middle,608,Sugar maple,2023,2.45,1.0,2.25,0.08888888888888896,normal
+Middle,608,Sugar maple,2024,3.45,1.0,2.45,0.4081632653061224,normal
+Middle,608,Sugar maple,2025,3.47,1.0,3.45,0.005797101449275368,normal
+Middle,609,Sugar maple,2022,1.19,,,,initial
+Middle,609,Sugar maple,2023,1.23,1.0,1.19,0.033613445378151294,normal
+Middle,609,Sugar maple,2024,2.14,1.0,1.23,0.7398373983739839,normal
+Middle,609,Sugar maple,2025,2.2,1.0,2.14,0.028037383177570117,normal
+Middle,610,Sugar maple,2022,4.0,,,,initial
+Middle,610,Sugar maple,2023,3.23,1.0,4.0,-0.1925,normal
+Middle,610,Sugar maple,2024,4.0,1.0,3.23,0.23839009287925697,normal
+Middle,610,Sugar maple,2025,4.1,1.0,4.0,0.02499999999999991,normal
+Middle,611,sugar maple,2022,2.5,,,,initial
+Middle,611,sugar maple,2023,1.48,1.0,2.5,-0.40800000000000003,normal
+Middle,611,sugar maple,2024,2.33,1.0,1.48,0.5743243243243243,normal
+Middle,611,sugar maple,2025,2.5,1.0,2.33,0.0729613733905579,normal
+Middle,612,sugar maple,2022,5.63,,,,initial
+Middle,612,sugar maple,2023,4.72,1.0,5.63,-0.1616341030195382,normal
+Middle,612,sugar maple,2024,5.9,1.0,4.72,0.25000000000000017,normal
+Middle,612,sugar maple,2025,6.0,1.0,5.9,0.01694915254237282,normal
+Middle,613,mockernut hickory,2022,10.0,,,,initial
+Middle,613,mockernut hickory,2023,8.82,1.0,10.0,-0.11799999999999997,normal
+Middle,613,mockernut hickory,2024,10.0,1.0,8.82,0.13378684807256233,normal
+Middle,613,mockernut hickory,2025,10.0,1.0,10.0,0.0,normal
+Middle,614,sugar maple,2022,4.38,,,,initial
+Middle,614,sugar maple,2023,4.5,1.0,4.38,0.02739726027397263,normal
+Middle,614,sugar maple,2024,4.55,1.0,4.5,0.011111111111111072,normal
+Middle,614,sugar maple,2025,5.05,1.0,4.55,0.10989010989010989,normal
+Middle,615,mockernut hickory,2022,10.0,,,,initial
+Middle,615,mockernut hickory,2023,17.4,1.0,10.0,0.7399999999999999,normal
+Middle,615,mockernut hickory,2024,17.65,1.0,17.4,0.014367816091954025,normal
+Middle,615,mockernut hickory,2025,17.75,1.0,17.65,0.00566572237960348,normal
+Middle,616,sugar maple,2022,5.63,,,,initial
+Middle,616,sugar maple,2023,1.8,1.0,5.63,-0.680284191829485,normal
+Middle,616,sugar maple,2024,1.75,1.0,1.8,-0.0277777777777778,normal
+Middle,616,sugar maple,2025,1.8,1.0,1.75,0.0285714285714286,normal
+Middle,617,sugar maple,2022,3.88,,,,initial
+Middle,617,sugar maple,2023,3.95,1.0,3.88,0.018041237113402137,normal
+Middle,617,sugar maple,2024,3.95,1.0,3.95,0.0,normal
+Middle,617,sugar maple,2025,4.0,1.0,3.95,0.01265822784810122,normal
+Middle,618,norway maple,2022,1.88,,,,initial
+Middle,618,norway maple,2023,2.0,1.0,1.88,0.06382978723404262,normal
+Middle,618,norway maple,2024,2.0,1.0,2.0,0.0,normal
+Middle,618,norway maple,2025,2.1,1.0,2.0,0.050000000000000044,normal
+Middle,619,sugar maple,2022,6.5,,,,initial
+Middle,619,sugar maple,2023,6.7,1.0,6.5,0.030769230769230795,normal
+Middle,619,sugar maple,2024,6.48,1.0,6.7,-0.03283582089552235,normal
+Middle,619,sugar maple,2025,6.7,1.0,6.48,0.033950617283950574,normal
+Middle,620,sugar maple,2022,2.38,,,,initial
+Middle,620,sugar maple,2023,2.4,1.0,2.38,0.008403361344537823,normal
+Middle,620,sugar maple,2024,2.38,1.0,2.4,-0.008333333333333342,normal
+Middle,620,sugar maple,2025,2.4,1.0,2.38,0.008403361344537823,normal
+Middle,621,mockernut hickory,2022,6.75,,,,initial
+Middle,621,mockernut hickory,2023,6.6,1.0,6.75,-0.022222222222222275,normal
+Middle,621,mockernut hickory,2024,6.48,1.0,6.6,-0.018181818181818063,normal
+Middle,621,mockernut hickory,2025,6.5,1.0,6.48,0.0030864197530863537,normal
+Middle,622,Red Oak,2022,17.0,,,,initial
+Middle,622,Red Oak,2023,16.7,1.0,17.0,-0.017647058823529453,normal
+Middle,622,Red Oak,2024,16.52,1.0,16.7,-0.010778443113772438,normal
+Middle,622,Red Oak,2025,16.9,1.0,16.52,0.023002421307505995,normal
+Middle,623,Sugar Maple,2022,5.13,,,,initial
+Middle,623,Sugar Maple,2023,5.22,1.0,5.13,0.01754385964912278,normal
+Middle,623,Sugar Maple,2024,5.3,1.0,5.22,0.015325670498084306,normal
+Middle,623,Sugar Maple,2025,5.3,1.0,5.3,0.0,normal
+Middle,624,Red Oak,2022,46.53,,,,initial
+Middle,624,Red Oak,2023,43.7,1.0,46.53,-0.0608209757145927,normal
+Middle,624,Red Oak,2024,51.19,1.0,43.7,0.17139588100686487,normal
+Middle,624,Red Oak,2025,51.4,1.0,51.19,0.004102363742918556,normal
+Middle,625,Sugar Maple,2022,5.52,,,,initial
+Middle,625,Sugar Maple,2023,1.5,1.0,5.52,-0.7282608695652174,normal
+Middle,625,Sugar Maple,2024,5.63,1.0,1.5,2.7533333333333334,normal
+Middle,625,Sugar Maple,2025,5.7,1.0,5.63,0.012433392539964526,normal
+Middle,626,Sugar Maple,2022,1.43,,,,initial
+Middle,626,Sugar Maple,2023,1.5,1.0,1.43,0.048951048951048994,normal
+Middle,626,Sugar Maple,2024,1.5,1.0,1.5,0.0,normal
+Middle,626,Sugar Maple,2025,1.5,1.0,1.5,0.0,normal
+Middle,627,Sugar Maple,2022,12.87,,,,initial
+Middle,627,Sugar Maple,2023,13.0,1.0,12.87,0.010101010101010163,normal
+Middle,627,Sugar Maple,2024,13.19,1.0,13.0,0.014615384615384577,normal
+Middle,627,Sugar Maple,2025,13.4,1.0,13.19,0.015921152388172922,normal
+Middle,628,Sugar Maple,2022,4.5,,,,initial
+Middle,628,Sugar Maple,2023,4.45,1.0,4.5,-0.011111111111111072,normal
+Middle,628,Sugar Maple,2024,4.63,1.0,4.45,0.040449438202247126,normal
+Middle,628,Sugar Maple,2025,4.6,1.0,4.63,-0.006479481641468736,normal
+Middle,629,Sugar Maple,2022,6.09,,,,initial
+Middle,629,Sugar Maple,2023,6.01,1.0,6.09,-0.013136288998357976,normal
+Middle,630,Sugar Maple,2022,7.3,,,,initial
+Middle,630,Sugar Maple,2023,7.5,1.0,7.3,0.02739726027397263,normal
+Middle,630,Sugar Maple,2024,7.56,1.0,7.5,0.007999999999999948,normal
+Middle,630,Sugar Maple,2025,7.6,1.0,7.56,0.005291005291005296,normal
+Middle,631,Sugar Maple,2022,4.82,,,,initial
+Middle,631,Sugar Maple,2023,4.9,1.0,4.82,0.016597510373443997,normal
+Middle,631,Sugar Maple,2024,4.63,1.0,4.9,-0.05510204081632662,normal
+Middle,631,Sugar Maple,2025,4.75,1.0,4.63,0.025917926565874754,normal
+Middle,632,Red Oak,2022,29.28,,,,initial
+Middle,632,Red Oak,2023,29.5,1.0,29.28,0.007513661202185753,normal
+Middle,632,Red Oak,2024,29.13,1.0,29.5,-0.012542372881355965,normal
+Middle,632,Red Oak,2025,29.9,1.0,29.13,0.02643323034672158,normal
+Middle,633,Sugar Maple,2022,8.81,,,,initial
+Middle,633,Sugar Maple,2023,9.0,1.0,8.81,0.02156640181611799,normal
+Middle,633,Sugar Maple,2024,9.88,1.0,9.0,0.09777777777777787,normal
+Middle,633,Sugar Maple,2025,9.9,1.0,9.88,0.002024291497975665,normal
+Middle,634,Sugar Maple,2022,5.3,,,,initial
+Middle,634,Sugar Maple,2023,5.17,1.0,5.3,-0.024528301886792434,normal
+Middle,634,Sugar Maple,2024,5.13,1.0,5.17,-0.00773694390715668,normal
+Middle,634,Sugar Maple,2025,5.1,1.0,5.13,-0.005847953216374317,normal
+Middle,635,White Ash,2022,14.59,,,,initial
+Middle,635,White Ash,2023,14.34,1.0,14.59,-0.017135023989033583,normal
+Middle,636,Beech,2022,1.5,,,,initial
+Middle,636,Beech,2023,1.87,1.0,1.5,0.24666666666666673,normal
+Middle,636,Beech,2024,1.88,1.0,1.87,0.005347593582887587,normal
+Middle,636,Beech,2025,1.9,1.0,1.88,0.010638297872340436,normal
+Middle,637,Sugar Maple,2022,2.06,,,,initial
+Middle,637,Sugar Maple,2023,2.0,1.0,2.06,-0.029126213592233035,normal
+Middle,637,Sugar Maple,2024,1.95,1.0,2.0,-0.025000000000000022,normal
+Middle,637,Sugar Maple,2025,2.0,1.0,1.95,0.025641025641025664,normal
+Middle,638,Sugar Maple,2022,5.13,,,,initial
+Middle,638,Sugar Maple,2023,5.06,1.0,5.13,-0.013645224171540018,normal
+Middle,638,Sugar Maple,2024,5.05,1.0,5.06,-0.0019762845849801954,normal
+Middle,638,Sugar Maple,2025,5.3,1.0,5.05,0.04950495049504951,normal
+Middle,639,Red Oak,2022,206.08,,,,initial
+Middle,639,Red Oak,2023,60.94,1.0,206.08,-0.7042895962732919,normal
+Middle,639,Red Oak,2024,61.0,1.0,60.94,0.0009845749917952458,normal
+Middle,639,Red Oak,2025,52.0,1.0,61.0,-0.14754098360655737,normal
+Middle,640,The American Hophorn Beam,2022,5.13,,,,initial
+Middle,640,The American Hophorn Beam,2023,4.89,1.0,5.13,-0.0467836257309942,normal
+Middle,640,The American Hophorn Beam,2024,5.0,1.0,4.89,0.02249488752556244,normal
+Middle,640,The American Hophorn Beam,2025,5.1,1.0,5.0,0.019999999999999928,normal
+Middle,642,Sugar Maple,2022,7.8,,,,initial
+Middle,642,Sugar Maple,2023,7.73,1.0,7.8,-0.008974358974358897,normal
+Middle,642,Sugar Maple,2024,7.75,1.0,7.73,0.0025873221216040844,normal
+Middle,642,Sugar Maple,2025,7.8,1.0,7.75,0.006451612903225784,normal
+Middle,643,Sugar Maple,2022,29.7,,,,initial
+Middle,643,Sugar Maple,2023,29.5,1.0,29.7,-0.00673400673400671,normal
+Middle,643,Sugar Maple,2024,29.88,1.0,29.5,0.012881355932203357,normal
+Middle,643,Sugar Maple,2025,30.0,1.0,29.88,0.004016064257028146,normal
+Middle,644,Sugar Maple,2022,7.5,,,,initial
+Middle,644,Sugar Maple,2023,7.5,1.0,7.5,0.0,normal
+Middle,644,Sugar Maple,2024,7.44,1.0,7.5,-0.007999999999999948,normal
+Middle,644,Sugar Maple,2025,7.7,1.0,7.44,0.034946236559139754,normal
+Middle,645,White Ash,2022,10.1,,,,initial
+Middle,645,White Ash,2023,9.13,1.0,10.1,-0.09603960396039593,normal
+Middle,645,White Ash,2024,10.94,1.0,9.13,0.19824753559693303,normal
+Middle,645,White Ash,2025,10.0,1.0,10.94,-0.08592321755027418,normal
+Middle,646,Sugar Maple,2022,0.38,,,,initial
+Middle,646,Sugar Maple,2023,0.52,1.0,0.38,0.368421052631579,normal
+Middle,646,Sugar Maple,2024,1.44,1.0,0.52,1.769230769230769,normal
+Middle,646,Sugar Maple,2025,1.6,1.0,1.44,0.11111111111111122,normal
+Middle,647,Sugar Maple,2022,8.81,,,,initial
+Middle,647,Sugar Maple,2023,9.04,1.0,8.81,0.02610669693530064,normal
+Middle,647,Sugar Maple,2024,10.25,1.0,9.04,0.133849557522124,normal
+Middle,647,Sugar Maple,2025,10.3,1.0,10.25,0.004878048780487874,normal
+Middle,648,Sugar Maple,2022,7.7,,,,initial
+Middle,648,Sugar Maple,2023,7.6,1.0,7.7,-0.012987012987013056,normal
+Middle,648,Sugar Maple,2024,7.7,1.0,7.6,0.013157894736842176,normal
+Middle,648,Sugar Maple,2025,8.0,1.0,7.7,0.03896103896103894,normal
+Middle,649,Sugar Maple,2022,7.3,,,,initial
+Middle,649,Sugar Maple,2023,7.22,1.0,7.3,-0.010958904109589052,normal
+Middle,649,Sugar Maple,2024,7.19,1.0,7.22,-0.004155124653739524,normal
+Middle,649,Sugar Maple,2025,7.2,1.0,7.19,0.0013908205841446156,normal
+Middle,650,White Ash,2022,13.78,,,,initial
+Middle,650,White Ash,2023,14.45,1.0,13.78,0.04862119013062409,normal
+Middle,650,White Ash,2025,15.4,2.0,14.45,0.03287197231833914,annualized
+Middle,651,Sugar Maple,2022,10.77,,,,initial
+Middle,651,Sugar Maple,2023,11.95,1.0,10.77,0.10956360259981428,normal
+Middle,651,Sugar Maple,2024,12.13,1.0,11.95,0.015062761506276277,normal
+Middle,651,Sugar Maple,2025,12.3,1.0,12.13,0.01401483924154987,normal
+Middle,652,Sugar Maple,2022,4.06,,,,initial
+Middle,652,Sugar Maple,2023,5.21,1.0,4.06,0.2832512315270937,normal
+Middle,652,Sugar Maple,2024,5.16,1.0,5.21,-0.009596928982725494,normal
+Middle,652,Sugar Maple,2025,5.2,1.0,5.16,0.007751937984496131,normal
+Middle,653,Sugar Maple,2022,4.5,,,,initial
+Middle,653,Sugar Maple,2023,3.71,1.0,4.5,-0.17555555555555558,normal
+Middle,653,Sugar Maple,2024,3.5,1.0,3.71,-0.056603773584905655,normal
+Middle,653,Sugar Maple,2025,3.8,1.0,3.5,0.08571428571428566,normal
+Middle,655,Sugar Maple,2022,2.35,,,,initial
+Middle,655,Sugar Maple,2023,2.3,1.0,2.35,-0.021276595744680965,normal
+Middle,655,Sugar Maple,2024,2.28,1.0,2.3,-0.008695652173913052,normal
+Middle,655,Sugar Maple,2025,2.4,1.0,2.28,0.052631578947368474,normal
+Middle,656,Red Oak,2022,22.99,,,,initial
+Middle,656,Red Oak,2023,23.4,1.0,22.99,0.017833840800347986,normal
+Middle,656,Red Oak,2024,23.3,1.0,23.4,-0.004273504273504183,normal
+Middle,656,Red Oak,2025,23.7,1.0,23.3,0.017167381974248865,normal
+Middle,657,Mockernut Hickory,2022,20.5,,,,initial
+Middle,657,Mockernut Hickory,2023,20.8,1.0,20.5,0.014634146341463448,normal
+Middle,657,Mockernut Hickory,2024,21.32,1.0,20.8,0.024999999999999977,normal
+Middle,657,Mockernut Hickory,2025,21.5,1.0,21.32,0.008442776735459649,normal
+Middle,658,Sugar Maple,2022,5.0,,,,initial
+Middle,658,Sugar Maple,2023,5.06,1.0,5.0,0.011999999999999922,normal
+Middle,658,Sugar Maple,2024,5.2,1.0,5.06,0.027667984189723435,normal
+Middle,658,Sugar Maple,2025,5.2,1.0,5.2,0.0,normal
+Middle,659,mockernut hickory,2022,16.13,,,,initial
+Middle,659,mockernut hickory,2023,16.06,1.0,16.13,-0.004339739615623081,normal
+Middle,659,mockernut hickory,2024,16.42,1.0,16.06,0.02241594022415959,normal
+Middle,659,mockernut hickory,2025,16.5,1.0,16.42,0.0048721071863579955,normal
+Middle,660,sugar maple,2022,3.25,,,,initial
+Middle,660,sugar maple,2023,3.26,1.0,3.25,0.0030769230769230114,normal
+Middle,660,sugar maple,2024,3.32,1.0,3.26,0.01840490797546014,normal
+Middle,660,sugar maple,2025,3.35,1.0,3.32,0.009036144578313329,normal
+Middle,661,sugar maple,2022,5.75,,,,initial
+Middle,661,sugar maple,2023,5.76,1.0,5.75,0.0017391304347825717,normal
+Middle,661,sugar maple,2024,5.88,1.0,5.76,0.020833333333333353,normal
+Middle,661,sugar maple,2025,5.9,1.0,5.88,0.003401360544217766,normal
+Middle,662,sugar maple,2022,5.0,,,,initial
+Middle,662,sugar maple,2023,2.7,1.0,5.0,-0.45999999999999996,normal
+Middle,662,sugar maple,2024,2.41,1.0,2.7,-0.10740740740740741,normal
+Middle,662,sugar maple,2025,2.75,1.0,2.41,0.1410788381742738,normal
+Middle,663,Sugar Maple,2022,4.13,,,,initial
+Middle,663,Sugar Maple,2023,4.1,1.0,4.13,-0.0072639225181598665,normal
+Middle,663,Sugar Maple,2024,4.1,1.0,4.1,0.0,normal
+Middle,663,Sugar Maple,2025,4.25,1.0,4.1,0.036585365853658625,normal
+Middle,664,Sugar Maple,2022,2.0,,,,initial
+Middle,664,Sugar Maple,2023,1.9,1.0,2.0,-0.050000000000000044,normal
+Middle,664,Sugar Maple,2024,1.56,1.0,1.9,-0.17894736842105258,normal
+Middle,664,Sugar Maple,2025,1.8,1.0,1.56,0.15384615384615383,normal
+Middle,665,Sugar Maple,2022,2.25,,,,initial
+Middle,665,Sugar Maple,2023,2.2,1.0,2.25,-0.022222222222222143,normal
+Middle,665,Sugar Maple,2024,2.11,1.0,2.2,-0.04090909090909104,normal
+Middle,666,Red Oak,2022,19.46,,,,initial
+Middle,666,Red Oak,2023,20.0,1.0,19.46,0.027749229188078064,normal
+Middle,666,Red Oak,2024,19.49,1.0,20.0,-0.025500000000000078,normal
+Middle,666,Red Oak,2025,20.2,1.0,19.49,0.0364289379168805,normal
+Middle,667,Pignut Hickory,2022,7.53,,,,initial
+Middle,667,Pignut Hickory,2023,7.65,1.0,7.53,0.015936254980079695,normal
+Middle,667,Pignut Hickory,2024,7.36,1.0,7.65,-0.03790849673202615,normal
+Middle,667,Pignut Hickory,2025,7.5,1.0,7.36,0.01902173913043474,normal
+Middle,668,Hop Hornbeam,2022,3.72,,,,initial
+Middle,668,Hop Hornbeam,2023,3.9,1.0,3.72,0.04838709677419347,normal
+Middle,668,Hop Hornbeam,2024,3.6,1.0,3.9,-0.07692307692307689,normal
+Middle,668,Hop Hornbeam,2025,3.9,1.0,3.6,0.08333333333333329,normal
+Middle,670,sugar maple,2022,3.25,,,,initial
+Middle,670,sugar maple,2023,3.2,1.0,3.25,-0.01538461538461533,normal
+Middle,670,sugar maple,2024,3.22,1.0,3.2,0.0062500000000000056,normal
+Middle,670,sugar maple,2025,3.25,1.0,3.22,0.009316770186335343,normal
+Middle,671,sugar maple,2022,1.75,,,,initial
+Middle,671,sugar maple,2023,1.7,1.0,1.75,-0.0285714285714286,normal
+Middle,671,sugar maple,2024,2.69,1.0,1.7,0.5823529411764706,normal
+Middle,671,sugar maple,2025,2.7,1.0,2.69,0.003717472118959194,normal
+Middle,672,sugar maple,2022,2.38,,,,initial
+Middle,672,sugar maple,2023,2.36,1.0,2.38,-0.008403361344537823,normal
+Middle,672,sugar maple,2024,2.38,1.0,2.36,0.00847457627118645,normal
+Middle,672,sugar maple,2025,2.4,1.0,2.38,0.008403361344537823,normal
+Middle,673,sugar maple,2022,1.5,,,,initial
+Middle,673,sugar maple,2023,2.5,1.0,1.5,0.6666666666666666,normal
+Middle,673,sugar maple,2024,2.44,1.0,2.5,-0.02400000000000002,normal
+Middle,673,sugar maple,2025,2.5,1.0,2.44,0.024590163934426253,normal
+Middle,674,sugar maple,2022,3.75,,,,initial
+Middle,674,sugar maple,2023,4.0,1.0,3.75,0.06666666666666667,normal
+Middle,674,sugar maple,2024,3.88,1.0,4.0,-0.030000000000000027,normal
+Middle,674,sugar maple,2025,3.9,1.0,3.88,0.005154639175257737,normal
+Middle,675,Sugar Maple,2022,2.85,,,,initial
+Middle,675,Sugar Maple,2023,2.9,1.0,2.85,0.017543859649122744,normal
+Middle,675,Sugar Maple,2024,2.88,1.0,2.9,-0.006896551724137937,normal
+Middle,675,Sugar Maple,2025,2.9,1.0,2.88,0.006944444444444451,normal
+Middle,676,Red Oak,2022,30.46,,,,initial
+Middle,676,Red Oak,2023,30.6,1.0,30.46,0.00459619172685491,normal
+Middle,676,Red Oak,2024,30.88,1.0,30.6,0.009150326797385542,normal
+Middle,676,Red Oak,2025,31.0,1.0,30.88,0.003886010362694333,normal
+Middle,677,Black Birch,2022,17.07,,,,initial
+Middle,677,Black Birch,2023,16.86,1.0,17.07,-0.012302284710017625,normal
+Middle,678,Sugar Maple,2022,6.03,,,,initial
+Middle,678,Sugar Maple,2023,6.2,1.0,6.03,0.02819237147595355,normal
+Middle,678,Sugar Maple,2024,6.25,1.0,6.2,0.008064516129032228,normal
+Middle,678,Sugar Maple,2025,6.3,1.0,6.25,0.007999999999999972,normal
+Middle,680,Mockernut,2022,10.61,,,,initial
+Middle,680,Mockernut,2023,10.7,1.0,10.61,0.008482563619227132,normal
+Middle,680,Mockernut,2024,10.69,1.0,10.7,-0.0009345794392523165,normal
+Middle,680,Mockernut,2025,10.7,1.0,10.69,0.0009354536950420755,normal
+Middle,681,Pignut Hickory,2022,7.23,,,,initial
+Middle,681,Pignut Hickory,2023,7.2,1.0,7.23,-0.00414937759336103,normal
+Middle,681,Pignut Hickory,2024,7.3,1.0,7.2,0.01388888888888884,normal
+Middle,681,Pignut Hickory,2025,7.35,1.0,7.3,0.006849315068493127,normal
+Middle,682,Pignut Hickory,2022,9.42,,,,initial
+Middle,682,Pignut Hickory,2023,9.26,1.0,9.42,-0.016985138004246298,normal
+Middle,682,Pignut Hickory,2024,9.41,1.0,9.26,0.016198704103671746,normal
+Middle,682,Pignut Hickory,2025,9.45,1.0,9.41,0.0042507970244419924,normal
+Middle,684,Sugar Maple,2022,6.0,,,,initial
+Middle,684,Sugar Maple,2023,5.96,1.0,6.0,-0.006666666666666672,normal
+Middle,684,Sugar Maple,2024,6.13,1.0,5.96,0.028523489932885893,normal
+Middle,684,Sugar Maple,2025,6.2,1.0,6.13,0.011419249592169703,normal
+Middle,685,Black Oak (says Osully),2022,19.25,,,,initial
+Middle,685,Black Oak (says Osully),2023,20.55,1.0,19.25,0.06753246753246757,normal
+Middle,685,Black Oak (says Osully),2024,21.1,1.0,20.55,0.026763990267639936,normal
+Middle,685,Black Oak (says Osully),2025,21.7,1.0,21.1,0.02843601895734587,normal
+Middle,686,Sugar Maple,2024,3.34,,,,initial
+Middle,686,Sugar Maple,2025,3.5,1.0,3.34,0.04790419161676651,normal
+Middle,687,Sugar Maple,2022,6.1,,,,initial
+Middle,687,Sugar Maple,2023,6.13,1.0,6.1,0.004918032786885287,normal
+Middle,687,Sugar Maple,2024,6.08,1.0,6.13,-0.008156606851549727,normal
+Middle,687,Sugar Maple,2025,6.2,1.0,6.08,0.019736842105263174,normal
+Middle,688,Sugar Maple,2022,5.5,,,,initial
+Middle,688,Sugar Maple,2023,5.53,1.0,5.5,0.0054545454545455,normal
+Middle,688,Sugar Maple,2024,6.75,1.0,5.53,0.22061482820976486,normal
+Middle,688,Sugar Maple,2025,6.8,1.0,6.75,0.007407407407407381,normal
+Middle,689,Sugar Maple,2022,7.5,,,,initial
+Middle,689,Sugar Maple,2023,7.47,1.0,7.5,-0.004000000000000033,normal
+Middle,689,Sugar Maple,2024,7.44,1.0,7.47,-0.004016064257028027,normal
+Middle,689,Sugar Maple,2025,7.6,1.0,7.44,0.02150537634408592,normal
+Middle,690,Red Oak ,2022,30.2,,,,initial
+Middle,690,Red Oak ,2023,26.0,1.0,30.2,-0.1390728476821192,normal
+Middle,690,Red Oak ,2024,29.14,1.0,26.0,0.1207692307692308,normal
+Middle,690,Red Oak ,2025,29.4,1.0,29.14,0.008922443376801578,normal
+Middle,691,Sugar Maple,2022,6.0,,,,initial
+Middle,691,Sugar Maple,2023,6.1,1.0,6.0,0.016666666666666607,normal
+Middle,691,Sugar Maple,2024,6.0,1.0,6.1,-0.01639344262295076,normal
+Middle,691,Sugar Maple,2025,6.3,1.0,6.0,0.04999999999999997,normal
+Middle,692,Sugar Maple,2022,16.1,,,,initial
+Middle,692,Sugar Maple,2023,16.22,1.0,16.1,0.007453416149068163,normal
+Middle,692,Sugar Maple,2024,16.19,1.0,16.22,-0.0018495684340319105,normal
+Middle,692,Sugar Maple,2025,16.3,1.0,16.19,0.006794317479925844,normal
+Middle,693,Sugar Maple,2022,7.9,,,,initial
+Middle,693,Sugar Maple,2023,7.83,1.0,7.9,-0.008860759493670921,normal
+Middle,693,Sugar Maple,2024,7.66,1.0,7.83,-0.021711366538952736,normal
+Middle,693,Sugar Maple,2025,7.85,1.0,7.66,0.02480417754569184,normal
+Middle,694,Sugar Maple,2022,8.6,,,,initial
+Middle,694,Sugar Maple,2023,8.64,1.0,8.6,0.004651162790697782,normal
+Middle,694,Sugar Maple,2024,8.55,1.0,8.64,-0.010416666666666649,normal
+Middle,694,Sugar Maple,2025,8.56,1.0,8.55,0.0011695906432748287,normal
+Middle,695,Red Oak,2022,25.2,,,,initial
+Middle,695,Red Oak,2023,24.44,1.0,25.2,-0.03015873015873008,normal
+Middle,695,Red Oak,2024,24.7,1.0,24.44,0.010638297872340344,normal
+Middle,695,Red Oak,2025,25.06,1.0,24.7,0.014574898785425078,normal
+Middle,696,Sugar Maple,2022,4.8,,,,initial
+Middle,696,Sugar Maple,2023,4.51,1.0,4.8,-0.060416666666666674,normal
+Middle,696,Sugar Maple,2024,4.63,1.0,4.51,0.026607538802660778,normal
+Middle,696,Sugar Maple,2025,4.7,1.0,4.63,0.01511879049676032,normal
+Middle,697,Sugar Maple,2022,5.4,,,,initial
+Middle,697,Sugar Maple,2023,5.27,1.0,5.4,-0.024074074074074216,normal
+Middle,697,Sugar Maple,2024,5.36,1.0,5.27,0.01707779886148022,normal
+Middle,697,Sugar Maple,2025,5.4,1.0,5.36,0.007462686567164185,normal
+Middle,698,Sugar Maple,2022,6.3,,,,initial
+Middle,698,Sugar Maple,2023,5.91,1.0,6.3,-0.06190476190476186,normal
+Middle,698,Sugar Maple,2024,5.96,1.0,5.91,0.008460236886632796,normal
+Middle,698,Sugar Maple,2025,6.03,1.0,5.96,0.011744966442953067,normal
+Middle,699,Basswood,2022,17.6,,,,initial
+Middle,699,Basswood,2023,17.19,1.0,17.6,-0.023295454545454553,normal
+Middle,699,Basswood,2024,17.33,1.0,17.19,0.008144269924374462,normal
+Middle,699,Basswood,2025,17.4,1.0,17.33,0.004039238315060606,normal
+Middle,700,Basswood,2022,14.6,,,,initial
+Middle,700,Basswood,2023,14.55,1.0,14.6,-0.0034246575342465023,normal
+Middle,700,Basswood,2024,13.69,1.0,14.55,-0.059106529209622075,normal
+Middle,700,Basswood,2025,13.8,1.0,13.69,0.008035062089116233,normal
+Middle,701,Sugar Maple,2022,13.0,,,,initial
+Middle,701,Sugar Maple,2023,13.3,1.0,13.0,0.02307692307692313,normal
+Middle,701,Sugar Maple,2024,13.16,1.0,13.3,-0.010526315789473726,normal
+Middle,701,Sugar Maple,2025,13.2,1.0,13.16,0.0030395136778114855,normal
+Middle,702,Sugar Maple,2022,12.31,,,,initial
+Middle,702,Sugar Maple,2023,12.1,1.0,12.31,-0.017059301380991133,normal
+Middle,702,Sugar Maple,2024,12.19,1.0,12.1,0.007438016528925609,normal
+Middle,702,Sugar Maple,2025,12.2,1.0,12.19,0.0008203445447087603,normal
+Middle,703,Sugar Maple,2022,16.17,,,,initial
+Middle,703,Sugar Maple,2023,10.3,1.0,16.17,-0.3630179344465059,normal
+Middle,703,Sugar Maple,2024,4.19,1.0,10.3,-0.5932038834951456,normal
+Middle,703,Sugar Maple,2025,4.2,1.0,4.19,0.002386634844868684,normal
+Middle,704,Mockernut Hickory,2022,18.17,,,,initial
+Middle,704,Mockernut Hickory,2023,18.03,1.0,18.17,-0.007705008255366018,normal
+Middle,704,Mockernut Hickory,2024,18.94,1.0,18.03,0.05047143649473101,normal
+Middle,704,Mockernut Hickory,2025,19.0,1.0,18.94,0.0031678986272438603,normal
+Middle,705,Mockernut Hickory,2022,13.14,,,,initial
+Middle,705,Mockernut Hickory,2023,13.4,1.0,13.14,0.019786910197869084,normal
+Middle,705,Mockernut Hickory,2024,13.06,1.0,13.4,-0.025373134328358197,normal
+Middle,705,Mockernut Hickory,2025,13.2,1.0,13.06,0.010719754977029004,normal
+Middle,706,Sugar Maple,2022,6.78,,,,initial
+Middle,706,Sugar Maple,2023,6.8,1.0,6.78,0.0029498525073745683,normal
+Middle,706,Sugar Maple,2024,7.69,1.0,6.8,0.13088235294117656,normal
+Middle,706,Sugar Maple,2025,7.7,1.0,7.69,0.0013003901170350828,normal
+Middle,707,Sugar Maple,2022,3.5,,,,initial
+Middle,707,Sugar Maple,2023,3.74,1.0,3.5,0.06857142857142863,normal
+Middle,707,Sugar Maple,2024,3.44,1.0,3.74,-0.08021390374331558,normal
+Middle,707,Sugar Maple,2025,3.55,1.0,3.44,0.03197674418604648,normal
+Middle,708,Sassafras,2022,16.51,,,,initial
+Middle,708,Sassafras,2023,16.56,1.0,16.51,0.0030284675953965567,normal
+Middle,708,Sassafras,2024,17.1,1.0,16.56,0.03260869565217408,normal
+Middle,708,Sassafras,2025,17.1,1.0,17.1,0.0,normal
+Middle,709,sugar maple,2022,12.6,,,,initial
+Middle,709,sugar maple,2023,12.76,1.0,12.6,0.01269841269841271,normal
+Middle,709,sugar maple,2024,12.44,1.0,12.76,-0.025078369905956136,normal
+Middle,709,sugar maple,2025,12.9,1.0,12.44,0.03697749196141486,normal
+Middle,710,Sugar Maple,2022,3.0,,,,initial
+Middle,710,Sugar Maple,2023,2.62,1.0,3.0,-0.12666666666666662,normal
+Middle,710,Sugar Maple,2024,2.55,1.0,2.62,-0.026717557251908504,normal
+Middle,710,Sugar Maple,2025,2.7,1.0,2.55,0.05882352941176485,normal
+Middle,711,Sugar Maple,2022,18.23,,,,initial
+Middle,711,Sugar Maple,2023,15.6,1.0,18.23,-0.14426769061985742,normal
+Middle,711,Sugar Maple,2024,15.8,1.0,15.6,0.01282051282051289,normal
+Middle,711,Sugar Maple,2025,15.9,1.0,15.8,0.00632911392405061,normal
+Middle,712,Beech ,2022,1.6,,,,initial
+Middle,712,Beech ,2023,1.56,1.0,1.6,-0.025000000000000022,normal
+Middle,712,Beech ,2024,1.6,1.0,1.56,0.025641025641025664,normal
+Middle,712,Beech ,2025,1.85,1.0,1.6,0.15625,normal
+Middle,713,Red Oak,2022,24.43,,,,initial
+Middle,713,Red Oak,2023,25.97,1.0,24.43,0.06303724928366759,normal
+Middle,713,Red Oak,2024,26.19,1.0,25.97,0.00847131305352339,normal
+Middle,713,Red Oak,2025,26.35,1.0,26.19,0.006109201985490651,normal
+Middle,714,Mocker Nut Hickory ,2022,15.45,,,,initial
+Middle,714,Mocker Nut Hickory ,2023,15.66,1.0,15.45,0.013592233009708793,normal
+Middle,714,Mocker Nut Hickory ,2024,15.88,1.0,15.66,0.01404853128991064,normal
+Middle,714,Mocker Nut Hickory ,2025,16.0,1.0,15.88,0.0075566750629722425,normal
+Middle,715,Sugar Maple,2024,1.94,,,,initial
+Middle,715,Sugar Maple,2025,2.0,1.0,1.94,0.03092783505154642,normal
+Middle,716,Sugar Maple,2022,12.79,,,,initial
+Middle,716,Sugar Maple,2023,12.9,1.0,12.79,0.008600469116497358,normal
+Middle,716,Sugar Maple,2024,12.75,1.0,12.9,-0.011627906976744214,normal
+Middle,716,Sugar Maple,2025,13.05,1.0,12.75,0.023529411764705938,normal
+Middle,718,Sugar Maple,2022,6.78,,,,initial
+Middle,718,Sugar Maple,2023,7.0,1.0,6.78,0.03244837758112091,normal
+Middle,718,Sugar Maple,2024,7.0,1.0,7.0,0.0,normal
+Middle,718,Sugar Maple,2025,7.1,1.0,7.0,0.014285714285714235,normal
+Middle,719,Sugar Maple,2022,5.67,,,,initial
+Middle,719,Sugar Maple,2023,5.9,1.0,5.67,0.040564373897707305,normal
+Middle,719,Sugar Maple,2024,6.0,1.0,5.9,0.01694915254237282,normal
+Middle,720,Sugar Maple,2022,5.47,,,,initial
+Middle,720,Sugar Maple,2023,5.5,1.0,5.47,0.0054844606946984,normal
+Middle,720,Sugar Maple,2024,5.75,1.0,5.5,0.045454545454545456,normal
+Middle,720,Sugar Maple,2025,5.8,1.0,5.75,0.008695652173913012,normal
+Middle,721,Beech,2022,1.9,,,,initial
+Middle,721,Beech,2023,1.97,1.0,1.9,0.036842105263157926,normal
+Middle,721,Beech,2024,1.95,1.0,1.97,-0.0101522842639594,normal
+Middle,721,Beech,2025,2.04,1.0,1.95,0.0461538461538462,normal
+Middle,722,Sugar Maple,2022,15.9,,,,initial
+Middle,722,Sugar Maple,2023,16.8,1.0,15.9,0.05660377358490568,normal
+Middle,722,Sugar Maple,2024,17.25,1.0,16.8,0.026785714285714243,normal
+Middle,722,Sugar Maple,2025,17.3,1.0,17.25,0.0028985507246377224,normal
+Middle,724,Sugar Maple,2022,9.0,,,,initial
+Middle,724,Sugar Maple,2023,8.86,1.0,9.0,-0.01555555555555562,normal
+Middle,724,Sugar Maple,2024,8.81,1.0,8.86,-0.005643340857787691,normal
+Middle,724,Sugar Maple,2025,8.9,1.0,8.81,0.010215664018161165,normal
+Middle,725,Sugar Maple,2022,13.49,,,,initial
+Middle,725,Sugar Maple,2023,13.44,1.0,13.49,-0.0037064492216457162,normal
+Middle,725,Sugar Maple,2024,13.94,1.0,13.44,0.03720238095238095,normal
+Middle,725,Sugar Maple,2025,14.0,1.0,13.94,0.004304160688665746,normal
+Middle,726,Sugar Maple,2022,10.13,,,,initial
+Middle,726,Sugar Maple,2023,9.83,1.0,10.13,-0.029615004935834223,normal
+Middle,726,Sugar Maple,2024,9.9,1.0,9.83,0.007121057985757913,normal
+Middle,726,Sugar Maple,2025,9.9,1.0,9.9,0.0,normal
+Middle,727,Sugar Maple,2022,18.75,,,,initial
+Middle,727,Sugar Maple,2023,17.34,1.0,18.75,-0.0752,normal
+Middle,727,Sugar Maple,2024,18.6,1.0,17.34,0.07266435986159178,normal
+Middle,727,Sugar Maple,2025,18.6,1.0,18.6,0.0,normal
+Middle,728,Sugar Maple,2022,15.14,,,,initial
+Middle,728,Sugar Maple,2023,14.25,1.0,15.14,-0.0587846763540291,normal
+Middle,728,Sugar Maple,2024,14.5,1.0,14.25,0.017543859649122806,normal
+Middle,728,Sugar Maple,2025,14.5,1.0,14.5,0.0,normal
+Middle,729,Sugar Maple,2022,5.91,,,,initial
+Middle,729,Sugar Maple,2023,5.83,1.0,5.91,-0.013536379018612533,normal
+Middle,729,Sugar Maple,2024,5.75,1.0,5.83,-0.013722126929674111,normal
+Middle,729,Sugar Maple,2025,5.8,1.0,5.75,0.008695652173913012,normal
+Middle,730,Sugar Maple,2022,7.73,,,,initial
+Middle,730,Sugar Maple,2023,7.55,1.0,7.73,-0.023285899094437335,normal
+Middle,730,Sugar Maple,2024,7.63,1.0,7.55,0.010596026490066236,normal
+Middle,730,Sugar Maple,2025,7.7,1.0,7.63,0.009174311926605542,normal
+Middle,799,Beech,2025,2.1,,,,initial
