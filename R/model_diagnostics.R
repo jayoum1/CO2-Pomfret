@@ -305,4 +305,3 @@ message("  - plot_residuals_vs_fitted(fitted_values, residuals, plot_name)")
 message("  - plot_residual_histogram(residuals, plot_name)")
 message("  - plot_residual_qq(residuals, plot_name)")
 message("")
-
