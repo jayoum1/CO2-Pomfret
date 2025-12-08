@@ -3,18 +3,35 @@ DBH Growth Model
 
 Trains a regression model to predict tree diameter growth from one year to the next.
 
-Model Input:
-    - PrevDBH_cm: Previous year's DBH (in cm)
-    - Species: One-hot encoded species features
-    - Plot: One-hot encoded plot features
-    - Other relevant features (GapYears, Group, GrowthType)
+IMPORTANT INTERPRETATION:
+    During Training:
+        - Input: PrevDBH_cm (last year's DBH) + features (species, plot, etc.)
+        - Output: DBH_cm (this year's DBH)
+        - The model learns: DBH_cm = f(PrevDBH_cm, species, plot, ...)
+    
+    In the App (Future):
+        - User provides: current DBH (as prev_dbh_cm)
+        - Model predicts: next year's DBH
+        - Interpretation: The model's prediction represents the tree's DBH one year from now
+
+Model Input Features:
+    - PrevDBH_cm: Previous year's DBH (in cm) - REQUIRED
+    - Species_*: One-hot encoded species features (e.g., Species_red oak)
+    - Plot_*: One-hot encoded plot features (Plot_Middle, Plot_Upper; Lower is reference)
+    - Group_*: Tree group (hardwood/softwood)
+    - GapYears: Years between measurements (default: 1.0 for annual prediction)
 
 Model Output:
-    - DBH_cm: Current year's DBH (in cm)
+    - DBH_cm: Predicted DBH (in cm)
 
-Usage in App:
-    - User provides current DBH as prev_dbh_cm
-    - Model predicts next year's DBH
+Usage Example:
+    >>> from src.models.dbh_growth_model import predict_dbh_next_year
+    >>> next_dbh = predict_dbh_next_year(
+    ...     prev_dbh_cm=25.0,
+    ...     species='red oak',
+    ...     plot='Upper'
+    ... )
+    >>> print(f"Predicted DBH next year: {next_dbh:.2f} cm")
 """
 
 import pandas as pd
@@ -545,35 +562,30 @@ def predict_dbh_next_year(prev_dbh_cm, species=None, plot=None, gap_years=1.0, *
     # Required feature: PrevDBH_cm
     feature_dict['PrevDBH_cm'] = prev_dbh_cm
     
-    # Initialize all features to 0 (or False for boolean)
+    # Initialize all features to 0 (numeric, not boolean)
     for feat_name in feature_names:
         if feat_name not in feature_dict:
-            if feat_name.startswith('Species_') or feat_name.startswith('Plot_') or \
-               feat_name.startswith('Group_') or feat_name.startswith('GrowthType_'):
-                feature_dict[feat_name] = False
-            else:
-                feature_dict[feat_name] = 0.0
+            feature_dict[feat_name] = 0.0
     
     # Set species feature
     if species is not None:
         species_col = f'Species_{species.lower()}'
         if species_col in feature_names:
-            feature_dict[species_col] = True
+            feature_dict[species_col] = 1.0  # Numeric 1, not boolean True
         else:
             print(f"Warning: Species '{species}' not found in training data. Using default.")
     
     # Set plot feature
     # Note: "Lower" is the reference category (dropped during one-hot encoding)
-    # So if plot is "Lower" or None, all Plot_* columns remain False
+    # So if plot is "Lower" or None, all Plot_* columns remain 0
     if plot is not None and plot.lower() != 'lower':
-        plot_col = f'Plot_{plot}'
+        # Normalize plot name: capitalize first letter to match feature names (e.g., "middle" -> "Middle")
+        plot_normalized = plot.capitalize()
+        plot_col = f'Plot_{plot_normalized}'
         if plot_col in feature_names:
-            feature_dict[plot_col] = True
-        elif plot.lower() == 'lower':
-            # Lower is the reference category - all Plot_* columns should be False
-            pass
+            feature_dict[plot_col] = 1.0  # Numeric 1, not boolean True
         else:
-            print(f"Warning: Plot '{plot}' not found in training data. Using Lower (reference category).")
+            print(f"Warning: Plot '{plot}' (normalized to '{plot_normalized}') not found in training data. Using Lower (reference category).")
     
     # Set GapYears
     if 'GapYears' in feature_names:
