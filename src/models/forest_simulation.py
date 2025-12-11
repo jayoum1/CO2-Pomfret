@@ -6,6 +6,9 @@ Provides functions to simulate tree growth and carbon storage over multiple year
 These functions iteratively apply the one-year DBH growth model to project
 tree metrics into the future. This will drive the time slider in the app
 (e.g., "show tree in 0, 5, 10, 20 years").
+
+This module focuses on SINGLE-TREE trajectories. For forest-wide simulation
+and snapshot generation, see forest_snapshots.py.
 """
 
 import sys
@@ -215,4 +218,3 @@ def simulate_growth_trajectory(
         'carbon': carbon_traj,
         'years': list(range(years + 1))
     }
-
