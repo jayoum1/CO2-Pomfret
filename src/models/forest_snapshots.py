@@ -106,7 +106,163 @@ def load_base_forest_df(base_year: int | None = None) -> pd.DataFrame:
     return df
 
 
-def simulate_forest_one_year(forest_df: pd.DataFrame) -> pd.DataFrame:
+def diagnose_dbh_progression(base_forest: pd.DataFrame, years: int = 10, sample_n: int = 10) -> None:
+    """
+    Diagnostic function to check DBH progression during simulation.
+    
+    Runs the year-by-year simulation and prints:
+      - mean DBH each year
+      - mean delta (DBH_{t+1}-DBH_t)
+      - % exactly zero delta
+      - % abs(delta) < 1e-6
+      - % abs(delta) < 0.01
+      - number of unique predicted DBH values each year
+    Also prints a few random example tree trajectories to confirm progression.
+    
+    Parameters
+    ----------
+    base_forest : pd.DataFrame
+        Base forest state (year 0)
+    years : int
+        Number of years to simulate (default: 10)
+    sample_n : int
+        Number of sample trees to show trajectories for (default: 10)
+    """
+    print("\n" + "="*70)
+    print("DBH PROGRESSION DIAGNOSTIC")
+    print("="*70)
+    
+    # Track statistics per year
+    current = base_forest.copy()
+    
+    # Count warnings
+    species_warning_count = 0
+    plot_warning_count = 0
+    
+    # Store trajectories for sample trees
+    sample_indices = np.random.choice(len(base_forest), size=min(sample_n, len(base_forest)), replace=False)
+    sample_treeids = base_forest.iloc[sample_indices]['TreeID'].values.tolist()
+    # Create a mapping from TreeID to initial index for lookup
+    treeid_to_idx = {tid: idx for idx, tid in zip(sample_indices, sample_treeids)}
+    trajectories = {tid: [base_forest.iloc[idx]['DBH_cm']] for idx, tid in zip(sample_indices, sample_treeids)}
+    
+    print(f"\nYear-by-Year DBH Statistics (full float precision):")
+    print("-" * 70)
+    print(f"{'Year':<6} | {'Mean DBH':<12} | {'Mean Δ':<12} | {'Med Δ':<12} | {'% Zero':<8} | {'% Tiny':<8} | {'% Small':<8} | {'Unique':<8}")
+    print("-" * 70)
+    
+    plateau_start_year = None
+    
+    for t in range(1, years + 1):
+        # Store previous state
+        prev = current['DBH_cm'].to_numpy()
+        
+        # Simulate one year (with silent=False to count warnings)
+        next_state = simulate_forest_one_year(current, silent=False)
+        
+        # Get next state
+        nxt = next_state['DBH_cm'].to_numpy()
+        
+        # Compute delta
+        delta = nxt - prev
+        
+        # Statistics
+        mean_prev = prev.mean()
+        mean_nxt = nxt.mean()
+        mean_delta = delta.mean()
+        median_delta = np.median(delta)
+        pct_zero = (delta == 0).mean() * 100
+        pct_tiny = (np.abs(delta) < 1e-6).mean() * 100
+        pct_small = (np.abs(delta) < 0.01).mean() * 100
+        n_unique = len(np.unique(np.round(nxt, 6)))
+        
+        # Check for plateau (mean delta near zero)
+        if plateau_start_year is None and abs(mean_delta) < 1e-6:
+            plateau_start_year = t
+        
+        print(f"{t:<6} | {mean_prev:12.6f} | {mean_delta:12.6f} | {median_delta:12.6f} | "
+              f"{pct_zero:7.2f}% | {pct_tiny:7.2f}% | {pct_small:7.2f}% | {n_unique:<8}")
+        
+        # Update trajectories (lookup by TreeID since indices may change)
+        for tid in sample_treeids:
+            tid_mask = next_state['TreeID'] == tid
+            if tid_mask.any():
+                trajectories[tid].append(next_state[tid_mask]['DBH_cm'].values[0])
+        
+        # Update current state
+        current = next_state
+    
+    print("-" * 70)
+    
+    # Report plateau
+    if plateau_start_year is not None:
+        print(f"\n⚠ PLATEAU DETECTED: Mean delta dropped near zero starting at year {plateau_start_year}")
+    else:
+        print(f"\n✓ No plateau detected in mean delta over {years} years")
+    
+    # Print sample trajectories
+    print(f"\n{'='*70}")
+    print(f"Sample Tree Trajectories (DBH_0, DBH_1, ..., DBH_{years}):")
+    print("="*70)
+    for tid in sample_treeids[:sample_n]:
+        traj = trajectories[tid]
+        # Lookup original row by TreeID
+        tid_mask = base_forest['TreeID'] == tid
+        if tid_mask.any():
+            row = base_forest[tid_mask].iloc[0]
+            species = row['Species']
+            plot = row['Plot']
+            traj_str = ", ".join([f"{dbh:.6f}" for dbh in traj])
+            print(f"TreeID {tid} ({species}, {plot}): [{traj_str}]")
+            
+            # Check if this tree plateaued
+            if len(traj) > 1:
+                deltas = [traj[i+1] - traj[i] for i in range(len(traj)-1)]
+                if len(deltas) > 5 and all(abs(d) < 1e-6 for d in deltas[5:]):  # Check after year 5
+                    print(f"  → This tree plateaued after year 5")
+    
+    # Feature activation check
+    print(f"\n{'='*70}")
+    print("Feature Activation Check (sample rows):")
+    print("="*70)
+    
+    # Check a few random rows
+    sample_indices = np.random.choice(len(base_forest), size=min(5, len(base_forest)), replace=False)
+    for idx in sample_indices:
+        row = base_forest.iloc[idx]
+        treeid = row['TreeID']
+        species = row['Species']
+        plot = row['Plot']
+        dbh = row['DBH_cm']
+        
+        # Call predict_dbh_next_year with return_warnings to inspect features
+        try:
+            result = predict_dbh_next_year(
+                prev_dbh_cm=dbh,
+                species=species,
+                plot=plot,
+                gap_years=1.0,
+                silent=True,
+                return_warnings=True
+            )
+            predicted_dbh, species_warn, plot_warn, feature_dict = result
+            
+            # Find nonzero features
+            nonzero_features = {k: v for k, v in feature_dict.items() if abs(v) > 1e-6}
+            
+            print(f"\nTreeID {treeid} ({species}, {plot}):")
+            print(f"  DBH: {dbh:.6f} → Predicted: {predicted_dbh:.6f}")
+            print(f"  Species warning: {species_warn}, Plot warning: {plot_warn}")
+            print(f"  Nonzero features ({len(nonzero_features)}):")
+            for feat, val in sorted(nonzero_features.items()):
+                print(f"    {feat}: {val}")
+        except Exception as e:
+            print(f"\nTreeID {treeid}: Error checking features: {e}")
+    
+    print("\n" + "="*70)
+
+
+def simulate_forest_one_year(forest_df: pd.DataFrame, silent: bool = True) -> pd.DataFrame:
     """
     Simulate the forest forward by exactly one year.
     
@@ -125,6 +281,8 @@ def simulate_forest_one_year(forest_df: pd.DataFrame) -> pd.DataFrame:
         Current forest state with columns: TreeID, Plot, Species, DBH_cm, ...
         Each row represents one tree.
         DBH_cm represents the DBH at the start of the year (prev_dbh).
+    silent : bool
+        If True, suppress warning messages from predict_dbh_next_year (default: True)
     
     Returns
     -------
@@ -137,7 +295,8 @@ def simulate_forest_one_year(forest_df: pd.DataFrame) -> pd.DataFrame:
     # Create a copy to avoid mutating the input
     result_df = forest_df.copy()
     
-    print(f"Simulating {len(result_df):,} trees forward one year...")
+    if not silent:
+        print(f"Simulating {len(result_df):,} trees forward one year...")
     
     # Apply the one-year growth model to each tree
     # We iterate row-by-row for clarity, though this could be vectorized later
@@ -157,7 +316,8 @@ def simulate_forest_one_year(forest_df: pd.DataFrame) -> pd.DataFrame:
             prev_dbh_cm=prev_dbh,
             species=species,
             plot=plot,
-            gap_years=1.0
+            gap_years=1.0,
+            silent=silent
         )
         
         # Compute carbon metrics:
@@ -173,7 +333,8 @@ def simulate_forest_one_year(forest_df: pd.DataFrame) -> pd.DataFrame:
     result_df['DBH_cm'] = dbh_next_list  # DBH_cm now represents DBH at end of year
     result_df['carbon_at_time'] = carbon_at_time_list  # Carbon at end of year
     
-    print(f"✓ Simulation complete. Mean DBH: {result_df['DBH_cm'].mean():.2f} cm")
+    if not silent:
+        print(f"✓ Simulation complete. Mean DBH: {result_df['DBH_cm'].mean():.2f} cm")
     
     return result_df
 
@@ -183,12 +344,16 @@ def simulate_forest_years(
     years: int
 ) -> pd.DataFrame:
     """
-    Simulate the forest forward for a given number of years by repeatedly applying
-    `simulate_forest_one_year`.
+    Simulate the forest forward for `years` discrete one-year steps.
     
-    This function implements the iterative application of the one-year step function.
-    It starts from the base forest state and applies the growth model N times,
-    where N = years.
+    This is a discrete-time simulation where:
+    - base_forest_df is the state at year 0
+    - years >= 0
+    - Returns the forest state after `years` steps
+    
+    Each call starts from the given base_forest_df and applies exactly `years` steps.
+    This ensures that each requested horizon (5, 10, 20 years) is simulated independently
+    from the base forest, not chained from previous simulations.
     
     Parameters
     ----------
@@ -218,21 +383,22 @@ def simulate_forest_years(
     print(f"Starting with {len(base_forest_df):,} trees")
     
     # Start with the base forest
-    current_forest = base_forest_df.copy()
+    # IMPORTANT: Always start from base_forest_df, not from a previous simulation state
+    current = base_forest_df.copy()
     
-    # Apply the one-year step function N times
-    for year in range(years):
-        print(f"  Year {year + 1}/{years}...", end=" ")
-        current_forest = simulate_forest_one_year(current_forest)
+    # Apply the one-year step function exactly `years` times
+    # This is a discrete-time simulation: each iteration represents one year
+    for _ in range(years):
+        current = simulate_forest_one_year(current, silent=True)
         # After each year, DBH_cm represents the DBH at that future time point
         # We use this updated DBH as input for the next iteration
     
     # Add years_ahead column to indicate time offset
-    current_forest['years_ahead'] = years
+    current['years_ahead'] = years
     
     print(f"\n✓ Simulation complete: {years} years forward")
     
-    return current_forest
+    return current
 
 
 def generate_forest_snapshots(
@@ -295,19 +461,38 @@ def generate_forest_snapshots(
     if any(y < 0 for y in years_list):
         raise ValueError("All years in years_list must be >= 0")
     
-    # Load base forest
+    # Load base forest once (year 0)
+    # This is the starting state for all simulations
     base_forest = load_base_forest_df(base_year=base_year)
     
     # Generate snapshots for each year
     print(f"\nGenerating snapshots for years: {years_list}")
     
+    # Track mean DBH for consistency checking
+    mean_dbh_by_year = {}
+    
+    # For each requested horizon, simulate from the base forest
+    # IMPORTANT: Each simulation starts from base_forest, not from a previous simulation
+    # This ensures that 10-year and 20-year snapshots are computed independently,
+    # not chained from the 5-year state
     for years in sorted(years_list):
         print(f"\n{'='*60}")
         print(f"Generating snapshot: {years} years ahead")
         print(f"{'='*60}")
         
-        # Simulate forest forward
-        forest_snapshot = simulate_forest_years(base_forest, years)
+        # Simulate forest forward from base_forest
+        # If years == 0, use base forest as-is
+        # Otherwise, simulate exactly `years` steps from base_forest
+        if years == 0:
+            forest_snapshot = base_forest.copy()
+            forest_snapshot['years_ahead'] = 0
+        else:
+            # Each call to simulate_forest_years starts from base_forest and applies
+            # exactly `years` discrete one-year steps
+            forest_snapshot = simulate_forest_years(base_forest, years)
+        
+        # Track mean DBH for consistency checking
+        mean_dbh_by_year[years] = forest_snapshot['DBH_cm'].mean()
         
         # For year 0, we need to compute carbon_at_time if it doesn't exist
         if years == 0 and 'carbon_at_time' not in forest_snapshot.columns:
@@ -357,6 +542,40 @@ def generate_forest_snapshots(
         print(f"  DBH range: {cleaned_snapshot['DBH_cm'].min():.2f} - {cleaned_snapshot['DBH_cm'].max():.2f} cm")
         print(f"  Total carbon: {cleaned_snapshot['carbon_at_time'].sum():.2f} kg C")
     
+    # Consistency check: verify DBH progression
+    print(f"\n{'='*60}")
+    print("DBH Progression Check")
+    print(f"{'='*60}")
+    print("Years Ahead | Mean DBH (cm)")
+    print("-" * 30)
+    for years in sorted(mean_dbh_by_year.keys()):
+        print(f"{years:11d} | {mean_dbh_by_year[years]:.2f}")
+    
+    # Check for non-monotonic or flat progression
+    sorted_years = sorted(mean_dbh_by_year.keys())
+    warnings = []
+    for i in range(len(sorted_years) - 1):
+        k1, k2 = sorted_years[i], sorted_years[i + 1]
+        dbh1, dbh2 = mean_dbh_by_year[k1], mean_dbh_by_year[k2]
+        
+        if dbh2 < dbh1:
+            warnings.append(
+                f"WARNING: Mean DBH decreased from {k1} years ({dbh1:.2f} cm) "
+                f"to {k2} years ({dbh2:.2f} cm). DBH should not decrease on average."
+            )
+        elif dbh2 == dbh1:
+            warnings.append(
+                f"WARNING: Mean DBH is identical at {k1} years ({dbh1:.2f} cm) "
+                f"and {k2} years ({dbh2:.2f} cm). Simulation may not be progressing."
+            )
+    
+    if warnings:
+        print("\n⚠ CONSISTENCY WARNINGS:")
+        for warning in warnings:
+            print(f"  {warning}")
+    else:
+        print("\n✓ DBH progression is consistent (monotonic or increasing)")
+    
     print(f"\n{'='*60}")
     print("All snapshots generated successfully!")
     print(f"{'='*60}")
@@ -384,16 +603,9 @@ if __name__ == "__main__":
     print(f"  Plots: {base_forest['Plot'].value_counts().to_dict()}")
     print(f"  Top species: {base_forest['Species'].value_counts().head(5).to_dict()}")
     
-    # 2. Simulate 10 years
-    print("\n2. Simulating forest forward 10 years...")
-    forest_10_years = simulate_forest_years(base_forest, years=10)
-    
-    print("\nForest after 10 years summary:")
-    print(f"  Number of trees: {len(forest_10_years):,}")
-    print(f"  Mean DBH: {forest_10_years['DBH_cm'].mean():.2f} cm")
-    print(f"  DBH range: {forest_10_years['DBH_cm'].min():.2f} - {forest_10_years['DBH_cm'].max():.2f} cm")
-    if 'carbon_at_time' in forest_10_years.columns:
-        print(f"  Total carbon: {forest_10_years['carbon_at_time'].sum():.2f} kg C")
+    # 2. Run diagnostics
+    print("\n2. Running DBH progression diagnostics...")
+    diagnose_dbh_progression(base_forest, years=10, sample_n=10)
     
     # 3. Generate snapshots
     print("\n3. Generating forest snapshots...")

@@ -532,7 +532,7 @@ def load_dbh_growth_model():
     return _loaded_model, _loaded_feature_names
 
 
-def predict_dbh_next_year(prev_dbh_cm, species=None, plot=None, gap_years=1.0, **kwargs):
+def predict_dbh_next_year(prev_dbh_cm, species=None, plot=None, gap_years=1.0, silent=False, **kwargs):
     """
     Predict next year's DBH for a single tree.
     
@@ -548,6 +548,7 @@ def predict_dbh_next_year(prev_dbh_cm, species=None, plot=None, gap_years=1.0, *
         plot: str, plot identifier ("Upper", "Middle", or "Lower").
                If None, will use "Lower" (reference category).
         gap_years: float, years between measurements (default: 1.0 for annual prediction).
+        silent: bool, if True, suppress warning messages (default: False).
         **kwargs: optional additional features if needed (e.g., group, growthtype).
     
     Returns:
@@ -568,16 +569,20 @@ def predict_dbh_next_year(prev_dbh_cm, species=None, plot=None, gap_years=1.0, *
             feature_dict[feat_name] = 0.0
     
     # Set species feature
+    species_warning = False
     if species is not None:
         species_col = f'Species_{species.lower()}'
         if species_col in feature_names:
             feature_dict[species_col] = 1.0  # Numeric 1, not boolean True
         else:
-            print(f"Warning: Species '{species}' not found in training data. Using default.")
+            species_warning = True
+            if not silent:
+                print(f"Warning: Species '{species}' not found in training data. Using default.")
     
     # Set plot feature
     # Note: "Lower" is the reference category (dropped during one-hot encoding)
     # So if plot is "Lower" or None, all Plot_* columns remain 0
+    plot_warning = False
     if plot is not None and plot.lower() != 'lower':
         # Normalize plot name: capitalize first letter to match feature names (e.g., "middle" -> "Middle")
         plot_normalized = plot.capitalize()
@@ -585,7 +590,9 @@ def predict_dbh_next_year(prev_dbh_cm, species=None, plot=None, gap_years=1.0, *
         if plot_col in feature_names:
             feature_dict[plot_col] = 1.0  # Numeric 1, not boolean True
         else:
-            print(f"Warning: Plot '{plot}' (normalized to '{plot_normalized}') not found in training data. Using Lower (reference category).")
+            plot_warning = True
+            if not silent:
+                print(f"Warning: Plot '{plot}' (normalized to '{plot_normalized}') not found in training data. Using Lower (reference category).")
     
     # Set GapYears
     if 'GapYears' in feature_names:
@@ -605,6 +612,10 @@ def predict_dbh_next_year(prev_dbh_cm, species=None, plot=None, gap_years=1.0, *
     
     # Predict
     predicted_dbh = model.predict(feature_df)[0]
+    
+    # Return prediction along with warning flags for diagnostics
+    if 'return_warnings' in kwargs and kwargs['return_warnings']:
+        return predicted_dbh, species_warning, plot_warning, feature_dict
     
     return predicted_dbh
 
