@@ -1,0 +1,2 @@
+PrevDBH_cm
+Species_black birch

@@ -30,6 +30,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import CARBON_ALL_PLOTS, PROCESSED_DATA_DIR, ensure_dir
 from models.dbh_growth_nn import predict_dbh_next_year_nn
+from models.dbh_increment_model import predict_dbh_next_year_from_increment
 from models.forest_metrics import carbon_from_dbh
 
 
@@ -238,7 +239,8 @@ def simulate_forest_one_year(
     forest_df: pd.DataFrame, 
     silent: bool = True,
     enforce_monotonic_dbh: bool = True,
-    max_annual_shrink_cm: float = 0.0
+    max_annual_shrink_cm: float = 0.0,
+    model_type: str = "nn_state"
 ) -> tuple[pd.DataFrame, dict]:
     """
     Simulate the forest forward by exactly one year using the neural network model.
@@ -267,6 +269,9 @@ def simulate_forest_one_year(
     max_annual_shrink_cm : float
         Maximum allowed annual shrinkage in cm (default: 0.0)
         If enforce_monotonic_dbh=True, next_dbh will be clamped to at least (prev_dbh - max_annual_shrink_cm)
+    model_type : str
+        Model type to use: "nn_state" (neural network predicting next DBH) or 
+        "xgb_increment" (XGBoost predicting increment) (default: "nn_state")
     
     Returns
     -------
@@ -292,6 +297,7 @@ def simulate_forest_one_year(
     carbon_at_time_list = []
     n_clamped = 0
     shrink_flags = []
+    negative_increment_flags = []
     
     for idx, row in result_df.iterrows():
         # prev_dbh: DBH at the start of the year (current state)
@@ -300,24 +306,56 @@ def simulate_forest_one_year(
         plot = row['Plot']
         tree_id = row['TreeID']
         
-        # Predict next year's DBH using the neural network growth model
-        next_dbh_pred = predict_dbh_next_year_nn(
-            prev_dbh_cm=prev_dbh,
-            species=species,
-            plot=plot,
-            gap_years=1.0
-        )
-        
-        # Apply monotonic DBH enforcement if enabled
-        if enforce_monotonic_dbh:
-            min_allowed_dbh = prev_dbh - max_annual_shrink_cm
-            if next_dbh_pred < min_allowed_dbh:
-                next_dbh = min_allowed_dbh
-                n_clamped += 1
+        # Predict next year's DBH based on model type
+        if model_type == "xgb_increment":
+            # Use increment model - get raw increment first for diagnostics
+            from models.dbh_increment_model import predict_delta_dbh_per_year
+            delta_per_year_raw = predict_delta_dbh_per_year(
+                prev_dbh_cm=prev_dbh,
+                species=species,
+                plot=plot,
+                gap_years=1.0
+            )
+            
+            # Track negative increments
+            if delta_per_year_raw < -0.1:
+                negative_increment_flags.append({
+                    'TreeID': tree_id,
+                    'Species': species,
+                    'Plot': plot,
+                    'prev_dbh': prev_dbh,
+                    'delta_per_year_pred': delta_per_year_raw
+                })
+            
+            # Get final prediction with clamping
+            next_dbh_pred = predict_dbh_next_year_from_increment(
+                prev_dbh_cm=prev_dbh,
+                species=species,
+                plot=plot,
+                gap_years=1.0,
+                clamp_negative=enforce_monotonic_dbh,
+                max_shrink_cm=max_annual_shrink_cm
+            )
+            next_dbh = next_dbh_pred  # Clamping already handled in predict_dbh_next_year_from_increment
+        else:  # model_type == "nn_state"
+            # Use neural network state model
+            next_dbh_pred = predict_dbh_next_year_nn(
+                prev_dbh_cm=prev_dbh,
+                species=species,
+                plot=plot,
+                gap_years=1.0
+            )
+            
+            # Apply monotonic DBH enforcement if enabled (for nn_state model)
+            if enforce_monotonic_dbh:
+                min_allowed_dbh = prev_dbh - max_annual_shrink_cm
+                if next_dbh_pred < min_allowed_dbh:
+                    next_dbh = min_allowed_dbh
+                    n_clamped += 1
+                else:
+                    next_dbh = next_dbh_pred
             else:
                 next_dbh = next_dbh_pred
-        else:
-            next_dbh = next_dbh_pred
         
         # Track trees that would shrink significantly (for diagnostics)
         delta_pred = next_dbh_pred - prev_dbh
@@ -347,7 +385,8 @@ def simulate_forest_one_year(
     
     diagnostics = {
         'n_clamped': n_clamped,
-        'shrink_flags': shrink_flags
+        'shrink_flags': shrink_flags,
+        'negative_increment_flags': negative_increment_flags
     }
     
     if not silent:
@@ -363,8 +402,9 @@ def simulate_forest_years(
     years: int,
     enforce_monotonic_dbh: bool = True,
     max_annual_shrink_cm: float = 0.0,
-    print_diagnostics: bool = True
-) -> tuple[pd.DataFrame, list[dict]]:
+    print_diagnostics: bool = True,
+    model_type: str = "nn_state"
+) -> tuple[pd.DataFrame, list[dict], list[dict]]:
     """
     Simulate the forest forward for `years` discrete one-year steps using neural network.
     
@@ -394,9 +434,10 @@ def simulate_forest_years(
     
     Returns
     -------
-    tuple[pd.DataFrame, list[dict]]
+    tuple[pd.DataFrame, list[dict], list[dict]]
         - DataFrame: Forest state after `years` years with 'years_ahead' column
         - list[dict]: All shrink flags collected across all years (for CSV export)
+        - list[dict]: All negative increment flags (for increment model diagnostics)
     """
     if years < 0:
         raise ValueError("years must be non-negative")
@@ -405,16 +446,20 @@ def simulate_forest_years(
         # Return base forest with years_ahead=0
         result = base_forest_df.copy()
         result['years_ahead'] = 0
-        return result, []
+        return result, [], []
     
+    model_name = "Increment Model" if model_type == "xgb_increment" else "Neural Network Model"
     if print_diagnostics:
-        print(f"\nSimulating forest forward {years} years (NN model)...")
+        print(f"\nSimulating forest forward {years} years ({model_name})...")
         print(f"Starting with {len(base_forest_df):,} trees")
         print(f"Monotonic DBH enforcement: {enforce_monotonic_dbh}, Max shrink: {max_annual_shrink_cm} cm")
         print("\n" + "="*70)
         print("YEAR-BY-YEAR DIAGNOSTICS")
         print("="*70)
-        print(f"{'Year':<6} | {'Mean ΔDBH':<12} | {'% Shrink':<10} | {'% Clamped':<12} | {'Min Δ':<10} | {'Med Δ':<10} | {'Max Δ':<10}")
+        if model_type == "xgb_increment":
+            print(f"{'Year':<6} | {'Mean Δ':<12} | {'Med Δ':<12} | {'% Neg':<10} | {'% Clamped':<12} | {'Min Δ':<10} | {'Max Δ':<10}")
+        else:
+            print(f"{'Year':<6} | {'Mean ΔDBH':<12} | {'% Shrink':<10} | {'% Clamped':<12} | {'Min Δ':<10} | {'Med Δ':<10} | {'Max Δ':<10}")
         print("-"*70)
     
     # Start with the base forest
@@ -423,6 +468,7 @@ def simulate_forest_years(
     
     # Collect all shrink flags across years
     all_shrink_flags = []
+    all_negative_increment_flags = []
     
     # Apply the one-year step function exactly `years` times
     # This is a discrete-time simulation: each iteration represents one year
@@ -434,7 +480,8 @@ def simulate_forest_years(
             current, 
             silent=True,
             enforce_monotonic_dbh=enforce_monotonic_dbh,
-            max_annual_shrink_cm=max_annual_shrink_cm
+            max_annual_shrink_cm=max_annual_shrink_cm,
+            model_type=model_type
         )
         
         # Calculate deltas
@@ -449,13 +496,45 @@ def simulate_forest_years(
         pct_shrink = (deltas < 0).mean() * 100
         pct_clamped = (diagnostics['n_clamped'] / len(current)) * 100 if len(current) > 0 else 0
         
+        # For increment model: collect negative increment flags
+        if model_type == "xgb_increment":
+            from models.dbh_increment_model import predict_delta_dbh_per_year
+            for idx, row in current.iterrows():
+                delta_per_year_raw = predict_delta_dbh_per_year(
+                    prev_dbh_cm=prev_dbhs[current.index.get_loc(idx)],
+                    species=row['Species'],
+                    plot=row['Plot'],
+                    gap_years=1.0
+                )
+                if delta_per_year_raw < -0.1:  # Negative increment threshold
+                    all_negative_increment_flags.append({
+                        'TreeID': row['TreeID'],
+                        'Species': row['Species'],
+                        'Plot': row['Plot'],
+                        'prev_dbh': prev_dbhs[current.index.get_loc(idx)],
+                        'delta_per_year_pred': delta_per_year_raw,
+                        'year_step': year_step
+                    })
+        
         # Add year_step to shrink flags
         for flag in diagnostics['shrink_flags']:
             flag['year_step'] = year_step
             all_shrink_flags.append(flag)
         
+        # Add year_step to negative increment flags (for increment model)
+        if model_type == "xgb_increment" and 'negative_increment_flags' in diagnostics:
+            for flag in diagnostics['negative_increment_flags']:
+                flag['year_step'] = year_step
+                all_negative_increment_flags.append(flag)
+        
         if print_diagnostics:
-            print(f"{year_step:<6} | {mean_delta:12.4f} | {pct_shrink:9.1f}% | {pct_clamped:11.1f}% | {min_delta:10.4f} | {median_delta:10.4f} | {max_delta:10.4f}")
+            if model_type == "xgb_increment":
+                # Count negative increments for this year
+                year_neg_flags = [f for f in all_negative_increment_flags if f['year_step'] == year_step]
+                pct_neg = (len(year_neg_flags) / len(current)) * 100 if len(current) > 0 else 0.0
+                print(f"{year_step:<6} | {mean_delta:12.4f} | {median_delta:12.4f} | {pct_neg:9.1f}% | {pct_clamped:11.1f}% | {min_delta:10.4f} | {max_delta:10.4f}")
+            else:
+                print(f"{year_step:<6} | {mean_delta:12.4f} | {pct_shrink:9.1f}% | {pct_clamped:11.1f}% | {min_delta:10.4f} | {median_delta:10.4f} | {max_delta:10.4f}")
         
         # After each year, DBH_cm represents the DBH at that future time point
         # We use this updated DBH as input for the next iteration
@@ -468,8 +547,10 @@ def simulate_forest_years(
         print(f"\n✓ Simulation complete: {years} years forward")
         if all_shrink_flags:
             print(f"  Found {len(all_shrink_flags)} tree-year combinations with >0.3 cm shrinkage")
+        if model_type == "xgb_increment" and all_negative_increment_flags:
+            print(f"  Found {len(all_negative_increment_flags)} tree-year combinations with negative increment (<-0.1 cm/year)")
     
-    return current, all_shrink_flags
+    return current, all_shrink_flags, all_negative_increment_flags
 
 
 def generate_forest_snapshots(
@@ -477,7 +558,8 @@ def generate_forest_snapshots(
     base_year: int | None = None,
     output_dir: str | Path = None,
     enforce_monotonic_dbh: bool = True,
-    max_annual_shrink_cm: float = 0.0
+    max_annual_shrink_cm: float = 0.0,
+    model_type: str = "nn_state"
 ) -> None:
     """
     Generate forest snapshots at multiple time points using neural network model.
@@ -519,6 +601,8 @@ def generate_forest_snapshots(
         (default: True)
     max_annual_shrink_cm : float
         Maximum allowed annual shrinkage in cm (default: 0.0)
+    model_type : str
+        Model type to use: "nn_state" or "xgb_increment" (default: "nn_state")
     """
     # Set default output directory
     if output_dir is None:
@@ -546,14 +630,19 @@ def generate_forest_snapshots(
     # This is the starting state for all simulations
     base_forest = load_base_forest_df(base_year=base_year)
     
+    # Determine model name and file suffix
+    model_name = "Increment Model" if model_type == "xgb_increment" else "Neural Network Model"
+    file_suffix = "xgb_increment" if model_type == "xgb_increment" else "nn"
+    
     # Generate snapshots for each year
-    print(f"\nGenerating snapshots for years: {years_list} (Neural Network Model)")
+    print(f"\nGenerating snapshots for years: {years_list} ({model_name})")
     
     # Track mean DBH for consistency checking
     mean_dbh_by_year = {}
     
     # Collect all shrink flags across all years for CSV export
     all_shrink_flags = []
+    all_negative_increment_flags = []
     
     # For each requested horizon, simulate from the base forest
     # IMPORTANT: Each simulation starts from base_forest, not from a previous simulation
@@ -561,7 +650,7 @@ def generate_forest_snapshots(
     # not chained from the 5-year state
     for years in sorted(years_list):
         print(f"\n{'='*60}")
-        print(f"Generating snapshot: {years} years ahead (NN model)")
+        print(f"Generating snapshot: {years} years ahead ({model_name})")
         print(f"{'='*60}")
         
         # Simulate forest forward from base_forest
@@ -571,17 +660,20 @@ def generate_forest_snapshots(
             forest_snapshot = base_forest.copy()
             forest_snapshot['years_ahead'] = 0
             shrink_flags_year = []
+            negative_increment_flags_year = []
         else:
             # Each call to simulate_forest_years starts from base_forest and applies
             # exactly `years` discrete one-year steps
-            forest_snapshot, shrink_flags_year = simulate_forest_years(
+            forest_snapshot, shrink_flags_year, negative_increment_flags_year = simulate_forest_years(
                 base_forest, 
                 years,
                 enforce_monotonic_dbh=enforce_monotonic_dbh,
                 max_annual_shrink_cm=max_annual_shrink_cm,
-                print_diagnostics=True
+                print_diagnostics=True,
+                model_type=model_type
             )
             all_shrink_flags.extend(shrink_flags_year)
+            all_negative_increment_flags.extend(negative_increment_flags_year)
         
         # Track mean DBH for consistency checking
         mean_dbh_by_year[years] = forest_snapshot['DBH_cm'].mean()
@@ -623,8 +715,8 @@ def generate_forest_snapshots(
         # Create cleaned snapshot DataFrame (exclude modeling internals)
         cleaned_snapshot = forest_snapshot[columns_to_save].copy()
         
-        # Save to CSV with "_nn" suffix
-        filename = f"forest_nn_{years}_years.csv"
+        # Save to CSV with appropriate suffix
+        filename = f"forest_{file_suffix}_{years}_years.csv"
         filepath = output_dir / filename
         cleaned_snapshot.to_csv(filepath, index=False)
         
@@ -695,11 +787,21 @@ def generate_forest_snapshots(
     # Save shrink flags to CSV
     if all_shrink_flags:
         shrink_flags_df = pd.DataFrame(all_shrink_flags)
-        shrink_flags_path = diagnostics_dir / "shrink_flags.csv"
+        shrink_flags_path = diagnostics_dir / f"shrink_flags_{file_suffix}.csv"
         shrink_flags_df.to_csv(shrink_flags_path, index=False)
         print(f"\n{'='*60}")
         print(f"Saved shrink flags: {shrink_flags_path}")
         print(f"  Total tree-year combinations with >0.3 cm shrinkage: {len(shrink_flags_df)}")
+        print(f"{'='*60}")
+    
+    # Save negative increment flags for increment model
+    if model_type == "xgb_increment" and all_negative_increment_flags:
+        negative_increment_df = pd.DataFrame(all_negative_increment_flags)
+        negative_increment_path = diagnostics_dir / "increment_negative_flags.csv"
+        negative_increment_df.to_csv(negative_increment_path, index=False)
+        print(f"\n{'='*60}")
+        print(f"Saved negative increment flags: {negative_increment_path}")
+        print(f"  Total tree-year combinations with negative increment (<-0.1 cm/year): {len(negative_increment_df)}")
         print(f"{'='*60}")
     
     print(f"\n{'='*60}")
