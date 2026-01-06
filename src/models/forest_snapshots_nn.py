@@ -240,7 +240,9 @@ def simulate_forest_one_year(
     silent: bool = True,
     enforce_monotonic_dbh: bool = True,
     max_annual_shrink_cm: float = 0.0,
-    model_type: str = "nn_state"
+    model_type: str = "nn_state",
+    simulation_mode: str = "hard0",
+    epsilon_cm: float = 0.02
 ) -> tuple[pd.DataFrame, dict]:
     """
     Simulate the forest forward by exactly one year using the neural network model.
@@ -272,6 +274,11 @@ def simulate_forest_one_year(
     model_type : str
         Model type to use: "nn_state" (neural network predicting next DBH) or 
         "xgb_increment" (XGBoost predicting increment) (default: "nn_state")
+    simulation_mode : str
+        Simulation mode for NN state model: "hard0" (no shrinkage, delta < 0 -> 0) or
+        "epsilon" (delta < 0 -> epsilon_cm) (default: "hard0")
+    epsilon_cm : float
+        Minimum growth when epsilon mode is used (default: 0.02 cm)
     
     Returns
     -------
@@ -283,6 +290,9 @@ def simulate_forest_one_year(
         - dict: Diagnostic information with keys:
           - 'n_clamped': Number of trees that were clamped due to monotonic enforcement
           - 'shrink_flags': List of dicts with trees that would shrink by >0.3 cm
+          - 'delta_pred_list': List of raw predicted deltas (for stuck tree analysis)
+          - 'delta_used_list': List of deltas actually used (after hard0/epsilon)
+          - 'n_zero_delta': Number of trees with zero delta after correction
     """
     # Create a copy to avoid mutating the input
     result_df = forest_df.copy()
@@ -298,6 +308,9 @@ def simulate_forest_one_year(
     n_clamped = 0
     shrink_flags = []
     negative_increment_flags = []
+    delta_pred_list = []
+    delta_used_list = []
+    n_zero_delta = 0
     
     for idx, row in result_df.iterrows():
         # prev_dbh: DBH at the start of the year (current state)
@@ -346,16 +359,40 @@ def simulate_forest_one_year(
                 gap_years=1.0
             )
             
-            # Apply monotonic DBH enforcement if enabled (for nn_state model)
-            if enforce_monotonic_dbh:
-                min_allowed_dbh = prev_dbh - max_annual_shrink_cm
-                if next_dbh_pred < min_allowed_dbh:
-                    next_dbh = min_allowed_dbh
-                    n_clamped += 1
+            # Calculate raw predicted delta
+            delta_pred = next_dbh_pred - prev_dbh
+            delta_pred_list.append(delta_pred)
+            
+            # Apply simulation mode rule (hard0 or epsilon) for NN state model
+            if simulation_mode == "hard0":
+                # HARD 0 RULE: any negative change becomes 0 growth
+                delta_used = max(0.0, delta_pred)
+                next_dbh = prev_dbh + delta_used
+            elif simulation_mode == "epsilon":
+                # EPSILON RULE: negative change becomes epsilon growth
+                if delta_pred < 0:
+                    delta_used = epsilon_cm
+                else:
+                    delta_used = delta_pred
+                next_dbh = prev_dbh + delta_used
+            else:
+                # Legacy monotonic enforcement (for backward compatibility)
+                if enforce_monotonic_dbh:
+                    min_allowed_dbh = prev_dbh - max_annual_shrink_cm
+                    if next_dbh_pred < min_allowed_dbh:
+                        next_dbh = min_allowed_dbh
+                        n_clamped += 1
+                        delta_used = next_dbh - prev_dbh
+                    else:
+                        next_dbh = next_dbh_pred
+                        delta_used = delta_pred
                 else:
                     next_dbh = next_dbh_pred
-            else:
-                next_dbh = next_dbh_pred
+                    delta_used = delta_pred
+            
+            delta_used_list.append(delta_used)
+            if abs(delta_used) < 1e-6:  # Effectively zero
+                n_zero_delta += 1
         
         # Track trees that would shrink significantly (for diagnostics)
         delta_pred = next_dbh_pred - prev_dbh
@@ -386,7 +423,10 @@ def simulate_forest_one_year(
     diagnostics = {
         'n_clamped': n_clamped,
         'shrink_flags': shrink_flags,
-        'negative_increment_flags': negative_increment_flags
+        'negative_increment_flags': negative_increment_flags,
+        'delta_pred_list': delta_pred_list,
+        'delta_used_list': delta_used_list,
+        'n_zero_delta': n_zero_delta
     }
     
     if not silent:
@@ -403,8 +443,10 @@ def simulate_forest_years(
     enforce_monotonic_dbh: bool = True,
     max_annual_shrink_cm: float = 0.0,
     print_diagnostics: bool = True,
-    model_type: str = "nn_state"
-) -> tuple[pd.DataFrame, list[dict], list[dict]]:
+    model_type: str = "nn_state",
+    simulation_mode: str = "hard0",
+    epsilon_cm: float = 0.02
+) -> tuple[pd.DataFrame, list[dict], list[dict], dict]:
     """
     Simulate the forest forward for `years` discrete one-year steps using neural network.
     
@@ -432,12 +474,21 @@ def simulate_forest_years(
     print_diagnostics : bool
         If True, print per-year diagnostics (default: True)
     
+    simulation_mode : str
+        Simulation mode for NN state model: "hard0" or "epsilon" (default: "hard0")
+    epsilon_cm : float
+        Minimum growth when epsilon mode is used (default: 0.02 cm)
+    
     Returns
     -------
-    tuple[pd.DataFrame, list[dict], list[dict]]
+    tuple[pd.DataFrame, list[dict], list[dict], dict]
         - DataFrame: Forest state after `years` years with 'years_ahead' column
         - list[dict]: All shrink flags collected across all years (for CSV export)
         - list[dict]: All negative increment flags (for increment model diagnostics)
+        - dict: Stuck tree diagnostics with keys:
+          - 'yearly_stats': List of dicts with per-year statistics
+          - 'stuck_trees': List of dicts with permanently stuck trees
+          - 'dbh_history': Dict mapping TreeID to list of DBH values over years
     """
     if years < 0:
         raise ValueError("years must be non-negative")
@@ -446,7 +497,7 @@ def simulate_forest_years(
         # Return base forest with years_ahead=0
         result = base_forest_df.copy()
         result['years_ahead'] = 0
-        return result, [], []
+        return result, [], [], {'yearly_stats': [], 'stuck_trees': [], 'dbh_history': {}}
     
     model_name = "Increment Model" if model_type == "xgb_increment" else "Neural Network Model"
     if print_diagnostics:
@@ -459,7 +510,8 @@ def simulate_forest_years(
         if model_type == "xgb_increment":
             print(f"{'Year':<6} | {'Mean Δ':<12} | {'Med Δ':<12} | {'% Neg':<10} | {'% Clamped':<12} | {'Min Δ':<10} | {'Max Δ':<10}")
         else:
-            print(f"{'Year':<6} | {'Mean ΔDBH':<12} | {'% Shrink':<10} | {'% Clamped':<12} | {'Min Δ':<10} | {'Med Δ':<10} | {'Max Δ':<10}")
+            # NN state model with simulation mode diagnostics
+            print(f"{'Year':<6} | {'Mean DBH':<12} | {'Mean Δ_pred':<12} | {'Med Δ':<12} | {'% Neg Δ':<10} | {'% Zero Δ':<10} | {'Unique DBH':<12}")
         print("-"*70)
     
     # Start with the base forest
@@ -469,6 +521,10 @@ def simulate_forest_years(
     # Collect all shrink flags across years
     all_shrink_flags = []
     all_negative_increment_flags = []
+    
+    # Track DBH history for stuck tree detection
+    dbh_history = {tree_id: [dbh] for tree_id, dbh in zip(base_forest_df['TreeID'], base_forest_df['DBH_cm'])}
+    yearly_stats = []
     
     # Apply the one-year step function exactly `years` times
     # This is a discrete-time simulation: each iteration represents one year
@@ -481,20 +537,47 @@ def simulate_forest_years(
             silent=True,
             enforce_monotonic_dbh=enforce_monotonic_dbh,
             max_annual_shrink_cm=max_annual_shrink_cm,
-            model_type=model_type
+            model_type=model_type,
+            simulation_mode=simulation_mode,
+            epsilon_cm=epsilon_cm
         )
         
         # Calculate deltas
         next_dbhs = current['DBH_cm'].values
         deltas = next_dbhs - prev_dbhs
         
+        # Get raw predicted deltas (for diagnostics)
+        delta_pred_raw = diagnostics.get('delta_pred_list', [])
+        delta_used_list = diagnostics.get('delta_used_list', deltas)
+        
         # Statistics
-        mean_delta = deltas.mean()
+        mean_dbh = next_dbhs.mean()
+        mean_delta_pred = np.mean(delta_pred_raw) if delta_pred_raw else mean_delta
+        mean_delta_used = np.mean(delta_used_list) if delta_used_list else mean_delta
         median_delta = np.median(deltas)
         min_delta = deltas.min()
         max_delta = deltas.max()
-        pct_shrink = (deltas < 0).mean() * 100
-        pct_clamped = (diagnostics['n_clamped'] / len(current)) * 100 if len(current) > 0 else 0
+        pct_shrink = (np.array(delta_pred_raw) < 0).mean() * 100 if delta_pred_raw else (deltas < 0).mean() * 100
+        pct_zero_delta = (np.abs(np.array(delta_used_list)) < 1e-6).mean() * 100 if delta_used_list else 0.0
+        pct_clamped = (diagnostics['n_zero_delta'] / len(current)) * 100 if len(current) > 0 else 0.0
+        unique_dbhs = len(np.unique(np.round(next_dbhs, 6)))
+        
+        # Update DBH history
+        for tree_id, dbh in zip(current['TreeID'], next_dbhs):
+            if tree_id in dbh_history:
+                dbh_history[tree_id].append(dbh)
+        
+        # Store yearly statistics
+        yearly_stats.append({
+            'year': year_step,
+            'mean_dbh': mean_dbh,
+            'mean_delta_pred': mean_delta_pred,
+            'mean_delta_used': mean_delta_used,
+            'median_delta': median_delta,
+            'pct_delta_pred_neg': pct_shrink,
+            'pct_zero_delta': pct_zero_delta,
+            'unique_dbhs': unique_dbhs
+        })
         
         # For increment model: collect negative increment flags
         if model_type == "xgb_increment":
@@ -534,13 +617,23 @@ def simulate_forest_years(
                 pct_neg = (len(year_neg_flags) / len(current)) * 100 if len(current) > 0 else 0.0
                 print(f"{year_step:<6} | {mean_delta:12.4f} | {median_delta:12.4f} | {pct_neg:9.1f}% | {pct_clamped:11.1f}% | {min_delta:10.4f} | {max_delta:10.4f}")
             else:
-                print(f"{year_step:<6} | {mean_delta:12.4f} | {pct_shrink:9.1f}% | {pct_clamped:11.1f}% | {min_delta:10.4f} | {median_delta:10.4f} | {max_delta:10.4f}")
+                # NN state model with simulation mode diagnostics
+                print(f"{year_step:<6} | {mean_dbh:12.4f} | {mean_delta_pred:12.4f} | {median_delta:12.4f} | {pct_shrink:9.1f}% | {pct_zero_delta:9.1f}% | {unique_dbhs:12d}")
         
         # After each year, DBH_cm represents the DBH at that future time point
         # We use this updated DBH as input for the next iteration
     
     # Add years_ahead column to indicate time offset
     current['years_ahead'] = years
+    
+    # Detect permanently stuck trees
+    stuck_trees = detect_stuck_trees(dbh_history, years)
+    
+    stuck_diagnostics = {
+        'yearly_stats': yearly_stats,
+        'stuck_trees': stuck_trees,
+        'dbh_history': dbh_history
+    }
     
     if print_diagnostics:
         print("-"*70)
@@ -549,8 +642,66 @@ def simulate_forest_years(
             print(f"  Found {len(all_shrink_flags)} tree-year combinations with >0.3 cm shrinkage")
         if model_type == "xgb_increment" and all_negative_increment_flags:
             print(f"  Found {len(all_negative_increment_flags)} tree-year combinations with negative increment (<-0.1 cm/year)")
+        if stuck_trees:
+            print(f"  Found {len(stuck_trees)} permanently stuck trees ({100*len(stuck_trees)/len(current):.1f}%)")
     
-    return current, all_shrink_flags, all_negative_increment_flags
+    return current, all_shrink_flags, all_negative_increment_flags, stuck_diagnostics
+
+
+def detect_stuck_trees(dbh_history: dict, total_years: int) -> list[dict]:
+    """
+    Detect trees that are permanently stuck (DBH stops changing and never changes again).
+    
+    A tree is "permanently stuck by year k" if:
+    - DBH stops changing at year k (delta == 0)
+    - DBH never changes again through year total_years
+    
+    Parameters
+    ----------
+    dbh_history : dict
+        Dictionary mapping TreeID to list of DBH values [year0, year1, ..., yearN]
+    total_years : int
+        Total number of years simulated
+    
+    Returns
+    -------
+    list[dict]
+        List of stuck tree records with keys:
+        - TreeID
+        - Species (from base forest)
+        - Plot (from base forest)
+        - DBH_at_stuck
+        - year_first_stuck
+    """
+    stuck_trees = []
+    
+    for tree_id, dbh_list in dbh_history.items():
+        if len(dbh_list) < 2:
+            continue
+        
+        # Find first year where DBH stops changing
+        year_first_stuck = None
+        for year in range(1, len(dbh_list)):
+            if abs(dbh_list[year] - dbh_list[year-1]) < 1e-6:  # Effectively zero change
+                # Check if it stays stuck for all remaining years
+                is_permanently_stuck = True
+                for future_year in range(year + 1, len(dbh_list)):
+                    if abs(dbh_list[future_year] - dbh_list[year]) >= 1e-6:
+                        is_permanently_stuck = False
+                        break
+                
+                if is_permanently_stuck:
+                    year_first_stuck = year
+                    break
+        
+        if year_first_stuck is not None:
+            stuck_trees.append({
+                'TreeID': tree_id,
+                'DBH_at_stuck': dbh_list[year_first_stuck],
+                'year_first_stuck': year_first_stuck
+            })
+    
+    return stuck_trees
 
 
 def generate_forest_snapshots(
@@ -559,8 +710,10 @@ def generate_forest_snapshots(
     output_dir: str | Path = None,
     enforce_monotonic_dbh: bool = True,
     max_annual_shrink_cm: float = 0.0,
-    model_type: str = "nn_state"
-) -> None:
+    model_type: str = "nn_state",
+    simulation_mode: str = "hard0",
+    epsilon_cm: float = 0.02
+) -> dict:
     """
     Generate forest snapshots at multiple time points using neural network model.
     
@@ -603,6 +756,18 @@ def generate_forest_snapshots(
         Maximum allowed annual shrinkage in cm (default: 0.0)
     model_type : str
         Model type to use: "nn_state" or "xgb_increment" (default: "nn_state")
+    simulation_mode : str
+        Simulation mode for NN state model: "hard0" or "epsilon" (default: "hard0")
+    epsilon_cm : float
+        Minimum growth when epsilon mode is used (default: 0.02 cm)
+    
+    Returns
+    -------
+    dict
+        Dictionary with simulation results including:
+        - 'snapshots': List of snapshot DataFrames
+        - 'stuck_trees': List of stuck trees
+        - 'yearly_stats': Yearly statistics
     """
     # Set default output directory
     if output_dir is None:
@@ -664,16 +829,23 @@ def generate_forest_snapshots(
         else:
             # Each call to simulate_forest_years starts from base_forest and applies
             # exactly `years` discrete one-year steps
-            forest_snapshot, shrink_flags_year, negative_increment_flags_year = simulate_forest_years(
+            forest_snapshot, shrink_flags_year, negative_increment_flags_year, stuck_diagnostics = simulate_forest_years(
                 base_forest, 
                 years,
                 enforce_monotonic_dbh=enforce_monotonic_dbh,
                 max_annual_shrink_cm=max_annual_shrink_cm,
                 print_diagnostics=True,
-                model_type=model_type
+                model_type=model_type,
+                simulation_mode=simulation_mode,
+                epsilon_cm=epsilon_cm
             )
             all_shrink_flags.extend(shrink_flags_year)
             all_negative_increment_flags.extend(negative_increment_flags_year)
+            
+            # Store stuck trees (only for longest simulation)
+            if years == max(years_list):
+                final_stuck_trees = stuck_diagnostics['stuck_trees']
+                final_yearly_stats = stuck_diagnostics['yearly_stats']
         
         # Track mean DBH for consistency checking
         mean_dbh_by_year[years] = forest_snapshot['DBH_cm'].mean()
@@ -804,9 +976,42 @@ def generate_forest_snapshots(
         print(f"  Total tree-year combinations with negative increment (<-0.1 cm/year): {len(negative_increment_df)}")
         print(f"{'='*60}")
     
+    # Save stuck trees CSV if available
+    if 'final_stuck_trees' in locals() and final_stuck_trees:
+        # Enrich stuck trees with Species and Plot from base forest
+        stuck_trees_enriched = []
+        for stuck_tree in final_stuck_trees:
+            tree_row = base_forest[base_forest['TreeID'] == stuck_tree['TreeID']]
+            if len(tree_row) > 0:
+                stuck_trees_enriched.append({
+                    'TreeID': stuck_tree['TreeID'],
+                    'Species': tree_row.iloc[0]['Species'],
+                    'Plot': tree_row.iloc[0]['Plot'],
+                    'DBH_at_stuck': stuck_tree['DBH_at_stuck'],
+                    'year_first_stuck': stuck_tree['year_first_stuck']
+                })
+        
+        if stuck_trees_enriched:
+            stuck_trees_df = pd.DataFrame(stuck_trees_enriched)
+            stuck_trees_path = diagnostics_dir / f"stuck_trees_{simulation_mode}.csv"
+            stuck_trees_df.to_csv(stuck_trees_path, index=False)
+            print(f"\n{'='*60}")
+            print(f"Saved stuck trees: {stuck_trees_path}")
+            print(f"  Total permanently stuck trees: {len(stuck_trees_df)} ({100*len(stuck_trees_df)/len(base_forest):.1f}%)")
+            print(f"{'='*60}")
+    
     print(f"\n{'='*60}")
     print("All snapshots generated successfully!")
     print(f"{'='*60}")
+    
+    # Return results
+    result_dict = {
+        'snapshots': [],
+        'stuck_trees': final_stuck_trees if 'final_stuck_trees' in locals() else [],
+        'yearly_stats': final_yearly_stats if 'final_yearly_stats' in locals() else []
+    }
+    
+    return result_dict
 
 
 # ==============================================================================
