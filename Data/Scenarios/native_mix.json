@@ -1,0 +1,17 @@
+{
+  "name": "Native Mix",
+  "description": "Native species mix reflecting Pomfret forest composition",
+  "mode": "recipe",
+  "total_count": 100,
+  "species_proportions": {
+    "red oak": 0.25,
+    "sugar maple": 0.25,
+    "white oak": 0.15,
+    "black oak": 0.10,
+    "white pine": 0.10,
+    "eastern hemlock": 0.10,
+    "yellow birch": 0.05
+  },
+  "plot": "Middle",
+  "initial_dbh_cm": 5.0
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Biodiversity Mix",
+  "description": "Diverse species mix to enhance forest biodiversity",
+  "mode": "recipe",
+  "total_count": 100,
+  "species_proportions": {
+    "red oak": 0.15,
+    "sugar maple": 0.15,
+    "white oak": 0.10,
+    "black oak": 0.10,
+    "white pine": 0.10,
+    "eastern hemlock": 0.10,
+    "yellow birch": 0.08,
+    "american beech": 0.08,
+    "black cherry": 0.07,
+    "red maple": 0.07
+  },
+  "plot": "Lower",
+  "initial_dbh_cm": 5.0
+}
