@@ -1,0 +1,210 @@
+TreeID,Species,Plot,DBH_at_stuck,year_first_stuck
+104,sugar maple,Lower,17.272,1
+105,sugar maple,Lower,13.988473862308398,20
+11,sugar maple,Upper,42.4526067841261,16
+113,sugar maple,Lower,14.13562733998256,15
+116,white pine,Lower,41.91,1
+117,red oak,Lower,75.18400000000001,1
+120,mockernut hickory,Lower,14.160334601987534,13
+122,white pine,Lower,31.743465205298957,2
+126,sugar maple,Lower,17.5514,1
+127,black birch,Lower,14.478000000000002,1
+128,black birch,Lower,24.460200000000004,1
+129,musclewood,Lower,21.8694,1
+130,musclewood,Lower,23.571199999999997,1
+131,musclewood,Lower,17.526,1
+135,white pine,Lower,14.622300985175393,3
+138,shagbark hickory,Lower,43.561,1
+14,sugar maple,Upper,42.48211599716922,8
+144,yellow birch,Lower,14.609416692850933,2
+149,black birch,Lower,30.3276,1
+151,red oak,Lower,52.20071821096431,9
+163,musclewood,Lower,12.634123493053169,18
+17,sugar maple,Upper,58.0898,1
+18,norway maple,Upper,14.071558178185873,19
+180,red maple,Upper,14.07172613509752,10
+181,sugar maple,Upper,45.796200000000006,1
+188,sugar maple,Upper,50.673,1
+198,norway maple,Upper,50.165,1
+20,sugar maple,Upper,71.7042,1
+23,sugar maple,Upper,42.45046746312599,17
+28,sugar maple,Upper,42.418,1
+301,black birch,Lower,18.796000000000003,1
+302,red oak,Lower,48.53417430922714,3
+303,sugar maple,Lower,24.053800000000003,1
+305,sugar maple,Lower,14.101225578199756,20
+309,sugar maple,Lower,13.972176425505852,14
+313,sugar maple,Lower,14.065390515632291,7
+314,sugar maple,Lower,25.146,1
+317,white pine,Lower,14.601215267066017,3
+318,musclewood,Lower,12.638899647586952,18
+319,musclewood,Lower,15.24,1
+32,sugar maple,Upper,46.292015600114425,3
+321,burning bush,Lower,5.8166,1
+322,pignut hickory,Lower,7.366,1
+334,musclewood,Lower,12.633047197572422,8
+335,black oak,Lower,27.970006262387056,19
+336,pignut hickory,Lower,8.1788,1
+337,musclewood,Lower,12.599899924516071,3
+338,musclewood,Lower,49.784000000000006,1
+342,black birch,Lower,13.976643218866649,7
+343,musclewood,Lower,11.928294870540041,10
+344,white ash,Lower,12.546496263679801,8
+346,black birch,Lower,38.4556,1
+348,musclewood,Lower,12.622915903044614,12
+350,musclewood,Lower,15.748,1
+354,musclewood,Lower,12.638899647586952,18
+364,white pine,Lower,30.226000000000003,1
+365,red oak,Lower,73.27132474973695,6
+367,black birch,Lower,32.918400000000005,1
+368,sugar maple,Lower,14.006467701590516,9
+370,black birch,Lower,20.1676,1
+371,red oak,Lower,48.012449598334626,7
+372,white pine,Lower,16.256,1
+373,black oak,Lower,28.02205455379597,2
+374,shagbark hickory,Lower,35.1536,1
+375,red oak,Lower,73.24102095507887,13
+379,sugar maple,Lower,21.362959278449676,2
+381,white pine,Lower,18.923,1
+384,sugar maple,Lower,26.924,1
+385,red oak,Lower,132.84199999999998,1
+386,sugar maple,Lower,24.638,1
+387,red oak,Lower,47.879000000000005,1
+388,sugar maple,Lower,21.082,1
+389,red oak,Lower,84.328,1
+390,sugar maple,Lower,28.194,1
+391,red maple,Lower,18.542,1
+392,sugar maple,Lower,14.986,1
+395,white pine,Lower,51.562000000000005,1
+397,red oak,Lower,89.15400000000001,1
+398,white pine,Lower,59.69,1
+40,sugar maple,Upper,43.18,1
+400,sugar maple,Lower,17.78,1
+402,burning bush,Lower,5.9250148266773515,2
+409,sugar maple,Lower,13.988473862308398,20
+416 (was 683),sugar maple,Middle,14.108671335530312,12
+417 (was 654),sugar maple,Middle,18.542,1
+430,sugar maple,Lower,13.984759852683569,17
+432,burning bush,Lower,13.208,1
+44,sugar maple,Upper,46.99,1
+459,red maple,Lower,11.684,1
+467,musclewood,Lower,12.2174,1
+470,sugar maple,Lower,14.066327750027076,16
+479,sugar maple,Middle,14.986,1
+481,musclewood,Lower,12.638899647586952,18
+482,white pine,Lower,19.685,1
+483,sugar maple,Lower,15.494,1
+486,sugar maple,Lower,18.415,1
+488,sugar maple,Lower,14.061194076496953,20
+489,black birch,Lower,14.223999999999998,1
+49,sugar maple,Upper,62.484,1
+494,sugar maple,Lower,14.007376709742745,16
+503,sugar maple,Lower,14.072269308089433,20
+511,sugar maple,Lower,14.004437249863704,20
+516 (was 679),sugar maple,Middle,14.108671335530312,12
+52,sugar maple,Upper,45.72,1
+58,sugar maple,Upper,46.228,1
+603,sugar maple,Middle,27.1018,1
+604,sugar maple,Middle,17.78,1
+606,sugar maple,Middle,14.05651391913089,17
+608,sugar maple,Middle,14.126824634528216,17
+610,sugar maple,Middle,14.061200231967371,11
+612,sugar maple,Middle,15.24,1
+613,mockernut hickory,Middle,27.98246294932499,3
+614,sugar maple,Middle,14.01025400868171,4
+615,mockernut hickory,Middle,45.085,1
+617,sugar maple,Middle,14.001569893991485,12
+619,sugar maple,Middle,17.018,1
+620,sugar maple,Middle,14.044956304119832,17
+621,mockernut hickory,Middle,28.113827889128448,11
+622,red oak,Middle,48.575188228279096,4
+623,sugar maple,Middle,14.168898519483013,4
+625,sugar maple,Middle,14.478000000000002,1
+627,sugar maple,Middle,34.036,1
+628,sugar maple,Middle,14.111141534383323,10
+629,sugar maple,Middle,15.2654,1
+630,sugar maple,Middle,19.304,1
+631,sugar maple,Middle,14.051747577664369,8
+632,red oak,Middle,75.946,1
+633,sugar maple,Middle,25.146,1
+634,sugar maple,Middle,14.133245771988108,4
+635,white ash,Middle,36.4236,1
+638,sugar maple,Middle,14.168898519483013,4
+640,american hophornbeam,Middle,13.437193396849263,2
+642,sugar maple,Middle,19.812,1
+643,sugar maple,Middle,76.2,1
+644,sugar maple,Middle,19.558,1
+645,white ash,Middle,26.42103321795391,4
+647,sugar maple,Middle,26.436287388153158,4
+648,sugar maple,Middle,20.32,1
+649,sugar maple,Middle,18.288,1
+650,white ash,Middle,39.116,1
+651,sugar maple,Middle,34.39836912508518,7
+652,sugar maple,Middle,14.1280591179733,5
+653,sugar maple,Middle,14.169262276683355,7
+655,sugar maple,Middle,14.044956304119832,17
+657,mockernut hickory,Middle,60.29984902664006,7
+658,sugar maple,Middle,14.1280591179733,5
+659,mockernut hickory,Middle,45.09624312092391,9
+660,sugar maple,Middle,14.114817515647681,18
+661,sugar maple,Middle,14.986,1
+663,sugar maple,Middle,14.043982514897085,10
+666,red oak,Middle,52.41244298587178,4
+667,pignut hickory,Middle,19.05,1
+668,hophornbeam,Middle,12.486995383142876,2
+670,sugar maple,Middle,14.147548503769723,19
+672,sugar maple,Middle,14.044956304119832,17
+674,sugar maple,Middle,14.04480862196294,6
+675,sugar maple,Middle,14.05055557374272,20
+676,red oak,Middle,78.74,1
+677,black birch,Middle,42.8244,1
+678,sugar maple,Middle,16.002,1
+68,norway maple,Upper,14.049847046031664,7
+680,mockernut,Middle,27.177999999999997,1
+681,pignut hickory,Middle,18.669,1
+682,pignut hickory,Middle,24.003,1
+686,sugar maple,Middle,14.051466210449158,15
+688,sugar maple,Middle,17.272,1
+689,sugar maple,Middle,19.304,1
+690,red oak,Middle,74.676,1
+691,sugar maple,Middle,16.002,1
+692,sugar maple,Middle,41.402,1
+693,sugar maple,Middle,19.939,1
+694,sugar maple,Middle,21.7424,1
+696,sugar maple,Middle,14.15291176984243,9
+697,sugar maple,Middle,14.184407206136507,3
+698,sugar maple,Middle,15.3162,1
+699,basswood,Middle,47.337430386363884,2
+700,basswood,Middle,35.052,1
+701,sugar maple,Middle,34.275848593687485,2
+702,sugar maple,Middle,34.441263740238966,8
+703,sugar maple,Middle,14.111702069777888,12
+704,mockernut hickory,Middle,48.26,1
+705,mockernut hickory,Middle,45.18730318335046,17
+706,sugar maple,Middle,19.558,1
+707,sugar maple,Middle,14.122030047783339,9
+708,sassafras,Middle,43.434000000000005,1
+709,sugar maple,Middle,34.25055903988321,4
+711,sugar maple,Middle,40.386,1
+714,mockernut hickory,Middle,45.19351647452171,9
+716,sugar maple,Middle,34.26694324042763,3
+718,sugar maple,Middle,18.034,1
+719,sugar maple,Middle,15.24,1
+720,sugar maple,Middle,14.732,1
+722,sugar maple,Middle,45.74629231399432,2
+724,sugar maple,Middle,22.606,1
+725,sugar maple,Middle,35.56,1
+726,sugar maple,Middle,25.146,1
+727,sugar maple,Middle,47.24400000000001,1
+728,sugar maple,Middle,36.83,1
+729,sugar maple,Middle,14.732,1
+730,sugar maple,Middle,19.558,1
+74,sugar maple,Upper,58.928,1
+75,sugar maple,Upper,60.706,1
+80,sugar maple,Upper,45.72,1
+82,sugar maple,Upper,43.18,1
+87,red maple,Upper,78.74,1
+91,sugar maple,Upper,45.72,1
+92,sugar maple,Upper,43.18,1
+94,norway maple,Upper,14.091147834660447,18
+97,norway maple,Upper,14.049847046031664,7

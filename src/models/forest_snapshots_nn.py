@@ -32,6 +32,7 @@ from config import CARBON_ALL_PLOTS, PROCESSED_DATA_DIR, ensure_dir
 from models.dbh_growth_nn import predict_dbh_next_year_nn
 from models.dbh_increment_model import predict_dbh_next_year_from_increment
 from models.forest_metrics import carbon_from_dbh
+from models.dbh_residual_model import predict_delta_hybrid
 
 
 def load_base_forest_df(base_year: int | None = None) -> pd.DataFrame:
@@ -275,8 +276,8 @@ def simulate_forest_one_year(
         Model type to use: "nn_state" (neural network predicting next DBH) or 
         "xgb_increment" (XGBoost predicting increment) (default: "nn_state")
     simulation_mode : str
-        Simulation mode for NN state model: "hard0" (no shrinkage, delta < 0 -> 0) or
-        "epsilon" (delta < 0 -> epsilon_cm) (default: "hard0")
+        Simulation mode for NN state model: "hard0" (no shrinkage, delta < 0 -> 0),
+        "epsilon" (delta < 0 -> epsilon_cm), or "hybrid" (baseline + residual) (default: "hard0")
     epsilon_cm : float
         Minimum growth when epsilon mode is used (default: 0.02 cm)
     
@@ -291,8 +292,11 @@ def simulate_forest_one_year(
           - 'n_clamped': Number of trees that were clamped due to monotonic enforcement
           - 'shrink_flags': List of dicts with trees that would shrink by >0.3 cm
           - 'delta_pred_list': List of raw predicted deltas (for stuck tree analysis)
-          - 'delta_used_list': List of deltas actually used (after hard0/epsilon)
+          - 'delta_used_list': List of deltas actually used (after hard0/epsilon/hybrid)
           - 'n_zero_delta': Number of trees with zero delta after correction
+          - 'delta_base_list': List of baseline deltas (hybrid mode only)
+          - 'delta_resid_list': List of residual deltas (hybrid mode only)
+          - 'was_clamped_list': List of clamp flags (hybrid mode only)
     """
     # Create a copy to avoid mutating the input
     result_df = forest_df.copy()
@@ -311,6 +315,11 @@ def simulate_forest_one_year(
     delta_pred_list = []
     delta_used_list = []
     n_zero_delta = 0
+    
+    # Hybrid mode diagnostics
+    delta_base_list = []
+    delta_resid_list = []
+    was_clamped_list = []
     
     for idx, row in result_df.iterrows():
         # prev_dbh: DBH at the start of the year (current state)
@@ -363,7 +372,7 @@ def simulate_forest_one_year(
             delta_pred = next_dbh_pred - prev_dbh
             delta_pred_list.append(delta_pred)
             
-            # Apply simulation mode rule (hard0 or epsilon) for NN state model
+            # Apply simulation mode rule (hard0, epsilon, or hybrid) for NN state model
             if simulation_mode == "hard0":
                 # HARD 0 RULE: any negative change becomes 0 growth
                 delta_used = max(0.0, delta_pred)
@@ -375,6 +384,25 @@ def simulate_forest_one_year(
                 else:
                     delta_used = delta_pred
                 next_dbh = prev_dbh + delta_used
+            elif simulation_mode == "hybrid":
+                # HYBRID MODE: baseline + residual
+                delta_base, delta_resid, delta_total_raw = predict_delta_hybrid(
+                    prev_dbh_cm=prev_dbh,
+                    species=species,
+                    plot=plot,
+                    gap_years=1.0
+                )
+                delta_base_list.append(delta_base)
+                delta_resid_list.append(delta_resid)
+                
+                # Clamp to nonnegative
+                delta_total_raw_val = delta_total_raw
+                delta_used = max(0.0, delta_total_raw_val)
+                was_clamped = 1 if delta_total_raw_val < 0 else 0
+                was_clamped_list.append(was_clamped)
+                
+                next_dbh = prev_dbh + delta_used
+                delta_pred = delta_total_raw_val  # For consistency with other modes
             else:
                 # Legacy monotonic enforcement (for backward compatibility)
                 if enforce_monotonic_dbh:
@@ -429,6 +457,12 @@ def simulate_forest_one_year(
         'n_zero_delta': n_zero_delta
     }
     
+    # Add hybrid mode diagnostics if available
+    if simulation_mode == "hybrid":
+        diagnostics['delta_base_list'] = delta_base_list
+        diagnostics['delta_resid_list'] = delta_resid_list
+        diagnostics['was_clamped_list'] = was_clamped_list
+    
     if not silent:
         print(f"✓ Simulation complete. Mean DBH: {result_df['DBH_cm'].mean():.2f} cm")
         if enforce_monotonic_dbh and n_clamped > 0:
@@ -475,7 +509,7 @@ def simulate_forest_years(
         If True, print per-year diagnostics (default: True)
     
     simulation_mode : str
-        Simulation mode for NN state model: "hard0" or "epsilon" (default: "hard0")
+        Simulation mode for NN state model: "hard0", "epsilon", or "hybrid" (default: "hard0")
     epsilon_cm : float
         Minimum growth when epsilon mode is used (default: 0.02 cm)
     
@@ -757,7 +791,7 @@ def generate_forest_snapshots(
     model_type : str
         Model type to use: "nn_state" or "xgb_increment" (default: "nn_state")
     simulation_mode : str
-        Simulation mode for NN state model: "hard0" or "epsilon" (default: "hard0")
+        Simulation mode for NN state model: "hard0", "epsilon", or "hybrid" (default: "hard0")
     epsilon_cm : float
         Minimum growth when epsilon mode is used (default: 0.02 cm)
     

@@ -1,0 +1,283 @@
+Species,Plot,DBH_center_cm,delta_mean_cm_per_year,fallback_level,n_samples
+autumn olive,Middle,5.0,0.1602289687137891,global,2620
+autumn olive,Middle,15.0,0.05464504101416846,global,2620
+autumn olive,Middle,25.0,0.09469641025641022,global,2620
+autumn olive,Middle,35.0,0.29225905587668594,global,2620
+autumn olive,Middle,45.0,0.17019753451676506,global,2620
+autumn olive,Middle,55.0,0.37616534090909054,global,2620
+autumn olive,Middle,65.0,0.26458333333333445,global,2620
+autumn olive,Middle,75.0,0.0730807017543848,global,2620
+autumn olive,Middle,85.0,0.0,global,2620
+autumn olive,Middle,95.0,0.0,global,2620
+autumn olive,Middle,115.0,5.918199999999992,global,2620
+autumn olive,Middle,125.0,1.28375833333333,global,2620
+autumn olive,Middle,135.0,0.0,global,2620
+autumn olive,Middle,145.0,0.0,global,2620
+autumn olive,Middle,155.0,0.0,global,2620
+basswood,Middle,5.0,0.1602289687137891,global,2620
+basswood,Middle,15.0,0.05464504101416846,global,2620
+basswood,Middle,25.0,0.09469641025641022,global,2620
+basswood,Middle,35.0,0.29225905587668594,global,2620
+basswood,Middle,45.0,0.17019753451676506,global,2620
+basswood,Middle,55.0,0.37616534090909054,global,2620
+basswood,Middle,65.0,0.26458333333333445,global,2620
+basswood,Middle,75.0,0.0730807017543848,global,2620
+basswood,Middle,85.0,0.0,global,2620
+basswood,Middle,95.0,0.0,global,2620
+basswood,Middle,115.0,5.918199999999992,global,2620
+basswood,Middle,125.0,1.28375833333333,global,2620
+basswood,Middle,135.0,0.0,global,2620
+basswood,Middle,145.0,0.0,global,2620
+basswood,Middle,155.0,0.0,global,2620
+beech,Middle,5.0,0.1602289687137891,global,2620
+beech,Middle,15.0,0.05464504101416846,global,2620
+beech,Middle,25.0,0.09469641025641022,global,2620
+beech,Middle,35.0,0.29225905587668594,global,2620
+beech,Middle,45.0,0.17019753451676506,global,2620
+beech,Middle,55.0,0.37616534090909054,global,2620
+beech,Middle,65.0,0.26458333333333445,global,2620
+beech,Middle,75.0,0.0730807017543848,global,2620
+beech,Middle,85.0,0.0,global,2620
+beech,Middle,95.0,0.0,global,2620
+beech,Middle,115.0,5.918199999999992,global,2620
+beech,Middle,125.0,1.28375833333333,global,2620
+beech,Middle,135.0,0.0,global,2620
+beech,Middle,145.0,0.0,global,2620
+beech,Middle,155.0,0.0,global,2620
+black birch,Middle,5.0,0.13359789789789783,species_plot,382
+black birch,Middle,15.0,0.0,species_plot,382
+black birch,Middle,25.0,0.0,species_plot,382
+black birch,Middle,35.0,0.0,species_plot,382
+black birch,Middle,45.0,0.0,species_plot,382
+black birch,Middle,55.0,0.0,species_plot,382
+black oak,Middle,5.0,0.1602289687137891,global,2620
+black oak,Middle,15.0,0.05464504101416846,global,2620
+black oak,Middle,25.0,0.09469641025641022,global,2620
+black oak,Middle,35.0,0.29225905587668594,global,2620
+black oak,Middle,45.0,0.17019753451676506,global,2620
+black oak,Middle,55.0,0.37616534090909054,global,2620
+black oak,Middle,65.0,0.26458333333333445,global,2620
+black oak,Middle,75.0,0.0730807017543848,global,2620
+black oak,Middle,85.0,0.0,global,2620
+black oak,Middle,95.0,0.0,global,2620
+black oak,Middle,115.0,5.918199999999992,global,2620
+black oak,Middle,125.0,1.28375833333333,global,2620
+black oak,Middle,135.0,0.0,global,2620
+black oak,Middle,145.0,0.0,global,2620
+black oak,Middle,155.0,0.0,global,2620
+buckthorn,Middle,5.0,0.1602289687137891,global,2620
+buckthorn,Middle,15.0,0.05464504101416846,global,2620
+buckthorn,Middle,25.0,0.09469641025641022,global,2620
+buckthorn,Middle,35.0,0.29225905587668594,global,2620
+buckthorn,Middle,45.0,0.17019753451676506,global,2620
+buckthorn,Middle,55.0,0.37616534090909054,global,2620
+buckthorn,Middle,65.0,0.26458333333333445,global,2620
+buckthorn,Middle,75.0,0.0730807017543848,global,2620
+buckthorn,Middle,85.0,0.0,global,2620
+buckthorn,Middle,95.0,0.0,global,2620
+buckthorn,Middle,115.0,5.918199999999992,global,2620
+buckthorn,Middle,125.0,1.28375833333333,global,2620
+buckthorn,Middle,135.0,0.0,global,2620
+buckthorn,Middle,145.0,0.0,global,2620
+buckthorn,Middle,155.0,0.0,global,2620
+burning bush,Middle,5.0,0.1602289687137891,global,2620
+burning bush,Middle,15.0,0.05464504101416846,global,2620
+burning bush,Middle,25.0,0.09469641025641022,global,2620
+burning bush,Middle,35.0,0.29225905587668594,global,2620
+burning bush,Middle,45.0,0.17019753451676506,global,2620
+burning bush,Middle,55.0,0.37616534090909054,global,2620
+burning bush,Middle,65.0,0.26458333333333445,global,2620
+burning bush,Middle,75.0,0.0730807017543848,global,2620
+burning bush,Middle,85.0,0.0,global,2620
+burning bush,Middle,95.0,0.0,global,2620
+burning bush,Middle,115.0,5.918199999999992,global,2620
+burning bush,Middle,125.0,1.28375833333333,global,2620
+burning bush,Middle,135.0,0.0,global,2620
+burning bush,Middle,145.0,0.0,global,2620
+burning bush,Middle,155.0,0.0,global,2620
+dogwood,Middle,5.0,0.1602289687137891,global,2620
+dogwood,Middle,15.0,0.05464504101416846,global,2620
+dogwood,Middle,25.0,0.09469641025641022,global,2620
+dogwood,Middle,35.0,0.29225905587668594,global,2620
+dogwood,Middle,45.0,0.17019753451676506,global,2620
+dogwood,Middle,55.0,0.37616534090909054,global,2620
+dogwood,Middle,65.0,0.26458333333333445,global,2620
+dogwood,Middle,75.0,0.0730807017543848,global,2620
+dogwood,Middle,85.0,0.0,global,2620
+dogwood,Middle,95.0,0.0,global,2620
+dogwood,Middle,115.0,5.918199999999992,global,2620
+dogwood,Middle,125.0,1.28375833333333,global,2620
+dogwood,Middle,135.0,0.0,global,2620
+dogwood,Middle,145.0,0.0,global,2620
+dogwood,Middle,155.0,0.0,global,2620
+hophornbeam,Middle,5.0,0.1602289687137891,global,2620
+hophornbeam,Middle,15.0,0.05464504101416846,global,2620
+hophornbeam,Middle,25.0,0.09469641025641022,global,2620
+hophornbeam,Middle,35.0,0.29225905587668594,global,2620
+hophornbeam,Middle,45.0,0.17019753451676506,global,2620
+hophornbeam,Middle,55.0,0.37616534090909054,global,2620
+hophornbeam,Middle,65.0,0.26458333333333445,global,2620
+hophornbeam,Middle,75.0,0.0730807017543848,global,2620
+hophornbeam,Middle,85.0,0.0,global,2620
+hophornbeam,Middle,95.0,0.0,global,2620
+hophornbeam,Middle,115.0,5.918199999999992,global,2620
+hophornbeam,Middle,125.0,1.28375833333333,global,2620
+hophornbeam,Middle,135.0,0.0,global,2620
+hophornbeam,Middle,145.0,0.0,global,2620
+hophornbeam,Middle,155.0,0.0,global,2620
+mockernut,Middle,5.0,0.1602289687137891,global,2620
+mockernut,Middle,15.0,0.05464504101416846,global,2620
+mockernut,Middle,25.0,0.09469641025641022,global,2620
+mockernut,Middle,35.0,0.29225905587668594,global,2620
+mockernut,Middle,45.0,0.17019753451676506,global,2620
+mockernut,Middle,55.0,0.37616534090909054,global,2620
+mockernut,Middle,65.0,0.26458333333333445,global,2620
+mockernut,Middle,75.0,0.0730807017543848,global,2620
+mockernut,Middle,85.0,0.0,global,2620
+mockernut,Middle,95.0,0.0,global,2620
+mockernut,Middle,115.0,5.918199999999992,global,2620
+mockernut,Middle,125.0,1.28375833333333,global,2620
+mockernut,Middle,135.0,0.0,global,2620
+mockernut,Middle,145.0,0.0,global,2620
+mockernut,Middle,155.0,0.0,global,2620
+mockernut hickory,Middle,5.0,0.1602289687137891,global,2620
+mockernut hickory,Middle,15.0,0.05464504101416846,global,2620
+mockernut hickory,Middle,25.0,0.09469641025641022,global,2620
+mockernut hickory,Middle,35.0,0.29225905587668594,global,2620
+mockernut hickory,Middle,45.0,0.17019753451676506,global,2620
+mockernut hickory,Middle,55.0,0.37616534090909054,global,2620
+mockernut hickory,Middle,65.0,0.26458333333333445,global,2620
+mockernut hickory,Middle,75.0,0.0730807017543848,global,2620
+mockernut hickory,Middle,85.0,0.0,global,2620
+mockernut hickory,Middle,95.0,0.0,global,2620
+mockernut hickory,Middle,115.0,5.918199999999992,global,2620
+mockernut hickory,Middle,125.0,1.28375833333333,global,2620
+mockernut hickory,Middle,135.0,0.0,global,2620
+mockernut hickory,Middle,145.0,0.0,global,2620
+mockernut hickory,Middle,155.0,0.0,global,2620
+musclewood,Middle,5.0,0.20798743455497382,species_plot,280
+musclewood,Middle,15.0,0.0,species_plot,280
+musclewood,Middle,25.0,0.0,species_plot,280
+norway maple,Middle,5.0,0.19805569620253166,species,129
+norway maple,Middle,15.0,0.19811999999999982,species,129
+norway maple,Middle,45.0,0.08466666666666711,species,129
+norway maple,Upper,5.0,0.19589315068493157,species_plot,118
+norway maple,Upper,15.0,0.18975294117647043,species_plot,118
+norway maple,Upper,45.0,0.08466666666666711,species_plot,118
+pignut hickory,Middle,5.0,0.1602289687137891,global,2620
+pignut hickory,Middle,15.0,0.05464504101416846,global,2620
+pignut hickory,Middle,25.0,0.09469641025641022,global,2620
+pignut hickory,Middle,35.0,0.29225905587668594,global,2620
+pignut hickory,Middle,45.0,0.17019753451676506,global,2620
+pignut hickory,Middle,55.0,0.37616534090909054,global,2620
+pignut hickory,Middle,65.0,0.26458333333333445,global,2620
+pignut hickory,Middle,75.0,0.0730807017543848,global,2620
+pignut hickory,Middle,85.0,0.0,global,2620
+pignut hickory,Middle,95.0,0.0,global,2620
+pignut hickory,Middle,115.0,5.918199999999992,global,2620
+pignut hickory,Middle,125.0,1.28375833333333,global,2620
+pignut hickory,Middle,135.0,0.0,global,2620
+pignut hickory,Middle,145.0,0.0,global,2620
+pignut hickory,Middle,155.0,0.0,global,2620
+red maple,Middle,5.0,0.4213013333333333,species,55
+red maple,Middle,15.0,0.0,species,55
+red maple,Middle,75.0,0.24553333333333546,species,55
+red maple,Middle,85.0,0.0,species,55
+red maple,Upper,5.0,0.4213013333333333,species,55
+red maple,Upper,15.0,0.0,species,55
+red maple,Upper,75.0,0.24553333333333546,species,55
+red maple,Upper,85.0,0.0,species,55
+red oak,Middle,15.0,38.354,species_plot,187
+red oak,Middle,35.0,0.3111499999999999,species_plot,187
+red oak,Middle,45.0,0.5794375,species_plot,187
+red oak,Middle,55.0,0.4263376344086021,species_plot,187
+red oak,Middle,65.0,0.5854828282828282,species_plot,187
+red oak,Middle,75.0,0.06864047619047516,species_plot,187
+red oak,Middle,85.0,0.09313333333333362,species_plot,187
+red oak,Middle,95.0,0.0,species_plot,187
+red oak,Middle,115.0,5.918199999999992,species_plot,187
+red oak,Middle,125.0,1.28375833333333,species_plot,187
+red oak,Middle,135.0,0.0,species_plot,187
+red oak,Middle,145.0,0.0,species_plot,187
+red oak,Middle,155.0,0.0,species_plot,187
+sassafras,Middle,5.0,0.1602289687137891,global,2620
+sassafras,Middle,15.0,0.05464504101416846,global,2620
+sassafras,Middle,25.0,0.09469641025641022,global,2620
+sassafras,Middle,35.0,0.29225905587668594,global,2620
+sassafras,Middle,45.0,0.17019753451676506,global,2620
+sassafras,Middle,55.0,0.37616534090909054,global,2620
+sassafras,Middle,65.0,0.26458333333333445,global,2620
+sassafras,Middle,75.0,0.0730807017543848,global,2620
+sassafras,Middle,85.0,0.0,global,2620
+sassafras,Middle,95.0,0.0,global,2620
+sassafras,Middle,115.0,5.918199999999992,global,2620
+sassafras,Middle,125.0,1.28375833333333,global,2620
+sassafras,Middle,135.0,0.0,global,2620
+sassafras,Middle,145.0,0.0,global,2620
+sassafras,Middle,155.0,0.0,global,2620
+shagbark hickory,Middle,5.0,0.1602289687137891,global,2620
+shagbark hickory,Middle,15.0,0.05464504101416846,global,2620
+shagbark hickory,Middle,25.0,0.09469641025641022,global,2620
+shagbark hickory,Middle,35.0,0.29225905587668594,global,2620
+shagbark hickory,Middle,45.0,0.17019753451676506,global,2620
+shagbark hickory,Middle,55.0,0.37616534090909054,global,2620
+shagbark hickory,Middle,65.0,0.26458333333333445,global,2620
+shagbark hickory,Middle,75.0,0.0730807017543848,global,2620
+shagbark hickory,Middle,85.0,0.0,global,2620
+shagbark hickory,Middle,95.0,0.0,global,2620
+shagbark hickory,Middle,115.0,5.918199999999992,global,2620
+shagbark hickory,Middle,125.0,1.28375833333333,global,2620
+shagbark hickory,Middle,135.0,0.0,global,2620
+shagbark hickory,Middle,145.0,0.0,global,2620
+shagbark hickory,Middle,155.0,0.0,global,2620
+sugar maple,Middle,5.0,0.2541751724137931,species_plot,464
+sugar maple,Middle,15.0,0.14784551724137923,species_plot,464
+sugar maple,Middle,25.0,0.0,species_plot,464
+sugar maple,Middle,35.0,0.1850571428571433,species_plot,464
+sugar maple,Middle,45.0,0.0,species_plot,464
+sugar maple,Middle,65.0,0.0,species_plot,464
+sugar maple,Middle,75.0,0.25400000000000017,species_plot,464
+sugar maple,Upper,5.0,0.0926540880503145,species_plot,810
+sugar maple,Upper,15.0,0.09114895833333339,species_plot,810
+sugar maple,Upper,25.0,0.11178213507625277,species_plot,810
+sugar maple,Upper,35.0,0.3685668067226891,species_plot,810
+sugar maple,Upper,45.0,0.04044184397163091,species_plot,810
+sugar maple,Upper,55.0,0.40142829457364265,species_plot,810
+sugar maple,Upper,65.0,0.0,species_plot,810
+sugar maple,Upper,75.0,0.0,species_plot,810
+white ash,Middle,5.0,0.1602289687137891,global,2620
+white ash,Middle,15.0,0.05464504101416846,global,2620
+white ash,Middle,25.0,0.09469641025641022,global,2620
+white ash,Middle,35.0,0.29225905587668594,global,2620
+white ash,Middle,45.0,0.17019753451676506,global,2620
+white ash,Middle,55.0,0.37616534090909054,global,2620
+white ash,Middle,65.0,0.26458333333333445,global,2620
+white ash,Middle,75.0,0.0730807017543848,global,2620
+white ash,Middle,85.0,0.0,global,2620
+white ash,Middle,95.0,0.0,global,2620
+white ash,Middle,115.0,5.918199999999992,global,2620
+white ash,Middle,125.0,1.28375833333333,global,2620
+white ash,Middle,135.0,0.0,global,2620
+white ash,Middle,145.0,0.0,global,2620
+white ash,Middle,155.0,0.0,global,2620
+white pine,Middle,5.0,9.144000000000002,species_plot,80
+white pine,Middle,15.0,0.00609599999999967,species_plot,80
+white pine,Middle,25.0,0.1947333333333336,species_plot,80
+white pine,Middle,35.0,0.0,species_plot,80
+white pine,Middle,45.0,0.08254999999999857,species_plot,80
+white pine,Middle,55.0,0.0,species_plot,80
+yellow birch,Middle,5.0,0.1602289687137891,global,2620
+yellow birch,Middle,15.0,0.05464504101416846,global,2620
+yellow birch,Middle,25.0,0.09469641025641022,global,2620
+yellow birch,Middle,35.0,0.29225905587668594,global,2620
+yellow birch,Middle,45.0,0.17019753451676506,global,2620
+yellow birch,Middle,55.0,0.37616534090909054,global,2620
+yellow birch,Middle,65.0,0.26458333333333445,global,2620
+yellow birch,Middle,75.0,0.0730807017543848,global,2620
+yellow birch,Middle,85.0,0.0,global,2620
+yellow birch,Middle,95.0,0.0,global,2620
+yellow birch,Middle,115.0,5.918199999999992,global,2620
+yellow birch,Middle,125.0,1.28375833333333,global,2620
+yellow birch,Middle,135.0,0.0,global,2620
+yellow birch,Middle,145.0,0.0,global,2620
+yellow birch,Middle,155.0,0.0,global,2620

@@ -1,0 +1,32 @@
+{
+  "min_samples": 40,
+  "bin_width": 10.0,
+  "trim_fraction": 0.1,
+  "fallback_rules": {
+    "autumn olive|Middle": "global",
+    "basswood|Middle": "global",
+    "beech|Middle": "global",
+    "black birch|Middle": "species_plot",
+    "black oak|Middle": "global",
+    "buckthorn|Middle": "global",
+    "burning bush|Middle": "global",
+    "dogwood|Middle": "global",
+    "hophornbeam|Middle": "global",
+    "mockernut|Middle": "global",
+    "mockernut hickory|Middle": "global",
+    "musclewood|Middle": "species_plot",
+    "norway maple|Middle": "species",
+    "norway maple|Upper": "species_plot",
+    "pignut hickory|Middle": "global",
+    "red maple|Middle": "species",
+    "red maple|Upper": "species",
+    "red oak|Middle": "species_plot",
+    "sassafras|Middle": "global",
+    "shagbark hickory|Middle": "global",
+    "sugar maple|Middle": "species_plot",
+    "sugar maple|Upper": "species_plot",
+    "white ash|Middle": "global",
+    "white pine|Middle": "species_plot",
+    "yellow birch|Middle": "global"
+  }
+}
