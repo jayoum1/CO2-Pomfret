@@ -10,10 +10,11 @@ Provides REST API endpoints for:
 import sys
 from pathlib import Path
 from typing import List, Dict, Optional, Union
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import pandas as pd
+import numpy as np
 
 # Add src directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -26,6 +27,9 @@ from scenarios.planting import (
     save_scenario
 )
 from config import PROCESSED_DATA_DIR
+from models.forest_snapshots_nn import simulate_forest_years, load_base_forest_df
+from models.forest_metrics import carbon_from_dbh
+from models.dbh_residual_model import predict_delta_hybrid
 
 app = FastAPI(
     title="Carbon DBH Forest Simulation API",
@@ -41,6 +45,41 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============================================================================
+# Snapshot Caching
+# ============================================================================
+
+_snapshot_cache: Dict[tuple, pd.DataFrame] = {}
+_summary_cache: Dict[tuple, Dict] = {}
+
+
+def get_snapshot_dir(mode: str = "hybrid") -> Path:
+    """Get snapshot directory for given mode."""
+    if mode == "hybrid":
+        return PROCESSED_DATA_DIR / "forest_snapshots_hybrid"
+    elif mode == "nn_epsilon":
+        return PROCESSED_DATA_DIR / "forest_snapshots_nn_epsilon"
+    else:
+        return PROCESSED_DATA_DIR / "forest_snapshots_nn_epsilon"
+
+
+def load_snapshot(years_ahead: int, mode: str = "hybrid") -> pd.DataFrame:
+    """Load snapshot with caching."""
+    cache_key = (mode, years_ahead)
+    
+    if cache_key in _snapshot_cache:
+        return _snapshot_cache[cache_key]
+    
+    snapshots_dir = get_snapshot_dir(mode)
+    snapshot_file = snapshots_dir / f"forest_nn_{years_ahead}_years.csv"
+    
+    if not snapshot_file.exists():
+        raise FileNotFoundError(f"Snapshot for {years_ahead} years (mode={mode}) not found")
+    
+    df = pd.read_csv(snapshot_file)
+    _snapshot_cache[cache_key] = df
+    return df
 
 
 # ============================================================================
@@ -331,17 +370,128 @@ async def save_custom_scenario(scenario_config: Dict, filename: str) -> Dict:
 # Simplified Scenario Endpoint (for Next.js frontend)
 # ============================================================================
 
-class ScenarioTreeRequest(BaseModel):
-    """Model for a single tree in scenario simulation"""
-    species: str
+class PlantingGroup(BaseModel):
+    """Model for a group of trees with same species, plot, and DBH"""
     plot: str = Field(..., description="Plot: 'Upper', 'Middle', or 'Lower'")
+    species: str
     dbh_cm: float = Field(..., gt=0, description="Initial DBH in cm")
+    count: int = Field(..., gt=0, description="Number of trees in this group")
 
 
 class ScenarioSimulateRequest(BaseModel):
-    """Request model for scenario simulation (simplified for frontend)"""
+    """Request model for scenario simulation"""
+    mode: str = Field(default="hybrid", description="Simulation mode: 'hybrid' or 'nn_epsilon'")
     years_list: List[int] = Field(default=[0, 5, 10, 20], description="Years to simulate")
-    new_trees: List[ScenarioTreeRequest] = Field(..., min_items=1, description="List of trees to plant")
+    plantings: List[PlantingGroup] = Field(..., min_items=1, description="List of planting groups")
+
+
+def simulate_cohort_forward(
+    plantings: List[PlantingGroup],
+    years_ahead: int,
+    mode: str = "hybrid"
+) -> Dict:
+    """
+    Simulate a cohort of planted trees forward efficiently.
+    
+    Aggregates by (species, plot, dbh_cm) and simulates one representative tree per group,
+    then multiplies by count.
+    
+    Parameters
+    ----------
+    plantings : List[PlantingGroup]
+        List of planting groups
+    years_ahead : int
+        Number of years to simulate forward
+    mode : str
+        Simulation mode: "hybrid" or "nn_epsilon"
+    
+    Returns
+    -------
+    Dict
+        Summary with total_carbon_kgC, num_trees, mean_dbh_cm
+    """
+    if years_ahead == 0:
+        # Year 0: just sum up initial carbon
+        total_carbon = 0.0
+        total_trees = 0
+        weighted_dbh_sum = 0.0
+        
+        for group in plantings:
+            carbon_per_tree = carbon_from_dbh(group.dbh_cm, group.species)
+            total_carbon += carbon_per_tree * group.count
+            total_trees += group.count
+            weighted_dbh_sum += group.dbh_cm * group.count
+        
+        mean_dbh = weighted_dbh_sum / total_trees if total_trees > 0 else 0.0
+        
+        return {
+            "total_carbon_kgC": total_carbon,
+            "num_trees": total_trees,
+            "mean_dbh_cm": mean_dbh
+        }
+    
+    # For years > 0, simulate each unique (species, plot, dbh_cm) group
+    total_carbon = 0.0
+    total_trees = 0
+    weighted_dbh_sum = 0.0
+    
+    # Aggregate by unique (species, plot, dbh_cm)
+    groups = {}
+    for planting in plantings:
+        key = (planting.species, planting.plot, planting.dbh_cm)
+        if key not in groups:
+            groups[key] = {
+                'species': planting.species,
+                'plot': planting.plot,
+                'dbh_cm': planting.dbh_cm,
+                'count': 0
+            }
+        groups[key]['count'] += planting.count
+    
+    # Simulate each unique group
+    for key, group_data in groups.items():
+        species = group_data['species']
+        plot = group_data['plot']
+        start_dbh = group_data['dbh_cm']
+        count = group_data['count']
+        
+        # Simulate forward years_ahead steps
+        current_dbh = start_dbh
+        for _ in range(years_ahead):
+            if mode == "hybrid":
+                delta_base, delta_resid, delta_total = predict_delta_hybrid(
+                    prev_dbh_cm=current_dbh,
+                    species=species,
+                    plot=plot,
+                    gap_years=1.0
+                )
+                delta_used = max(0.0, delta_total)
+            else:
+                # Fallback to NN state model
+                from models.dbh_growth_nn import predict_dbh_next_year_nn
+                next_dbh = predict_dbh_next_year_nn(
+                    prev_dbh_cm=current_dbh,
+                    species=species,
+                    plot=plot,
+                    gap_years=1.0
+                )
+                delta_used = max(0.0, next_dbh - current_dbh)
+            
+            current_dbh = current_dbh + delta_used
+        
+        # Compute carbon at final DBH
+        carbon_per_tree = carbon_from_dbh(current_dbh, species)
+        total_carbon += carbon_per_tree * count
+        total_trees += count
+        weighted_dbh_sum += current_dbh * count
+    
+    mean_dbh = weighted_dbh_sum / total_trees if total_trees > 0 else 0.0
+    
+    return {
+        "total_carbon_kgC": total_carbon,
+        "num_trees": total_trees,
+        "mean_dbh_cm": mean_dbh
+    }
 
 
 @app.post("/scenario/simulate")
@@ -349,54 +499,81 @@ async def simulate_scenario(request: ScenarioSimulateRequest) -> Dict:
     """
     Simulate a planting scenario and return comparison summaries.
     
-    This endpoint is optimized for the Next.js frontend:
-    - Takes a simple list of new trees
-    - Returns baseline vs scenario summaries at each horizon
-    - Efficiently simulates only new trees and adds to baseline snapshots
+    This endpoint efficiently simulates planting scenarios by:
+    - Loading baseline snapshots (cached)
+    - Simulating cohort forward for each horizon
+    - Combining baseline + cohort to get scenario totals
+    - Computing deltas
+    
+    Returns summaries organized by year with baseline, cohort, scenario, and delta metrics.
     """
     try:
-        # Convert to explicit trees format
-        explicit_trees = [
-            {"species": tree.species, "plot": tree.plot, "dbh_cm": tree.dbh_cm}
-            for tree in request.new_trees
-        ]
+        mode = request.mode
+        years_list = sorted(request.years_list)
         
-        # Generate planting trees
-        planting_trees = generate_planting_trees(
-            mode="explicit",
-            explicit_trees=explicit_trees
-        )
+        # Get baseline summaries for each year
+        baseline_by_year = {}
+        for years_ahead in years_list:
+            baseline_summary = await get_summary(years_ahead=years_ahead, mode=mode)
+            baseline_by_year[str(years_ahead)] = {
+                "num_trees": baseline_summary["num_trees"],
+                "mean_dbh_cm": baseline_summary["mean_dbh_cm"],
+                "total_carbon_kgC": baseline_summary["total_carbon_kgC"]
+            }
         
-        # Simulate scenario
-        scenario_results = simulate_planting_scenario(
-            planting_trees=planting_trees,
-            years_list=request.years_list,
-            simulation_mode="epsilon",
-            epsilon_cm=0.02
-        )
+        # Simulate cohort for each horizon
+        cohort_by_year = {}
+        scenario_by_year = {}
+        delta_by_year = {}
         
-        # Generate comparison
-        comparison_df = compare_scenarios(scenario_results, years_list=request.years_list)
-        
-        # Format summaries for frontend
-        summaries = []
-        for _, row in comparison_df.iterrows():
-            summaries.append({
-                "years_ahead": int(row["years_ahead"]),
-                "baseline_total_carbon": float(row["baseline_total_carbon"]),
-                "scenario_total_carbon": float(row["with_planting_total_carbon"]),
-                "delta_carbon": float(row["carbon_added"]),
-                "baseline_mean_dbh": float(row["baseline_mean_dbh"]),
-                "scenario_mean_dbh": float(row["with_planting_mean_dbh"]),
-                "baseline_num_trees": int(row["baseline_num_trees"]),
-                "scenario_num_trees": int(row["with_planting_num_trees"]),
-            })
+        for years_ahead in years_list:
+            # Simulate cohort forward
+            cohort_summary = simulate_cohort_forward(
+                plantings=request.plantings,
+                years_ahead=years_ahead,
+                mode=mode
+            )
+            cohort_by_year[str(years_ahead)] = cohort_summary
+            
+            # Combine baseline + cohort
+            baseline = baseline_by_year[str(years_ahead)]
+            scenario_summary = {
+                "num_trees": baseline["num_trees"] + cohort_summary["num_trees"],
+                "total_carbon_kgC": baseline["total_carbon_kgC"] + cohort_summary["total_carbon_kgC"]
+            }
+            
+            # Weighted mean DBH
+            baseline_weight = baseline["num_trees"]
+            cohort_weight = cohort_summary["num_trees"]
+            total_weight = baseline_weight + cohort_weight
+            
+            if total_weight > 0:
+                scenario_summary["mean_dbh_cm"] = (
+                    baseline["mean_dbh_cm"] * baseline_weight +
+                    cohort_summary["mean_dbh_cm"] * cohort_weight
+                ) / total_weight
+            else:
+                scenario_summary["mean_dbh_cm"] = 0.0
+            
+            scenario_by_year[str(years_ahead)] = scenario_summary
+            
+            # Compute delta
+            delta_by_year[str(years_ahead)] = {
+                "num_trees": cohort_summary["num_trees"],
+                "mean_dbh_cm": scenario_summary["mean_dbh_cm"] - baseline["mean_dbh_cm"],
+                "total_carbon_kgC": cohort_summary["total_carbon_kgC"]
+            }
         
         return {
             "success": True,
-            "summaries": summaries
+            "baseline_by_year": baseline_by_year,
+            "cohort_by_year": cohort_by_year,
+            "scenario_by_year": scenario_by_year,
+            "delta_by_year": delta_by_year
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -407,29 +584,12 @@ async def simulate_scenario(request: ScenarioSimulateRequest) -> Dict:
 @app.get("/snapshots/years")
 async def get_available_years() -> Dict:
     """
-    Get list of available snapshot years.
+    Get list of available snapshot years for hybrid mode.
+    Returns [0, 5, 10, 20] for hybrid snapshots.
     """
-    snapshots_dir = PROCESSED_DATA_DIR / "forest_snapshots_nn_epsilon"
-    if not snapshots_dir.exists():
-        return {
-            "success": True,
-            "years": []
-        }
-    
-    # Find all snapshot files
-    snapshot_files = list(snapshots_dir.glob("forest_nn_*_years.csv"))
-    years = []
-    for filepath in snapshot_files:
-        # Extract year from filename like "forest_nn_5_years.csv"
-        try:
-            year_str = filepath.stem.split("_")[2]  # Gets "5" from "forest_nn_5_years"
-            years.append(int(year_str))
-        except (IndexError, ValueError):
-            continue
-    
     return {
         "success": True,
-        "years": sorted(years)
+        "years": [0, 5, 10, 20]
     }
 
 
@@ -460,21 +620,24 @@ async def get_snapshot(years_ahead: int = 0) -> Dict:
 
 
 @app.get("/summary")
-async def get_summary(years_ahead: int = 0) -> Dict:
+async def get_summary(years_ahead: int = 0, mode: str = "hybrid") -> Dict:
     """
     Get summary metrics for a specific snapshot year.
-    """
-    snapshots_dir = PROCESSED_DATA_DIR / "forest_snapshots_nn_epsilon"
-    snapshot_file = snapshots_dir / f"forest_nn_{years_ahead}_years.csv"
     
-    if not snapshot_file.exists():
-        raise HTTPException(
-            status_code=404,
-            detail=f"Snapshot for {years_ahead} years not found"
-        )
+    Parameters
+    ----------
+    years_ahead : int
+        Years ahead to get summary for (0, 5, 10, or 20)
+    mode : str
+        Simulation mode: "hybrid" (default) or "nn_epsilon"
+    """
+    cache_key = (mode, years_ahead)
+    
+    if cache_key in _summary_cache:
+        return _summary_cache[cache_key]
     
     try:
-        df = pd.read_csv(snapshot_file)
+        df = load_snapshot(years_ahead, mode=mode)
         
         # Calculate summary metrics
         total_carbon = df['carbon_at_time'].sum()
@@ -486,20 +649,34 @@ async def get_summary(years_ahead: int = 0) -> Dict:
             'TreeID': 'count'
         }).rename(columns={'TreeID': 'count'}).to_dict(orient='index')
         
+        # Convert plot breakdown to simpler format
+        plot_breakdown_simple = {
+            k: {
+                'carbon_at_time': float(v['carbon_at_time']),
+                'count': int(v['count'])
+            }
+            for k, v in plot_breakdown.items()
+        }
+        
         # Species breakdown (top 10 by carbon)
         species_breakdown = df.groupby('Species').agg({
             'carbon_at_time': 'sum'
         }).sort_values('carbon_at_time', ascending=False).head(10).to_dict(orient='index')
         
-        return {
+        result = {
             "success": True,
             "years_ahead": years_ahead,
             "num_trees": len(df),
             "mean_dbh_cm": float(mean_dbh),
             "total_carbon_kgC": float(total_carbon),
-            "plot_breakdown": plot_breakdown,
+            "plot_breakdown": plot_breakdown_simple,
             "species_breakdown": {k: float(v['carbon_at_time']) for k, v in species_breakdown.items()}
         }
+        
+        _summary_cache[cache_key] = result
+        return result
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

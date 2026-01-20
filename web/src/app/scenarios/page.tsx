@@ -1,7 +1,9 @@
 'use client'
 
+'use client'
+
 import { useState, useEffect } from 'react'
-import { postScenario, ScenarioTree } from '@/lib/api'
+import { simulateScenario, PlantingGroup } from '@/lib/api'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const CO2E_FACTOR = 3.667
@@ -19,6 +21,7 @@ export default function Scenarios() {
   const [error, setError] = useState<string | null>(null)
   const [savedScenarios, setSavedScenarios] = useState<Array<{ name: string; data: any }>>([])
   const [scenarioName, setScenarioName] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<'baseline' | 'scenario' | 'delta'>('scenario')
 
   // Load saved scenarios from localStorage
   useEffect(() => {
@@ -57,37 +60,46 @@ export default function Scenarios() {
     setError(null)
 
     try {
-      // Generate trees based on proportions
-      const newTrees: ScenarioTree[] = []
-      let treeCount = 0
+      // Aggregate trees by (species, plot, dbh_cm) for efficient simulation
+      const plantingsMap = new Map<string, PlantingGroup>()
       
       for (const item of speciesMix) {
         const count = Math.round((item.percent / 100) * totalTrees)
-        for (let i = 0; i < count; i++) {
-          newTrees.push({
-            species: item.species.trim(),
-            plot,
-            dbh_cm: initialDbh,
-          })
-          treeCount++
+        if (count > 0) {
+          const key = `${item.species.trim()}_${plot}_${initialDbh}`
+          if (plantingsMap.has(key)) {
+            plantingsMap.get(key)!.count += count
+          } else {
+            plantingsMap.set(key, {
+              species: item.species.trim(),
+              plot,
+              dbh_cm: initialDbh,
+              count,
+            })
+          }
         }
       }
 
       // Adjust for rounding errors
-      while (newTrees.length < totalTrees) {
-        newTrees.push({
-          species: speciesMix[0].species.trim(),
-          plot,
-          dbh_cm: initialDbh,
-        })
-      }
-      while (newTrees.length > totalTrees) {
-        newTrees.pop()
+      const totalPlanned = Array.from(plantingsMap.values()).reduce((sum, g) => sum + g.count, 0)
+      if (totalPlanned < totalTrees) {
+        const firstKey = Array.from(plantingsMap.keys())[0]
+        if (firstKey) {
+          plantingsMap.get(firstKey)!.count += (totalTrees - totalPlanned)
+        }
+      } else if (totalPlanned > totalTrees) {
+        const firstKey = Array.from(plantingsMap.keys())[0]
+        if (firstKey) {
+          plantingsMap.get(firstKey)!.count -= (totalPlanned - totalTrees)
+        }
       }
 
-      const result = await postScenario({
+      const plantings = Array.from(plantingsMap.values())
+
+      const result = await simulateScenario({
+        mode: 'hybrid',
         years_list: [0, 5, 10, 20],
-        new_trees: newTrees,
+        plantings,
       })
 
       setScenarioResult(result)
@@ -134,7 +146,7 @@ export default function Scenarios() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Scenario Builder */}
-        <div className="bg-white p-6 rounded-lg shadow space-y-4">
+        <div className="bg-white p-6 rounded-xl shadow space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">Scenario Builder</h2>
 
           <div>
@@ -227,9 +239,9 @@ export default function Scenarios() {
           <button
             onClick={handleSimulate}
             disabled={!isValid || loading}
-            className="w-full bg-forest-green text-white py-2 px-4 rounded-lg hover:bg-forest-light disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-forest-green text-white py-2 px-4 rounded-xl hover:bg-forest-light disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
           >
-            {loading ? 'Simulating...' : '🌲 Simulate Scenario'}
+            {loading ? 'Simulating...' : 'Simulate Scenario'}
           </button>
 
           {error && (
@@ -240,65 +252,200 @@ export default function Scenarios() {
         </div>
 
         {/* Results */}
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-xl shadow min-h-[500px]">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Results</h2>
           
           {scenarioResult ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-3 rounded">
-                  <div className="text-xs text-gray-600">Carbon Added (20 years)</div>
-                  <div className="text-lg font-bold text-gray-900">
-                    {scenarioResult.summaries[scenarioResult.summaries.length - 1]?.delta_carbon.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <div className="text-xs text-gray-600">CO2e Added (20 years)</div>
-                  <div className="text-lg font-bold text-gray-900">
-                    {(scenarioResult.summaries[scenarioResult.summaries.length - 1]?.delta_carbon * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg CO2e
-                  </div>
-                </div>
+            <div className="w-full">
+              <div className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-100 p-1 mb-4 w-full">
+                <button
+                  onClick={() => setActiveTab('baseline')}
+                  className={`flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                    activeTab === 'baseline'
+                      ? 'bg-white text-gray-950 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Baseline
+                </button>
+                <button
+                  onClick={() => setActiveTab('scenario')}
+                  className={`flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                    activeTab === 'scenario'
+                      ? 'bg-white text-gray-950 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Scenario
+                </button>
+                <button
+                  onClick={() => setActiveTab('delta')}
+                  className={`flex-1 inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                    activeTab === 'delta'
+                      ? 'bg-white text-gray-950 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Delta
+                </button>
               </div>
-
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={scenarioResult.summaries}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="years_ahead" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="baseline_total_carbon" stroke="#8884d8" name="Baseline" />
-                  <Line type="monotone" dataKey="scenario_total_carbon" stroke="#82ca9d" name="With Planting" />
-                </LineChart>
-              </ResponsiveContainer>
-
-              <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900">Comparison by Year</h3>
+              
+              {activeTab === 'baseline' && (
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs text-gray-600">Total Carbon (20 years)</div>
+                    <div className="text-lg font-bold text-gray-900">
+                      {scenarioResult.baseline_by_year['20']?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs text-gray-600">CO2e (20 years)</div>
+                    <div className="text-lg font-bold text-gray-900">
+                      {(scenarioResult.baseline_by_year['20']?.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg CO2e
+                    </div>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-2">Years</th>
-                        <th className="text-right py-2">Baseline (kg C)</th>
-                        <th className="text-right py-2">Scenario (kg C)</th>
-                        <th className="text-right py-2">Delta (kg C)</th>
-                        <th className="text-right py-2">Delta CO2e</th>
+                        <th className="text-right py-2">Carbon (kg C)</th>
+                        <th className="text-right py-2">CO2e (kg)</th>
+                        <th className="text-right py-2">Mean DBH (cm)</th>
+                        <th className="text-right py-2">Trees</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {scenarioResult.summaries.map((s: any) => (
-                        <tr key={s.years_ahead} className="border-b">
-                          <td className="py-2">{s.years_ahead}</td>
-                          <td className="text-right py-2">{s.baseline_total_carbon.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                          <td className="text-right py-2">{s.scenario_total_carbon.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                          <td className="text-right py-2 text-green-600">{s.delta_carbon.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                          <td className="text-right py-2 text-green-600">{(s.delta_carbon * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                        </tr>
-                      ))}
+                      {[0, 5, 10, 20].map((year) => {
+                        const data = scenarioResult.baseline_by_year[year.toString()]
+                        return data ? (
+                          <tr key={year} className="border-b">
+                            <td className="py-2">{year}</td>
+                            <td className="text-right py-2">{data.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                            <td className="text-right py-2">{(data.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                            <td className="text-right py-2">{data.mean_dbh_cm.toFixed(1)}</td>
+                            <td className="text-right py-2">{data.num_trees.toLocaleString()}</td>
+                          </tr>
+                        ) : null
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
+              )}
+              
+              {activeTab === 'scenario' && (
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs text-gray-600">Total Carbon (20 years)</div>
+                    <div className="text-lg font-bold text-gray-900">
+                      {scenarioResult.scenario_by_year['20']?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs text-gray-600">CO2e (20 years)</div>
+                    <div className="text-lg font-bold text-gray-900">
+                      {(scenarioResult.scenario_by_year['20']?.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg CO2e
+                    </div>
+                  </div>
+                </div>
+                
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={[0, 5, 10, 20].map(year => ({
+                    years_ahead: year,
+                    baseline: scenarioResult.baseline_by_year[year.toString()]?.total_carbon_kgC || 0,
+                    scenario: scenarioResult.scenario_by_year[year.toString()]?.total_carbon_kgC || 0,
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="years_ahead" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="baseline" stroke="#8884d8" name="Baseline" />
+                    <Line type="monotone" dataKey="scenario" stroke="#82ca9d" name="With Planting" />
+                  </LineChart>
+                </ResponsiveContainer>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2">Years</th>
+                        <th className="text-right py-2">Carbon (kg C)</th>
+                        <th className="text-right py-2">CO2e (kg)</th>
+                        <th className="text-right py-2">Mean DBH (cm)</th>
+                        <th className="text-right py-2">Trees</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[0, 5, 10, 20].map((year) => {
+                        const data = scenarioResult.scenario_by_year[year.toString()]
+                        return data ? (
+                          <tr key={year} className="border-b">
+                            <td className="py-2">{year}</td>
+                            <td className="text-right py-2">{data.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                            <td className="text-right py-2">{(data.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                            <td className="text-right py-2">{data.mean_dbh_cm.toFixed(1)}</td>
+                            <td className="text-right py-2">{data.num_trees.toLocaleString()}</td>
+                          </tr>
+                        ) : null
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              )}
+              
+              {activeTab === 'delta' && (
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                    <div className="text-xs text-gray-600">Carbon Added (20 years)</div>
+                    <div className="text-lg font-bold text-green-700">
+                      {scenarioResult.delta_by_year['20']?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                    </div>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                    <div className="text-xs text-gray-600">CO2e Added (20 years)</div>
+                    <div className="text-lg font-bold text-green-700">
+                      {(scenarioResult.delta_by_year['20']?.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg CO2e
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2">Years</th>
+                        <th className="text-right py-2">Delta Carbon (kg C)</th>
+                        <th className="text-right py-2">Delta CO2e (kg)</th>
+                        <th className="text-right py-2">Delta DBH (cm)</th>
+                        <th className="text-right py-2">Trees Added</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[0, 5, 10, 20].map((year) => {
+                        const data = scenarioResult.delta_by_year[year.toString()]
+                        return data ? (
+                          <tr key={year} className="border-b">
+                            <td className="py-2">{year}</td>
+                            <td className="text-right py-2 text-green-600">{data.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                            <td className="text-right py-2 text-green-600">{(data.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                            <td className="text-right py-2">{data.mean_dbh_cm > 0 ? '+' : ''}{data.mean_dbh_cm.toFixed(2)}</td>
+                            <td className="text-right py-2">{data.num_trees.toLocaleString()}</td>
+                          </tr>
+                        ) : null
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              )}
+            </div>
 
               <div className="flex gap-2">
                 <input

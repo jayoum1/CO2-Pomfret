@@ -103,11 +103,20 @@ def evaluate_residual_model(df, curves, outdir: Path, retrain: bool = False):
     r2 = r2_score(y_test, y_pred_test_clipped)
     bias = np.mean(y_pred_test_clipped - y_test)
     
+    # Compute MAPE (Mean Absolute Percentage Error)
+    # For residuals, use a robust approach that handles near-zero values
+    # Use max(|y_true|, threshold) as denominator to avoid division by very small numbers
+    abs_y_test = np.abs(y_test)
+    threshold = np.percentile(abs_y_test, 10)  # Use 10th percentile as threshold
+    denominator = np.maximum(abs_y_test, threshold)
+    mape = np.mean(np.abs((y_test - y_pred_test_clipped) / denominator)) * 100
+    
     metrics = {
         'rmse': rmse,
         'mae': mae,
         'r2': r2,
         'bias': bias,
+        'mape': mape,
         'clip_low': clip_low,
         'clip_high': clip_high,
         'n_train': len(X_train),
@@ -119,6 +128,7 @@ def evaluate_residual_model(df, curves, outdir: Path, retrain: bool = False):
     print(f"  MAE:  {mae:.4f} cm/year")
     print(f"  R²:   {r2:.4f}")
     print(f"  Bias: {bias:.4f} cm/year")
+    print(f"  MAPE: {mape:.2f}%")
     
     # Create plots directory
     plots_dir = outdir / "plots"

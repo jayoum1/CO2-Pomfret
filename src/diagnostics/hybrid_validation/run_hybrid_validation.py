@@ -90,6 +90,8 @@ def generate_final_summary(
             f.write(f"- **MAE:** {residual_metrics['mae']:.4f} cm/year\n")
             f.write(f"- **R²:** {residual_metrics['r2']:.4f}\n")
             f.write(f"- **Bias:** {residual_metrics['bias']:.4f} cm/year\n")
+            if 'mape' in residual_metrics:
+                f.write(f"- **MAPE:** {residual_metrics['mape']:.2f}%\n")
             f.write(f"- **Test set size:** {residual_metrics['n_test']}\n\n")
             
             if residual_metrics['r2'] < 0:

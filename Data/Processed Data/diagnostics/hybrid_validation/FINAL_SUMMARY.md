@@ -1,6 +1,6 @@
 # Hybrid Model Validation Summary
 
-Generated: 2026-01-14 10:10:14
+Generated: 2026-01-19 21:09:00
 
 ---
 
@@ -19,6 +19,7 @@ Generated: 2026-01-14 10:10:14
 - **MAE:** 1.4834 cm/year
 - **R²:** -0.0018
 - **Bias:** -0.0004 cm/year
+- **MAPE:** 216.29%
 - **Test set size:** 524
 
 ⚠ **Warning:** Negative R² indicates poor residual prediction.

@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react'
 import { getAvailableYears, getSummary } from '@/lib/api'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { Info } from 'lucide-react'
 
 export default function Dashboard() {
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [selectedYear, setSelectedYear] = useState<number>(0)
   const [summary, setSummary] = useState<any>(null)
+  const [summary20, setSummary20] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [timeSeriesData, setTimeSeriesData] = useState<any[]>([])
@@ -25,14 +27,18 @@ export default function Dashboard() {
           const initialSummary = await getSummary(years[0])
           setSummary(initialSummary)
           
-          // Load time series data for all years
+          // Load time series data for all years (using hybrid mode)
           const timeSeries = []
           for (const year of years) {
-            const yearSummary = await getSummary(year)
+            const yearSummary = await getSummary(year, 'hybrid')
             timeSeries.push({
               years_ahead: year,
               total_carbon: yearSummary.total_carbon_kgC,
             })
+            // Store year 20 summary separately
+            if (year === 20) {
+              setSummary20(yearSummary)
+            }
           }
           setTimeSeriesData(timeSeries)
         }
@@ -93,9 +99,17 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Forest snapshots and carbon metrics over time</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Forest snapshots and carbon metrics over time</p>
+        </div>
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+          <Info className="w-4 h-4 text-blue-600" />
+          <span className="text-sm text-blue-800">
+            Model: <span className="font-semibold">Hybrid long-term simulator</span>
+          </span>
+        </div>
       </div>
 
       {/* Year Selector - Slider */}
@@ -148,42 +162,78 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Metrics Cards */}
+      {/* Metrics Cards - Show Year 0 and Year 20 */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-6 rounded-lg shadow animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-            <div className="h-8 bg-gray-200 rounded w-32"></div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-            <div className="h-8 bg-gray-200 rounded w-32"></div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-            <div className="h-8 bg-gray-200 rounded w-32"></div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[0, 1].map((i) => (
+            <div key={i} className="bg-white p-6 rounded-xl shadow animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-40 mb-4"></div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="text-sm text-gray-600">Total Carbon</div>
-            <div className="text-2xl font-bold text-gray-900 mt-1">
-              {summary.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="text-sm text-gray-600">Mean DBH</div>
-            <div className="text-2xl font-bold text-gray-900 mt-1">
-              {summary.mean_dbh_cm.toFixed(1)} cm
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="text-sm text-gray-600">Number of Trees</div>
-            <div className="text-2xl font-bold text-gray-900 mt-1">
-              {summary.num_trees.toLocaleString()}
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {(() => {
+            const year0 = timeSeriesData.find(d => d.years_ahead === 0)
+            const year20 = timeSeriesData.find(d => d.years_ahead === 20)
+            const summary0 = summary && selectedYear === 0 ? summary : null
+            const summary20 = timeSeriesData.length > 0 ? null : null // Will need to fetch separately
+            
+            return (
+              <>
+                <div className="bg-white p-6 rounded-xl shadow">
+                  <div className="text-sm text-gray-600 mb-1">Year 0 (Current)</div>
+                  <div className="text-2xl font-bold text-gray-900 mb-4">
+                    {summary0 ? summary0.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 }) : year0?.total_carbon.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                      <div className="text-gray-500">DBH</div>
+                      <div className="font-semibold">{summary0 ? summary0.mean_dbh_cm.toFixed(1) : '-'} cm</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500">Trees</div>
+                      <div className="font-semibold">{summary0 ? summary0.num_trees.toLocaleString() : '-'}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500">CO2e</div>
+                      <div className="font-semibold">
+                        {summary0 ? (summary0.total_carbon_kgC * 3.667).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'} kg
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow">
+                  <div className="text-sm text-gray-600 mb-1">Year 20 (Projected)</div>
+                  <div className="text-2xl font-bold text-gray-900 mb-4">
+                    {summary20 ? summary20.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 }) : year20?.total_carbon.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '-'} kg C
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                      <div className="text-gray-500">DBH</div>
+                      <div className="font-semibold">{summary20 ? summary20.mean_dbh_cm.toFixed(1) : '-'} cm</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500">Trees</div>
+                      <div className="font-semibold">{summary20 ? summary20.num_trees.toLocaleString() : '-'}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500">CO2e</div>
+                      <div className="font-semibold">
+                        {summary20 ? (summary20.total_carbon_kgC * 3.667).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'} kg
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )
+          })()}
         </div>
       )}
 

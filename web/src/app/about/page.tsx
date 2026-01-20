@@ -30,16 +30,23 @@ export default function About() {
             <li className="flex items-start">
               <span className="text-forest-green mr-2">•</span>
               <span>
-                <strong>Epsilon Simulation Rule:</strong> For long-horizon simulation, negative predicted DBH change
-                is treated as near-zero growth (ε = 0.02 cm) in simulation mode only. This avoids nonphysical forest
-                shrinkage and simulation "stuck" behavior.
+                <strong>Hybrid Model:</strong> Long-term simulations use a hybrid model combining baseline growth curves
+                (smooth, nonnegative, decelerating) with ML residual predictions. This produces stable multi-year projections
+                without fixed-point freezing.
               </span>
             </li>
             <li className="flex items-start">
               <span className="text-forest-green mr-2">•</span>
               <span>
-                <strong>Model Type:</strong> Neural Network state model that predicts next-year DBH from current DBH,
-                species, and plot location.
+                <strong>No Mortality Modeled:</strong> Growth-only scenario projections. Mortality, disturbance, and climate
+                change impacts are not included.
+              </span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-forest-green mr-2">•</span>
+              <span>
+                <strong>Results are Projections:</strong> These are scenario projections based on historical growth patterns,
+                not exact forecasts. Actual outcomes may vary.
               </span>
             </li>
           </ul>
