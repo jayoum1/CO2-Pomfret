@@ -1,7 +1,5 @@
 'use client'
 
-'use client'
-
 import { useState, useEffect } from 'react'
 import { simulateScenario, PlantingGroup } from '@/lib/api'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -445,9 +443,8 @@ export default function Scenarios() {
                 </div>
               </div>
               )}
-            </div>
-
-              <div className="flex gap-2">
+              
+              <div className="flex gap-2 mt-4">
                 <input
                   type="text"
                   placeholder="Scenario name"

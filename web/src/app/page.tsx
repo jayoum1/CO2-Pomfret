@@ -1,15 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getAvailableYears, getSummary } from '@/lib/api'
+import { getAvailableYears, getSummary, Summary } from '@/lib/api'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Info } from 'lucide-react'
 
 export default function Dashboard() {
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [selectedYear, setSelectedYear] = useState<number>(0)
-  const [summary, setSummary] = useState<any>(null)
-  const [summary20, setSummary20] = useState<any>(null)
+  const [summary, setSummary] = useState<Summary | null>(null)
+  const [summary20, setSummary20] = useState<Summary | null>(null)
+  
+  // Type guard helper
+  const isSummary = (s: Summary | null): s is Summary => {
+    return s !== null && 'total_carbon_kgC' in s
+  }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [timeSeriesData, setTimeSeriesData] = useState<any[]>([])
@@ -212,21 +217,21 @@ export default function Dashboard() {
                 <div className="bg-white p-6 rounded-xl shadow">
                   <div className="text-sm text-gray-600 mb-1">Year 20 (Projected)</div>
                   <div className="text-2xl font-bold text-gray-900 mb-4">
-                    {summary20 ? summary20.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 }) : year20?.total_carbon.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '-'} kg C
+                    {summary20 ? (summary20 as Summary).total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'} kg C
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
                       <div className="text-gray-500">DBH</div>
-                      <div className="font-semibold">{summary20 ? summary20.mean_dbh_cm.toFixed(1) : '-'} cm</div>
+                      <div className="font-semibold">{summary20 ? (summary20 as Summary).mean_dbh_cm.toFixed(1) : '-'} cm</div>
                     </div>
                     <div>
                       <div className="text-gray-500">Trees</div>
-                      <div className="font-semibold">{summary20 ? summary20.num_trees.toLocaleString() : '-'}</div>
+                      <div className="font-semibold">{summary20 ? (summary20 as Summary).num_trees.toLocaleString() : '-'}</div>
                     </div>
                     <div>
                       <div className="text-gray-500">CO2e</div>
                       <div className="font-semibold">
-                        {summary20 ? (summary20.total_carbon_kgC * 3.667).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'} kg
+                        {summary20 ? ((summary20 as Summary).total_carbon_kgC * 3.667).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'} kg
                       </div>
                     </div>
                   </div>
