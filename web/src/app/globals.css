@@ -2,78 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --neon-green: #4ade80;
-  --neon-green-dark: #22c55e;
-  --neon-green-light: #86efac;
-  --navy: #0f172a;
-  --navy-dark: #0a0f1a;
-  --navy-light: #1e293b;
-  --dark-gray: #1e293b;
-  --darker-gray: #0f172a;
-  --medium-gray: #334155;
-  --light-gray: #475569;
+@layer base {
+  :root {
+    /* Premium Dark Glass Theme */
+    --bg: #0a0f14;
+    --panel: rgba(10, 15, 20, 0.72);
+    --panel2: rgba(17, 24, 39, 0.55);
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --primary: #22c55e;
+    --border: rgba(255, 255, 255, 0.08);
+    --accent: rgba(34, 197, 94, 0.1);
+    
+    /* Additional semantic colors */
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --info: #3b82f6;
+    
+    /* Spacing (8px grid) */
+    --spacing-xs: 0.25rem;   /* 4px */
+    --spacing-sm: 0.5rem;    /* 8px */
+    --spacing-md: 1rem;      /* 16px */
+    --spacing-lg: 1.5rem;    /* 24px */
+    --spacing-xl: 2rem;      /* 32px */
+    --spacing-2xl: 3rem;     /* 48px */
+    
+    /* Border radius */
+    --radius-sm: 0.5rem;     /* 8px */
+    --radius-md: 0.75rem;    /* 12px */
+    --radius-lg: 1rem;       /* 16px */
+    --radius-xl: 1.25rem;    /* 20px */
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.35);
+    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.4);
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-[var(--bg)] text-[var(--text)] antialiased;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
 }
 
-body {
-  color: var(--neon-green);
-  background: var(--navy);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+@layer components {
+  /* Premium Glass Panel */
+  .glass-panel {
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                opacity 0.2s ease, 
+                background 0.2s ease,
+                border-color 0.2s ease;
+  }
+  
+  .glass-panel:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  }
+  
+  .glass-card {
+    @apply glass-panel rounded-[var(--radius-xl)] p-6;
+  }
+  
+  .glass-border {
+    border: 1px solid var(--border);
+  }
+  
+  /* Premium Easing */
+  .ease-premium {
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  /* Typography Hierarchy */
+  .text-heading-1 {
+    @apply text-[28px] md:text-[36px] font-bold leading-tight;
+  }
+  
+  .text-heading-2 {
+    @apply text-[24px] md:text-[28px] font-semibold leading-tight;
+  }
+  
+  .text-heading-3 {
+    @apply text-[20px] font-semibold leading-snug;
+  }
+  
+  .text-body {
+    @apply text-[14px] md:text-[16px] leading-relaxed;
+  }
+  
+  .text-label {
+    @apply text-[11px] md:text-[12px] font-medium uppercase tracking-wider text-[var(--muted)];
+  }
+  
+  /* Focus Rings */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--bg)];
+  }
 }
 
-/* Softer neon green glow effect */
-.neon-glow {
-  text-shadow: 0 0 8px rgba(74, 222, 128, 0.4), 0 0 15px rgba(74, 222, 128, 0.3), 0 0 25px rgba(74, 222, 128, 0.2);
-}
-
-.neon-glow-subtle {
-  text-shadow: 0 0 4px rgba(74, 222, 128, 0.3), 0 0 8px rgba(74, 222, 128, 0.2);
-}
-
-/* Dark card styling */
-.dark-card {
-  background: var(--navy-light);
-  border: 1px solid var(--medium-gray);
-  box-shadow: 0 0 20px rgba(74, 222, 128, 0.08);
-}
-
-.dark-card:hover {
-  border-color: var(--neon-green);
-  box-shadow: 0 0 30px rgba(74, 222, 128, 0.15);
-}
-
-/* Slider styling */
-input[type="range"].slider {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-input[type="range"].slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--neon-green);
-  cursor: pointer;
-  border: 2px solid var(--navy);
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5), 0 0 15px rgba(74, 222, 128, 0.3);
-}
-
-input[type="range"].slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--neon-green);
-  cursor: pointer;
-  border: 2px solid var(--navy);
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5), 0 0 15px rgba(74, 222, 128, 0.3);
-}
-
-input[type="range"].slider:focus {
-  outline: none;
-}
-
-input[type="range"].slider:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.6), 0 0 20px rgba(74, 222, 128, 0.4);
+@layer utilities {
+  /* Skeleton Loading */
+  .skeleton {
+    @apply animate-pulse bg-[var(--panel2)] rounded;
+  }
+  
+  /* Smooth Transitions */
+  .transition-premium {
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                opacity 0.2s ease, 
+                background 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+  }
 }

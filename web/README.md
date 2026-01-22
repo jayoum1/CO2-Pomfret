@@ -1,6 +1,6 @@
-# Pomfret Forest Web Application
+# CO2 Pomfret Web Application
 
-Next.js frontend for the Pomfret Forest Growth & Carbon Simulation project.
+Next.js frontend for the CO2 Pomfret forest growth and carbon sequestration simulation project.
 
 ## Features
 

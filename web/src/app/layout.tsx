@@ -1,12 +1,15 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Sidebar from '@/components/Sidebar'
+import AppShell from '@/components/layout/AppShell'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'Pomfret Forest Simulation',
+  title: 'CO2 Pomfret',
   description: 'Forest growth and carbon sequestration simulation for Pomfret School',
 }
 
@@ -16,14 +19,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body className={inter.className}>
-        <div className="flex h-screen bg-[#0f172a]">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto p-8 bg-[#0f172a]">
-            {children}
-          </main>
-        </div>
+        <AppShell title="Dashboard" subtitle="Forest snapshots and carbon metrics over time">
+          {children}
+        </AppShell>
       </body>
     </html>
   )
