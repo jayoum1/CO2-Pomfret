@@ -1,15 +1,15 @@
 export default function About() {
   return (
-    <div className="max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">About / Assumptions</h1>
-        <p className="text-gray-600 mt-1">Project details and simulation assumptions</p>
+    <div className="max-w-4xl space-y-8">
+      <div className="text-center space-y-2 pb-6 border-b border-[#334155]">
+        <h1 className="text-5xl font-black text-[#4ade80] neon-glow tracking-tight">About / Assumptions</h1>
+        <p className="text-lg text-[#4ade80]/70 mt-1">Project details and simulation assumptions</p>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow space-y-6">
+      <div className="bg-[#0a0a0a] p-6 rounded-lg border border-[#334155] shadow-[0_0_20px_rgba(0,255,136,0.1)] space-y-6">
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">Project Overview</h2>
-          <p className="text-gray-700">
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-3">Project Overview</h2>
+          <p className="text-[#4ade80]/70 leading-relaxed">
             The Pomfret Forest Growth & Carbon Simulation project uses measured DBH (diameter at breast height),
             species, and plot data to train a Neural Network that predicts next-year DBH. We generate multi-year
             forest snapshots (0/5/10/20 years) to visualize forest carbon sequestration over time.
@@ -17,35 +17,35 @@ export default function About() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">Simulation Assumptions</h2>
-          <ul className="space-y-2 text-gray-700">
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-3">Simulation Assumptions</h2>
+          <ul className="space-y-2 text-[#4ade80]/70">
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
-              <span><strong>DBH Units:</strong> All measurements are in centimeters (cm)</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
+              <span><strong className="text-[#4ade80]">DBH Units:</strong> All measurements are in centimeters (cm)</span>
             </li>
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
-              <span><strong>Growth-Only Baseline:</strong> No mortality or disturbance modeled (growth-only baseline)</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
+              <span><strong className="text-[#4ade80]">Growth-Only Baseline:</strong> No mortality or disturbance modeled (growth-only baseline)</span>
             </li>
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
               <span>
-                <strong>Hybrid Model:</strong> Long-term simulations use a hybrid model combining baseline growth curves
+                <strong className="text-[#4ade80]">Hybrid Model:</strong> Long-term simulations use a hybrid model combining baseline growth curves
                 (smooth, nonnegative, decelerating) with ML residual predictions. This produces stable multi-year projections
                 without fixed-point freezing.
               </span>
             </li>
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
               <span>
-                <strong>No Mortality Modeled:</strong> Growth-only scenario projections. Mortality, disturbance, and climate
+                <strong className="text-[#4ade80]">No Mortality Modeled:</strong> Growth-only scenario projections. Mortality, disturbance, and climate
                 change impacts are not included.
               </span>
             </li>
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
               <span>
-                <strong>Results are Projections:</strong> These are scenario projections based on historical growth patterns,
+                <strong className="text-[#4ade80]">Results are Projections:</strong> These are scenario projections based on historical growth patterns,
                 not exact forecasts. Actual outcomes may vary.
               </span>
             </li>
@@ -53,12 +53,12 @@ export default function About() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">Data Source</h2>
-          <p className="text-gray-700">
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-3">Data Source</h2>
+          <p className="text-[#4ade80]/70 leading-relaxed">
             Data comes from Pomfret School forest measurements across three plots (Upper, Middle, Lower).
             Measurements include:
           </p>
-          <ul className="list-disc list-inside text-gray-700 mt-2 space-y-1">
+          <ul className="list-disc list-inside text-[#4ade80]/70 mt-2 space-y-1 ml-4">
             <li>TreeID: Unique tree identifier</li>
             <li>Plot: Forest plot location (Upper/Middle/Lower)</li>
             <li>Species: Tree species name</li>
@@ -68,8 +68,8 @@ export default function About() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">Carbon Calculation</h2>
-          <p className="text-gray-700">
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-3">Carbon Calculation</h2>
+          <p className="text-[#4ade80]/70 leading-relaxed">
             Carbon storage is calculated from DBH using species-specific allometric equations.
             The equations classify trees into hardwood/softwood groups and apply appropriate biomass
             coefficients. Carbon is then derived as a fraction of aboveground biomass.
@@ -77,38 +77,38 @@ export default function About() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">CO2 Equivalent</h2>
-          <p className="text-gray-700">
-            CO2 equivalent (CO2e) is calculated using the conversion factor: <strong>1 kg C = 3.667 kg CO2e</strong>.
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-3">CO2 Equivalent</h2>
+          <p className="text-[#4ade80]/70 leading-relaxed">
+            CO2 equivalent (CO2e) is calculated using the conversion factor: <strong className="text-[#4ade80]">1 kg C = 3.667 kg CO2e</strong>.
             This represents the amount of CO2 that would be equivalent to the carbon stored in the forest.
           </p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">Limitations</h2>
-          <ul className="space-y-2 text-gray-700">
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-3">Limitations</h2>
+          <ul className="space-y-2 text-[#4ade80]/70">
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
               <span>No mortality or disturbance events are modeled</span>
             </li>
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
               <span>Simulation assumes consistent growth conditions</span>
             </li>
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
               <span>Climate change impacts are not included</span>
             </li>
             <li className="flex items-start">
-              <span className="text-forest-green mr-2">•</span>
+              <span className="text-[#4ade80] mr-2 neon-glow-subtle">•</span>
               <span>Results are projections based on historical growth patterns</span>
             </li>
           </ul>
         </section>
 
-        <section className="pt-4 border-t border-gray-200">
-          <p className="text-sm text-gray-600">
-            <strong>Pomfret School</strong> • Forest Carbon Project • {new Date().getFullYear()}
+        <section className="pt-4 border-t border-[#334155]">
+          <p className="text-sm text-[#4ade80]/50">
+            <strong className="text-[#4ade80]">Pomfret School</strong> • Forest Carbon Project • {new Date().getFullYear()}
           </p>
         </section>
       </div>

@@ -103,24 +103,37 @@ export default function Dashboard() {
     .slice(0, 10)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Big Project Title */}
+      <div className="text-center space-y-4 pb-8 border-b border-[#1e293b]">
+        <h1 className="text-7xl font-black text-[#4ade80] neon-glow tracking-tight">
+          POMFRET FOREST
+        </h1>
+        <p className="text-2xl text-[#4ade80]/70 font-light tracking-wide">
+          Carbon Sequestration Simulation Platform
+        </p>
+        <p className="text-sm text-[#4ade80]/50 mt-4">
+          Advanced forest growth modeling & analysis system
+        </p>
+      </div>
+
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Forest snapshots and carbon metrics over time</p>
+          <h2 className="text-2xl font-bold text-[#4ade80]">Dashboard</h2>
+          <p className="text-[#4ade80]/70 mt-1">Forest snapshots and carbon metrics over time</p>
         </div>
-        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-          <Info className="w-4 h-4 text-blue-600" />
-          <span className="text-sm text-blue-800">
+        <div className="flex items-center gap-2 bg-[#1e293b] border border-[#4ade80]/30 rounded-lg px-3 py-2 shadow-[0_0_8px_rgba(74,222,128,0.15)]">
+          <Info className="w-4 h-4 text-[#4ade80]" />
+          <span className="text-sm text-[#4ade80]">
             Model: <span className="font-semibold">Hybrid long-term simulator</span>
           </span>
         </div>
       </div>
 
       {/* Year Selector - Slider */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <label className="block text-sm font-medium text-gray-700 mb-4">
-          Years Ahead: <span className="text-forest-green font-bold">{selectedYear}</span>
+      <div className="bg-[#1e293b] p-6 rounded-lg border border-[#334155] shadow-[0_0_20px_rgba(74,222,128,0.1)]">
+        <label className="block text-sm font-medium text-[#4ade80] mb-4">
+          Years Ahead: <span className="text-[#4ade80] font-bold neon-glow-subtle">{selectedYear}</span>
         </label>
         {availableYears.length > 0 && (
           <div className="space-y-2">
@@ -138,12 +151,12 @@ export default function Dashboard() {
                 setSelectedYear(closest)
               }}
               step={availableYears.length > 10 ? 1 : undefined}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              className="w-full h-2 bg-[#334155] rounded-lg appearance-none cursor-pointer slider"
               style={{
-                background: `linear-gradient(to right, #2d5016 0%, #2d5016 ${((selectedYear - Math.min(...availableYears)) / (Math.max(...availableYears) - Math.min(...availableYears))) * 100}%, #e5e7eb ${((selectedYear - Math.min(...availableYears)) / (Math.max(...availableYears) - Math.min(...availableYears))) * 100}%, #e5e7eb 100%)`
+                background: `linear-gradient(to right, #4ade80 0%, #4ade80 ${((selectedYear - Math.min(...availableYears)) / (Math.max(...availableYears) - Math.min(...availableYears))) * 100}%, #334155 ${((selectedYear - Math.min(...availableYears)) / (Math.max(...availableYears) - Math.min(...availableYears))) * 100}%, #334155 100%)`
               }}
             />
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-[#4ade80]/50">
               <span>{Math.min(...availableYears)}</span>
               <span>{Math.max(...availableYears)}</span>
             </div>
@@ -153,10 +166,10 @@ export default function Dashboard() {
                 <button
                   key={year}
                   onClick={() => setSelectedYear(year)}
-                  className={`px-3 py-1 text-xs rounded transition-colors ${
+                  className={`px-3 py-1 text-xs rounded transition-all ${
                     selectedYear === year
-                      ? 'bg-forest-green text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-[#4ade80] text-[#0f172a] font-semibold shadow-[0_0_12px_rgba(74,222,128,0.3)]'
+                      : 'bg-[#334155] text-[#4ade80]/70 hover:bg-[#475569] hover:text-[#4ade80] border border-[#334155]'
                   }`}
                 >
                   {year}
@@ -171,13 +184,13 @@ export default function Dashboard() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[0, 1].map((i) => (
-            <div key={i} className="bg-white p-6 rounded-xl shadow animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-40 mb-4"></div>
+            <div key={i} className="bg-[#1e293b] p-6 rounded-xl border border-[#334155] animate-pulse">
+              <div className="h-4 bg-[#334155] rounded w-32 mb-2"></div>
+              <div className="h-8 bg-[#334155] rounded w-40 mb-4"></div>
               <div className="grid grid-cols-3 gap-2">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-[#334155] rounded"></div>
+                <div className="h-4 bg-[#334155] rounded"></div>
+                <div className="h-4 bg-[#334155] rounded"></div>
               </div>
             </div>
           ))}
@@ -192,45 +205,45 @@ export default function Dashboard() {
             
             return (
               <>
-                <div className="bg-white p-6 rounded-xl shadow">
-                  <div className="text-sm text-gray-600 mb-1">Year 0 (Current)</div>
-                  <div className="text-2xl font-bold text-gray-900 mb-4">
+                <div className="bg-[#1e293b] p-6 rounded-xl border border-[#334155] shadow-[0_0_20px_rgba(74,222,128,0.1)] hover:border-[#4ade80]/50 transition-all">
+                  <div className="text-sm text-[#4ade80]/70 mb-1">Year 0 (Current)</div>
+                  <div className="text-2xl font-bold text-[#4ade80] mb-4 neon-glow-subtle">
                     {summary0 ? summary0.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 }) : year0?.total_carbon.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
-                      <div className="text-gray-500">DBH</div>
-                      <div className="font-semibold">{summary0 ? summary0.mean_dbh_cm.toFixed(1) : '-'} cm</div>
+                      <div className="text-[#4ade80]/50">DBH</div>
+                      <div className="font-semibold text-[#4ade80]">{summary0 ? summary0.mean_dbh_cm.toFixed(1) : '-'} cm</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">Trees</div>
-                      <div className="font-semibold">{summary0 ? summary0.num_trees.toLocaleString() : '-'}</div>
+                      <div className="text-[#4ade80]/50">Trees</div>
+                      <div className="font-semibold text-[#4ade80]">{summary0 ? summary0.num_trees.toLocaleString() : '-'}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">CO2e</div>
-                      <div className="font-semibold">
+                      <div className="text-[#4ade80]/50">CO2e</div>
+                      <div className="font-semibold text-[#4ade80]">
                         {summary0 ? (summary0.total_carbon_kgC * 3.667).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'} kg
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="bg-white p-6 rounded-xl shadow">
-                  <div className="text-sm text-gray-600 mb-1">Year 20 (Projected)</div>
-                  <div className="text-2xl font-bold text-gray-900 mb-4">
+                <div className="bg-[#1e293b] p-6 rounded-xl border border-[#334155] shadow-[0_0_20px_rgba(74,222,128,0.1)] hover:border-[#4ade80]/50 transition-all">
+                  <div className="text-sm text-[#4ade80]/70 mb-1">Year 20 (Projected)</div>
+                  <div className="text-2xl font-bold text-[#4ade80] mb-4 neon-glow-subtle">
                     {summary20 ? (summary20 as Summary).total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'} kg C
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
-                      <div className="text-gray-500">DBH</div>
-                      <div className="font-semibold">{summary20 ? (summary20 as Summary).mean_dbh_cm.toFixed(1) : '-'} cm</div>
+                      <div className="text-[#4ade80]/50">DBH</div>
+                      <div className="font-semibold text-[#4ade80]">{summary20 ? (summary20 as Summary).mean_dbh_cm.toFixed(1) : '-'} cm</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">Trees</div>
-                      <div className="font-semibold">{summary20 ? (summary20 as Summary).num_trees.toLocaleString() : '-'}</div>
+                      <div className="text-[#4ade80]/50">Trees</div>
+                      <div className="font-semibold text-[#4ade80]">{summary20 ? (summary20 as Summary).num_trees.toLocaleString() : '-'}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">CO2e</div>
-                      <div className="font-semibold">
+                      <div className="text-[#4ade80]/50">CO2e</div>
+                      <div className="font-semibold text-[#4ade80]">
                         {summary20 ? ((summary20 as Summary).total_carbon_kgC * 3.667).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '-'} kg
                       </div>
                     </div>
@@ -245,46 +258,46 @@ export default function Dashboard() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Total Carbon Over Time */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Total Carbon vs Years</h2>
+        <div className="bg-[#1e293b] p-6 rounded-lg border border-[#334155] shadow-[0_0_20px_rgba(74,222,128,0.1)]">
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-4">Total Carbon vs Years</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={timeSeriesData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="years_ahead" label={{ value: 'Years Ahead', position: 'insideBottom', offset: -5 }} />
-              <YAxis label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft' }} />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="total_carbon" stroke="#2d5016" strokeWidth={2} name="Total Carbon (kg C)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis dataKey="years_ahead" label={{ value: 'Years Ahead', position: 'insideBottom', offset: -5 }} stroke="#4ade80" tick={{ fill: '#4ade80' }} />
+              <YAxis label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft' }} stroke="#4ade80" tick={{ fill: '#4ade80' }} />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #4ade80', color: '#4ade80' }} />
+              <Legend wrapperStyle={{ color: '#4ade80' }} />
+              <Line type="monotone" dataKey="total_carbon" stroke="#4ade80" strokeWidth={3} name="Total Carbon (kg C)" dot={{ fill: '#4ade80', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         {/* Carbon by Plot */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Carbon by Plot</h2>
+        <div className="bg-[#1e293b] p-6 rounded-lg border border-[#334155] shadow-[0_0_20px_rgba(74,222,128,0.1)]">
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-4">Carbon by Plot</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={plotData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="plot" />
-              <YAxis label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft' }} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="carbon" fill="#4a7c2a" name="Carbon (kg C)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis dataKey="plot" stroke="#4ade80" tick={{ fill: '#4ade80' }} />
+              <YAxis label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft' }} stroke="#4ade80" tick={{ fill: '#4ade80' }} />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #4ade80', color: '#4ade80' }} />
+              <Legend wrapperStyle={{ color: '#4ade80' }} />
+              <Bar dataKey="carbon" fill="#4ade80" name="Carbon (kg C)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Top Species */}
-        <div className="bg-white p-6 rounded-lg shadow lg:col-span-2">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Top 10 Species by Carbon</h2>
+        <div className="bg-[#1e293b] p-6 rounded-lg border border-[#334155] shadow-[0_0_20px_rgba(74,222,128,0.1)] lg:col-span-2">
+          <h2 className="text-xl font-semibold text-[#4ade80] mb-4">Top 10 Species by Carbon</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={speciesData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" label={{ value: 'Carbon (kg C)', position: 'insideBottom', offset: -5 }} />
-              <YAxis dataKey="species" type="category" width={150} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="carbon" fill="#2d5016" name="Carbon (kg C)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <XAxis type="number" label={{ value: 'Carbon (kg C)', position: 'insideBottom', offset: -5 }} stroke="#4ade80" tick={{ fill: '#4ade80' }} />
+              <YAxis dataKey="species" type="category" width={150} stroke="#4ade80" tick={{ fill: '#4ade80' }} />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #4ade80', color: '#4ade80' }} />
+              <Legend wrapperStyle={{ color: '#4ade80' }} />
+              <Bar dataKey="carbon" fill="#4ade80" name="Carbon (kg C)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
