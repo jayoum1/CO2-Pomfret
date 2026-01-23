@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Animated Clouds -->
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="cloud cloud-4"></div>
+    <div class="cloud cloud-5"></div>
+
     <!-- Navigation -->
     <nav class="nav-bar">
         <div class="nav-container">
@@ -19,10 +26,10 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero Section - Huge Title Centered -->
     <section id="hero" class="hero">
         <div class="container">
-            <h1 class="hero-title">Pomfret Forest Growth & Carbon Simulation</h1>
+            <h1 class="hero-title">CO₂ Pomfret</h1>
             <p class="hero-subtitle">Simulating forest carbon sequestration to compare with Pomfret School emissions.</p>
             <div class="chips">
                 <span class="chip">DBH (cm)</span>
@@ -38,50 +45,52 @@
     <section id="measured" class="section">
         <div class="container">
             <h2 class="section-title">What We Measured</h2>
-            <div class="measured-content">
-                <div class="measured-list">
-                    <ul>
-                        <li><strong>TreeID</strong> — Unique tree identifier</li>
-                        <li><strong>Plot</strong> — Forest location (Upper/Middle/Lower)</li>
-                        <li><strong>Species</strong> — Tree species (e.g., sugar maple, red oak)</li>
-                        <li><strong>DBH_cm</strong> — Diameter at breast height (cm)</li>
-                        <li><strong>Carbon</strong> — Derived from DBH using allometric equations (kg C)</li>
-                    </ul>
-                </div>
-                <div class="diagram">
-                    <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Data Box -->
-                        <rect x="20" y="80" width="80" height="40" rx="5" class="diagram-box"/>
-                        <text x="60" y="105" text-anchor="middle" class="diagram-text">Data</text>
-                        
-                        <!-- Arrow 1 -->
-                        <path d="M 100 100 L 140 100" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
-                        
-                        <!-- Model Box -->
-                        <rect x="140" y="80" width="80" height="40" rx="5" class="diagram-box"/>
-                        <text x="180" y="105" text-anchor="middle" class="diagram-text">Model</text>
-                        
-                        <!-- Arrow 2 -->
-                        <path d="M 220 100 L 260 100" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
-                        
-                        <!-- Snapshots Box -->
-                        <rect x="260" y="80" width="80" height="40" rx="5" class="diagram-box"/>
-                        <text x="300" y="105" text-anchor="middle" class="diagram-text">Snapshots</text>
-                        
-                        <!-- Arrow 3 -->
-                        <path d="M 340 100 L 380 100" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
-                        
-                        <!-- App Box -->
-                        <rect x="380" y="80" width="80" height="40" rx="5" class="diagram-box"/>
-                        <text x="420" y="105" text-anchor="middle" class="diagram-text">App</text>
-                        
-                        <!-- Arrow marker definition -->
-                        <defs>
-                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                                <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
-                            </marker>
-                        </defs>
-                    </svg>
+            <div class="content-box">
+                <div class="measured-content">
+                    <div class="measured-list">
+                        <ul>
+                            <li><strong>TreeID</strong> — Unique tree identifier</li>
+                            <li><strong>Plot</strong> — Forest location (Upper/Middle/Lower)</li>
+                            <li><strong>Species</strong> — Tree species (e.g., sugar maple, red oak)</li>
+                            <li><strong>DBH_cm</strong> — Diameter at breast height (cm)</li>
+                            <li><strong>Carbon</strong> — Derived from DBH using allometric equations (kg C)</li>
+                        </ul>
+                    </div>
+                    <div class="diagram">
+                        <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Data Box -->
+                            <rect x="20" y="80" width="80" height="40" rx="5" class="diagram-box"/>
+                            <text x="60" y="105" text-anchor="middle" class="diagram-text">Data</text>
+                            
+                            <!-- Arrow 1 -->
+                            <path d="M 100 100 L 140 100" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                            
+                            <!-- Model Box -->
+                            <rect x="140" y="80" width="80" height="40" rx="5" class="diagram-box"/>
+                            <text x="180" y="105" text-anchor="middle" class="diagram-text">Model</text>
+                            
+                            <!-- Arrow 2 -->
+                            <path d="M 220 100 L 260 100" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                            
+                            <!-- Snapshots Box -->
+                            <rect x="260" y="80" width="80" height="40" rx="5" class="diagram-box"/>
+                            <text x="300" y="105" text-anchor="middle" class="diagram-text">Snapshots</text>
+                            
+                            <!-- Arrow 3 -->
+                            <path d="M 340 100 L 380 100" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                            
+                            <!-- App Box -->
+                            <rect x="380" y="80" width="80" height="40" rx="5" class="diagram-box"/>
+                            <text x="420" y="105" text-anchor="middle" class="diagram-text">App</text>
+                            
+                            <!-- Arrow marker definition -->
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                    <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
+                                </marker>
+                            </defs>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </div>
@@ -91,91 +100,93 @@
     <section id="model" class="section section-alt">
         <div class="container">
             <h2 class="section-title">Model</h2>
-            <div class="model-content">
-                <div class="model-text">
-                    <p class="model-description">
-                        Neural Network predicts <strong>DBH_next_year</strong> from <strong>DBH_current</strong> + <strong>species</strong> + <strong>plot</strong>.
-                    </p>
-                    <div class="performance-metrics">
-                        <div class="metric">
-                            <span class="metric-label">R²</span>
-                            <span class="metric-value">≈ 0.966</span>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">RMSE</span>
-                            <span class="metric-value">≈ 3.80 cm</span>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">MAE</span>
-                            <span class="metric-value">≈ 1.82 cm</span>
+            <div class="content-box">
+                <div class="model-content">
+                    <div class="model-text">
+                        <p class="model-description">
+                            Neural Network predicts <strong>DBH_next_year</strong> from <strong>DBH_current</strong> + <strong>species</strong> + <strong>plot</strong>.
+                        </p>
+                        <div class="performance-metrics">
+                            <div class="metric">
+                                <span class="metric-label">R²</span>
+                                <span class="metric-value">≈ 0.966</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">RMSE</span>
+                                <span class="metric-value">≈ 3.80 cm</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">MAE</span>
+                                <span class="metric-value">≈ 1.82 cm</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="nn-diagram">
-                    <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Input Layer -->
-                        <g class="layer">
-                            <circle cx="80" cy="60" r="15" class="node input"/>
-                            <text x="80" y="40" text-anchor="middle" class="node-label">DBH</text>
+                    <div class="nn-diagram">
+                        <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Input Layer -->
+                            <g class="layer">
+                                <circle cx="80" cy="60" r="15" class="node input"/>
+                                <text x="80" y="40" text-anchor="middle" class="node-label">DBH</text>
+                                
+                                <circle cx="80" cy="120" r="15" class="node input"/>
+                                <text x="80" y="140" text-anchor="middle" class="node-label">Species</text>
+                                
+                                <circle cx="80" cy="180" r="15" class="node input"/>
+                                <text x="80" y="200" text-anchor="middle" class="node-label">Plot</text>
+                            </g>
                             
-                            <circle cx="80" cy="120" r="15" class="node input"/>
-                            <text x="80" y="140" text-anchor="middle" class="node-label">Species</text>
+                            <!-- Hidden Layer 1 -->
+                            <g class="layer">
+                                <circle cx="220" cy="50" r="12" class="node hidden"/>
+                                <circle cx="220" cy="100" r="12" class="node hidden"/>
+                                <circle cx="220" cy="150" r="12" class="node hidden"/>
+                                <circle cx="220" cy="200" r="12" class="node hidden"/>
+                                <circle cx="220" cy="250" r="12" class="node hidden"/>
+                            </g>
                             
-                            <circle cx="80" cy="180" r="15" class="node input"/>
-                            <text x="80" y="200" text-anchor="middle" class="node-label">Plot</text>
-                        </g>
-                        
-                        <!-- Hidden Layer 1 -->
-                        <g class="layer">
-                            <circle cx="220" cy="50" r="12" class="node hidden"/>
-                            <circle cx="220" cy="100" r="12" class="node hidden"/>
-                            <circle cx="220" cy="150" r="12" class="node hidden"/>
-                            <circle cx="220" cy="200" r="12" class="node hidden"/>
-                            <circle cx="220" cy="250" r="12" class="node hidden"/>
-                        </g>
-                        
-                        <!-- Hidden Layer 2 -->
-                        <g class="layer">
-                            <circle cx="360" cy="100" r="12" class="node hidden"/>
-                            <circle cx="360" cy="150" r="12" class="node hidden"/>
-                            <circle cx="360" cy="200" r="12" class="node hidden"/>
-                        </g>
-                        
-                        <!-- Output Layer -->
-                        <g class="layer">
-                            <circle cx="450" cy="150" r="18" class="node output"/>
-                            <text x="450" y="185" text-anchor="middle" class="node-label">DBH_next</text>
-                        </g>
-                        
-                        <!-- Connections Input -> Hidden 1 -->
-                        <g class="connections">
-                            <line x1="95" y1="60" x2="208" y2="50" class="connection"/>
-                            <line x1="95" y1="60" x2="208" y2="100" class="connection"/>
-                            <line x1="95" y1="60" x2="208" y2="150" class="connection"/>
-                            <line x1="95" y1="120" x2="208" y2="50" class="connection"/>
-                            <line x1="95" y1="120" x2="208" y2="100" class="connection"/>
-                            <line x1="95" y1="120" x2="208" y2="150" class="connection"/>
-                            <line x1="95" y1="180" x2="208" y2="150" class="connection"/>
-                            <line x1="95" y1="180" x2="208" y2="200" class="connection"/>
-                            <line x1="95" y1="180" x2="208" y2="250" class="connection"/>
-                        </g>
-                        
-                        <!-- Connections Hidden 1 -> Hidden 2 -->
-                        <g class="connections">
-                            <line x1="232" y1="50" x2="348" y2="100" class="connection"/>
-                            <line x1="232" y1="100" x2="348" y2="100" class="connection"/>
-                            <line x1="232" y1="150" x2="348" y2="150" class="connection"/>
-                            <line x1="232" y1="200" x2="348" y2="200" class="connection"/>
-                            <line x1="232" y1="250" x2="348" y2="200" class="connection"/>
-                        </g>
-                        
-                        <!-- Connections Hidden 2 -> Output -->
-                        <g class="connections">
-                            <line x1="372" y1="100" x2="432" y2="150" class="connection"/>
-                            <line x1="372" y1="150" x2="432" y2="150" class="connection"/>
-                            <line x1="372" y1="200" x2="432" y2="150" class="connection"/>
-                        </g>
-                    </svg>
+                            <!-- Hidden Layer 2 -->
+                            <g class="layer">
+                                <circle cx="360" cy="100" r="12" class="node hidden"/>
+                                <circle cx="360" cy="150" r="12" class="node hidden"/>
+                                <circle cx="360" cy="200" r="12" class="node hidden"/>
+                            </g>
+                            
+                            <!-- Output Layer -->
+                            <g class="layer">
+                                <circle cx="450" cy="150" r="18" class="node output"/>
+                                <text x="450" y="185" text-anchor="middle" class="node-label">DBH_next</text>
+                            </g>
+                            
+                            <!-- Connections Input -> Hidden 1 -->
+                            <g class="connections">
+                                <line x1="95" y1="60" x2="208" y2="50" class="connection"/>
+                                <line x1="95" y1="60" x2="208" y2="100" class="connection"/>
+                                <line x1="95" y1="60" x2="208" y2="150" class="connection"/>
+                                <line x1="95" y1="120" x2="208" y2="50" class="connection"/>
+                                <line x1="95" y1="120" x2="208" y2="100" class="connection"/>
+                                <line x1="95" y1="120" x2="208" y2="150" class="connection"/>
+                                <line x1="95" y1="180" x2="208" y2="150" class="connection"/>
+                                <line x1="95" y1="180" x2="208" y2="200" class="connection"/>
+                                <line x1="95" y1="180" x2="208" y2="250" class="connection"/>
+                            </g>
+                            
+                            <!-- Connections Hidden 1 -> Hidden 2 -->
+                            <g class="connections">
+                                <line x1="232" y1="50" x2="348" y2="100" class="connection"/>
+                                <line x1="232" y1="100" x2="348" y2="100" class="connection"/>
+                                <line x1="232" y1="150" x2="348" y2="150" class="connection"/>
+                                <line x1="232" y1="200" x2="348" y2="200" class="connection"/>
+                                <line x1="232" y1="250" x2="348" y2="200" class="connection"/>
+                            </g>
+                            
+                            <!-- Connections Hidden 2 -> Output -->
+                            <g class="connections">
+                                <line x1="372" y1="100" x2="432" y2="150" class="connection"/>
+                                <line x1="372" y1="150" x2="432" y2="150" class="connection"/>
+                                <line x1="372" y1="200" x2="432" y2="150" class="connection"/>
+                            </g>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </div>
@@ -185,29 +196,31 @@
     <section id="simulation" class="section">
         <div class="container">
             <h2 class="section-title">Simulation</h2>
-            <div class="simulation-content">
-                <div class="simulation-text">
-                    <p>
-                        We generate multi-year forest snapshots at <strong>0, 5, 10, and 20 years</strong> ahead by iteratively applying the one-year prediction model.
-                    </p>
-                    <p class="epsilon-explanation">
-                        <strong>Epsilon Correction:</strong> Negative predicted DBH change is treated as near-zero growth (ε = 0.02 cm) in simulation mode only. This prevents nonphysical forest shrinkage and avoids simulation "stuck" behavior where trees stop growing.
-                    </p>
-                </div>
-                <div class="assumptions-box">
-                    <h3 class="assumptions-title">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="16" x2="12" y2="12"/>
-                            <line x1="12" y1="8" x2="12.01" y2="8"/>
-                        </svg>
-                        Assumptions
-                    </h3>
-                    <ul class="assumptions-list">
-                        <li>DBH in centimeters (cm)</li>
-                        <li>Growth-only baseline (no mortality/disturbance)</li>
-                        <li>Epsilon rule for long-horizon visualization</li>
-                    </ul>
+            <div class="content-box">
+                <div class="simulation-content">
+                    <div class="simulation-text">
+                        <p>
+                            We generate multi-year forest snapshots at <strong>0, 5, 10, and 20 years</strong> ahead by iteratively applying the one-year prediction model.
+                        </p>
+                        <p class="epsilon-explanation">
+                            <strong>Epsilon Correction:</strong> Negative predicted DBH change is treated as near-zero growth (ε = 0.02 cm) in simulation mode only. This prevents nonphysical forest shrinkage and avoids simulation "stuck" behavior where trees stop growing.
+                        </p>
+                    </div>
+                    <div class="assumptions-box">
+                        <h3 class="assumptions-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            Assumptions
+                        </h3>
+                        <ul class="assumptions-list">
+                            <li>DBH in centimeters (cm)</li>
+                            <li>Growth-only baseline (no mortality/disturbance)</li>
+                            <li>Epsilon rule for long-horizon visualization</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -217,30 +230,32 @@
     <section id="results" class="section section-alt">
         <div class="container">
             <h2 class="section-title">Results</h2>
-            <div class="results-grid">
-                <div class="result-item">
-                    <div class="result-image-container">
-                        <img src="figures/total_carbon_vs_years.png" alt="Total Carbon vs Years" class="result-image" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f0f0f0\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-family=\'system-ui\' font-size=\'14\'%3EDrop total_carbon_vs_years.png into midterm_site/figures/%3C/text%3E%3C/svg%3E';">
+            <div class="content-box">
+                <div class="results-grid">
+                    <div class="result-item">
+                        <div class="result-image-container">
+                            <img src="figures/total_carbon_vs_years.png" alt="Total Carbon vs Years" class="result-image" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f0f0f0\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-family=\'system-ui\' font-size=\'14\'%3EDrop total_carbon_vs_years.png into midterm_site/figures/%3C/text%3E%3C/svg%3E';">
+                        </div>
+                        <p class="result-caption">Total Carbon vs Years</p>
                     </div>
-                    <p class="result-caption">Total Carbon vs Years</p>
-                </div>
-                <div class="result-item">
-                    <div class="result-image-container">
-                        <img src="figures/mean_dbh_vs_years.png" alt="Mean DBH vs Years" class="result-image" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f0f0f0\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-family=\'system-ui\' font-size=\'14\'%3EDrop mean_dbh_vs_years.png into midterm_site/figures/%3C/text%3E%3C/svg%3E';">
+                    <div class="result-item">
+                        <div class="result-image-container">
+                            <img src="figures/mean_dbh_vs_years.png" alt="Mean DBH vs Years" class="result-image" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f0f0f0\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-family=\'system-ui\' font-size=\'14\'%3EDrop mean_dbh_vs_years.png into midterm_site/figures/%3C/text%3E%3C/svg%3E';">
+                        </div>
+                        <p class="result-caption">Mean DBH vs Years</p>
                     </div>
-                    <p class="result-caption">Mean DBH vs Years</p>
-                </div>
-                <div class="result-item">
-                    <div class="result-image-container">
-                        <img src="figures/dbh_distribution_by_year.png" alt="DBH Distribution by Year" class="result-image" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f0f0f0\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-family=\'system-ui\' font-size=\'14\'%3EDrop dbh_distribution_by_year.png into midterm_site/figures/%3C/text%3E%3C/svg%3E';">
+                    <div class="result-item">
+                        <div class="result-image-container">
+                            <img src="figures/dbh_distribution_by_year.png" alt="DBH Distribution by Year" class="result-image" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f0f0f0\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-family=\'system-ui\' font-size=\'14\'%3EDrop dbh_distribution_by_year.png into midterm_site/figures/%3C/text%3E%3C/svg%3E';">
+                        </div>
+                        <p class="result-caption">DBH Distribution by Year</p>
                     </div>
-                    <p class="result-caption">DBH Distribution by Year</p>
-                </div>
-                <div class="result-item">
-                    <div class="result-image-container">
-                        <img src="figures/carbon_by_plot_over_time.png" alt="Carbon by Plot Over Time" class="result-image" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f0f0f0\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-family=\'system-ui\' font-size=\'14\'%3EDrop carbon_by_plot_over_time.png into midterm_site/figures/%3C/text%3E%3C/svg%3E';">
+                    <div class="result-item">
+                        <div class="result-image-container">
+                            <img src="figures/carbon_by_plot_over_time.png" alt="Carbon by Plot Over Time" class="result-image" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f0f0f0\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%23999\' font-family=\'system-ui\' font-size=\'14\'%3EDrop carbon_by_plot_over_time.png into midterm_site/figures/%3C/text%3E%3C/svg%3E';">
+                        </div>
+                        <p class="result-caption">Carbon by Plot Over Time</p>
                     </div>
-                    <p class="result-caption">Carbon by Plot Over Time</p>
                 </div>
             </div>
         </div>
@@ -250,27 +265,29 @@
     <section id="next" class="section">
         <div class="container">
             <h2 class="section-title">What's Next</h2>
-            <div class="next-content">
-                <ul class="next-list">
-                    <li>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                        <strong>App MVP</strong> — Time slider + user-designed tree prediction
-                    </li>
-                    <li>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                        <strong>3D Map Integration</strong> — Tree positions (improved later)
-                    </li>
-                    <li>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                        <strong>Yearly Updates</strong> — New DBH data → retrain → refresh snapshots
-                    </li>
-                </ul>
+            <div class="content-box">
+                <div class="next-content">
+                    <ul class="next-list">
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                            <strong>App MVP</strong> — Time slider + user-designed tree prediction
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                            <strong>3D Map Integration</strong> — Tree positions (improved later)
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                            <strong>Yearly Updates</strong> — New DBH data → retrain → refresh snapshots
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </section>
@@ -299,6 +316,64 @@
             });
         });
 
+        // Scroll-triggered animations for sections and content boxes
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        const boxObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, index * 100); // Stagger animation
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        // Observe all sections
+        document.querySelectorAll('.section').forEach(section => {
+            sectionObserver.observe(section);
+        });
+
+        // Observe all content boxes
+        document.querySelectorAll('.content-box').forEach(box => {
+            boxObserver.observe(box);
+        });
+
+        // Observe result items individually for staggered effect
+        document.querySelectorAll('.result-item').forEach((item, index) => {
+            boxObserver.observe(item);
+        });
+
+        // Show/hide navigation bar based on scroll position
+        const navBar = document.querySelector('.nav-bar');
+        const heroSection = document.querySelector('.hero');
+        
+        window.addEventListener('scroll', () => {
+            const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+            const scrollPosition = window.pageYOffset || window.scrollY;
+            
+            // Show nav bar after scrolling past the hero section
+            if (scrollPosition > heroBottom - 100) {
+                navBar.classList.add('visible');
+            } else {
+                navBar.classList.remove('visible');
+            }
+        });
+
         // Highlight active nav link on scroll
         const sections = document.querySelectorAll('.section, .hero');
         const navLinks = document.querySelectorAll('.nav-link');
@@ -308,7 +383,7 @@
             sections.forEach(section => {
                 const sectionTop = section.offsetTop;
                 const sectionHeight = section.clientHeight;
-                if (window.pageYOffset >= sectionTop - 100) {
+                if (window.pageYOffset >= sectionTop - 150) {
                     current = section.getAttribute('id');
                 }
             });
