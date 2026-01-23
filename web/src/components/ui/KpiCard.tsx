@@ -29,12 +29,12 @@ export function KpiCard({
     : 'text-[var(--muted)]'
 
   return (
-    <GlassCard className={cn('p-6', className)}>
+    <div className={cn('rounded-xl bg-[var(--panel)] p-6 shadow-md border border-[var(--border)] hover:border-[var(--primary)]/30 transition-all', className)}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-label mb-2">{title}</p>
+          <p className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-2 font-medium">{title}</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-heading-2 text-[var(--text)]">{value}</p>
+            <p className="text-[32px] font-bold text-[var(--text)] leading-tight">{value}</p>
             {delta && (
               <span className={cn('text-sm font-medium', deltaColor)}>
                 {delta.trend === 'up' ? '↑' : delta.trend === 'down' ? '↓' : '→'} {delta.value}
@@ -42,15 +42,15 @@ export function KpiCard({
             )}
           </div>
           {description && (
-            <p className="text-label mt-2 text-[var(--muted)]">{description}</p>
+            <p className="text-[12px] text-[var(--muted)] mt-2 uppercase">{description}</p>
           )}
         </div>
         {Icon && (
           <div className="p-2 rounded-lg bg-[var(--accent)]">
-            <Icon className="h-5 w-5 text-[var(--primary)]" />
+            <Icon className="h-6 w-6 text-[var(--primary)]" />
           </div>
         )}
       </div>
-    </GlassCard>
+    </div>
   )
 }

@@ -1,6 +1,6 @@
-# CO2 Pomfret Web Application
+# Carbon DBH Web Application
 
-Next.js frontend for the CO2 Pomfret forest growth and carbon sequestration simulation project.
+Next.js frontend for the Carbon DBH forest growth and carbon sequestration simulation project.
 
 ## Features
 

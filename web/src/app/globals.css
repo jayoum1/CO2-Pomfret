@@ -4,41 +4,16 @@
 
 @layer base {
   :root {
-    /* Premium Dark Glass Theme */
-    --bg: #0a0f14;
-    --panel: rgba(10, 15, 20, 0.72);
-    --panel2: rgba(17, 24, 39, 0.55);
-    --text: #e5e7eb;
-    --muted: #9ca3af;
-    --primary: #22c55e;
-    --border: rgba(255, 255, 255, 0.08);
-    --accent: rgba(34, 197, 94, 0.1);
-    
-    /* Additional semantic colors */
-    --success: #22c55e;
-    --warning: #f59e0b;
-    --error: #ef4444;
-    --info: #3b82f6;
-    
-    /* Spacing (8px grid) */
-    --spacing-xs: 0.25rem;   /* 4px */
-    --spacing-sm: 0.5rem;    /* 8px */
-    --spacing-md: 1rem;      /* 16px */
-    --spacing-lg: 1.5rem;    /* 24px */
-    --spacing-xl: 2rem;      /* 32px */
-    --spacing-2xl: 3rem;     /* 48px */
-    
-    /* Border radius */
-    --radius-sm: 0.5rem;     /* 8px */
-    --radius-md: 0.75rem;    /* 12px */
-    --radius-lg: 1rem;       /* 16px */
-    --radius-xl: 1.25rem;    /* 20px */
-    
-    /* Shadows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
-    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.35);
-    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.4);
+    /* Soft Blue Theme */
+    --bg: #e8f4f8;
+    --bg-alt: #ffffff;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --primary-light: #dbeafe;
   }
   
   * {
@@ -47,84 +22,297 @@
   
   body {
     @apply bg-[var(--bg)] text-[var(--text)] antialiased;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Cloud Background Effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
+      radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.35) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  /* Animated Clouds Container */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
   }
 }
 
 @layer components {
-  /* Premium Glass Panel */
-  .glass-panel {
-    background: var(--panel);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-lg);
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-                opacity 0.2s ease, 
-                background 0.2s ease,
-                border-color 0.2s ease;
+  .btn {
+    @apply px-5 py-2.5 rounded-2xl font-medium transition-all duration-200;
   }
   
-  .glass-panel:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  .btn-primary {
+    @apply bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-md;
   }
   
-  .glass-card {
-    @apply glass-panel rounded-[var(--radius-xl)] p-6;
+  .btn-primary:hover {
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1);
   }
   
-  .glass-border {
-    border: 1px solid var(--border);
+  .btn-secondary {
+    @apply bg-[var(--bg-alt)] text-[var(--text)] border border-[var(--border)] hover:bg-gray-50 shadow-sm;
   }
   
-  /* Premium Easing */
-  .ease-premium {
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  .input {
+    @apply w-full px-4 py-2.5 border border-[var(--border)] rounded-2xl bg-white focus:outline-none focus:ring-2 transition-all;
   }
   
-  /* Typography Hierarchy */
-  .text-heading-1 {
-    @apply text-[28px] md:text-[36px] font-bold leading-tight;
+  .input:focus {
+    --tw-ring-color: rgba(59, 130, 246, 0.3);
+    border-color: rgba(59, 130, 246, 0.5);
   }
   
-  .text-heading-2 {
-    @apply text-[24px] md:text-[28px] font-semibold leading-tight;
+  .card {
+    @apply bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm;
   }
   
-  .text-heading-3 {
-    @apply text-[20px] font-semibold leading-snug;
+  .number-input {
+    @apply flex items-center;
   }
   
-  .text-body {
-    @apply text-[14px] md:text-[16px] leading-relaxed;
+  .number-input input {
+    @apply w-full px-4 py-2.5 border border-[var(--border)] rounded-2xl bg-white text-center focus:outline-none focus:ring-2 transition-all;
   }
   
-  .text-label {
-    @apply text-[11px] md:text-[12px] font-medium uppercase tracking-wider text-[var(--muted)];
+  .number-input input:focus {
+    --tw-ring-color: rgba(59, 130, 246, 0.3);
   }
   
-  /* Focus Rings */
-  *:focus-visible {
-    @apply outline-none ring-2 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--bg)];
-  }
-}
-
-@layer utilities {
-  /* Skeleton Loading */
-  .skeleton {
-    @apply animate-pulse bg-[var(--panel2)] rounded;
+  .number-input button {
+    @apply px-3 py-2 border border-[var(--border)] bg-white hover:bg-gray-50 rounded-2xl transition-all;
   }
   
-  /* Smooth Transitions */
-  .transition-premium {
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
-                opacity 0.2s ease, 
-                background 0.2s ease,
-                border-color 0.2s ease,
-                box-shadow 0.2s ease;
+  /* Toggle Switch */
+  .toggle-switch {
+    @apply relative inline-block w-12 h-6;
+  }
+  
+  .toggle-switch input {
+    @apply opacity-0 w-0 h-0;
+  }
+  
+  .toggle-slider {
+    @apply absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 rounded-full transition-all duration-300;
+  }
+  
+  .toggle-slider:before {
+    content: '';
+    @apply absolute h-5 w-5 left-0.5 bottom-0.5 bg-white rounded-full transition-all duration-300 shadow-sm;
+  }
+  
+  .toggle-switch input:checked + .toggle-slider {
+    @apply bg-[var(--primary)];
+  }
+  
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+  }
+  
+  /* Cloud Shape - Uniform opacity */
+  .cloud {
+    position: fixed;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 50px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .cloud::before,
+  .cloud::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 50px;
+  }
+  
+  /* Cloud Shape 1 - Small (increased size) */
+  .cloud-1 {
+    width: 140px;
+    height: 70px;
+    top: 20%;
+    left: -200px;
+    animation: drift1 30s linear infinite;
+  }
+  
+  .cloud-1::before {
+    width: 80px;
+    height: 80px;
+    top: -40px;
+    left: 20px;
+  }
+  
+  .cloud-1::after {
+    width: 90px;
+    height: 90px;
+    top: -45px;
+    right: 20px;
+  }
+  
+  /* Cloud Shape 2 - Medium (increased size) */
+  .cloud-2 {
+    width: 180px;
+    height: 90px;
+    top: 40%;
+    left: -250px;
+    animation: drift2 40s linear infinite;
+    animation-delay: 5s;
+  }
+  
+  .cloud-2::before {
+    width: 100px;
+    height: 100px;
+    top: -50px;
+    left: 30px;
+  }
+  
+  .cloud-2::after {
+    width: 110px;
+    height: 110px;
+    top: -55px;
+    right: 30px;
+  }
+  
+  /* Cloud Shape 3 - Large (increased size) */
+  .cloud-3 {
+    width: 220px;
+    height: 110px;
+    top: 60%;
+    left: -300px;
+    animation: drift3 50s linear infinite;
+    animation-delay: 10s;
+  }
+  
+  .cloud-3::before {
+    width: 120px;
+    height: 120px;
+    top: -60px;
+    left: 40px;
+  }
+  
+  .cloud-3::after {
+    width: 130px;
+    height: 130px;
+    top: -65px;
+    right: 40px;
+  }
+  
+  /* Cloud Shape 4 - Small (increased size) */
+  .cloud-4 {
+    width: 150px;
+    height: 75px;
+    top: 15%;
+    left: -220px;
+    animation: drift4 35s linear infinite;
+    animation-delay: 15s;
+  }
+  
+  .cloud-4::before {
+    width: 85px;
+    height: 85px;
+    top: -42px;
+    left: 25px;
+  }
+  
+  .cloud-4::after {
+    width: 95px;
+    height: 95px;
+    top: -47px;
+    right: 25px;
+  }
+  
+  /* Cloud Shape 5 - Medium (increased size) */
+  .cloud-5 {
+    width: 170px;
+    height: 85px;
+    top: 75%;
+    left: -240px;
+    animation: drift5 45s linear infinite;
+    animation-delay: 20s;
+  }
+  
+  .cloud-5::before {
+    width: 95px;
+    height: 95px;
+    top: -47px;
+    left: 28px;
+  }
+  
+  .cloud-5::after {
+    width: 105px;
+    height: 105px;
+    top: -52px;
+    right: 28px;
+  }
+  
+  /* Cloud Animations */
+  @keyframes drift1 {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(calc(100vw + 400px));
+    }
+  }
+  
+  @keyframes drift2 {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(calc(100vw + 500px));
+    }
+  }
+  
+  @keyframes drift3 {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(calc(100vw + 600px));
+    }
+  }
+  
+  @keyframes drift4 {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(calc(100vw + 440px));
+    }
+  }
+  
+  @keyframes drift5 {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(calc(100vw + 480px));
+    }
   }
 }
