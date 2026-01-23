@@ -100,33 +100,33 @@ export default function Dashboard() {
         </div>
       ) : summary ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="card">
+          <div className="card border-t-4" style={{ borderTopColor: 'var(--teal-500)' }}>
             <div className="text-sm text-[var(--text-muted)] mb-1">Total Carbon</div>
-            <div className="text-2xl font-bold mb-1">
+            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--teal-600)' }}>
               {summary.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
             <div className="text-sm text-[var(--text-muted)]">kg C</div>
           </div>
 
-          <div className="card">
+          <div className="card border-t-4" style={{ borderTopColor: 'var(--accent)' }}>
             <div className="text-sm text-[var(--text-muted)] mb-1">Mean DBH</div>
-            <div className="text-2xl font-bold mb-1">
+            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--accent)' }}>
               {summary.mean_dbh_cm.toFixed(1)}
             </div>
             <div className="text-sm text-[var(--text-muted)]">cm</div>
           </div>
 
-          <div className="card">
+          <div className="card border-t-4" style={{ borderTopColor: 'var(--secondary)' }}>
             <div className="text-sm text-[var(--text-muted)] mb-1">Total Trees</div>
-            <div className="text-2xl font-bold mb-1">
+            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--secondary)' }}>
               {summary.num_trees.toLocaleString()}
             </div>
             <div className="text-sm text-[var(--text-muted)]">trees</div>
           </div>
 
-          <div className="card">
+          <div className="card border-t-4" style={{ borderTopColor: 'var(--teal-500)' }}>
             <div className="text-sm text-[var(--text-muted)] mb-1">CO₂ Equivalent</div>
-            <div className="text-2xl font-bold mb-1">
+            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--teal-600)' }}>
               {(summary.total_carbon_kgC * 3.667).toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
             <div className="text-sm text-[var(--text-muted)]">kg CO₂e</div>
@@ -149,7 +149,7 @@ export default function Dashboard() {
                 <YAxis label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft' }} stroke="#64748b" />
                 <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
                 <Legend />
-                <Line type="monotone" dataKey="total_carbon" stroke="#3b82f6" strokeWidth={2} name="Total Carbon (kg C)" dot={{ fill: '#3b82f6', r: 4 }} />
+                <Line type="monotone" dataKey="total_carbon" stroke="var(--teal-500)" strokeWidth={2} name="Total Carbon (kg C)" dot={{ fill: 'var(--teal-500)', r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -163,7 +163,7 @@ export default function Dashboard() {
                 <YAxis label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft' }} stroke="#64748b" />
                 <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
                 <Legend />
-                <Bar dataKey="carbon" fill="#3b82f6" name="Carbon (kg C)" />
+                <Bar dataKey="carbon" fill="var(--green-500)" name="Carbon (kg C)" />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -46,7 +46,7 @@ export function KpiCard({
           )}
         </div>
         {Icon && (
-          <div className="p-2 rounded-lg bg-[var(--accent)]">
+          <div className="p-2 rounded-lg bg-[var(--primary-light)]">
             <Icon className="h-6 w-6 text-[var(--primary)]" />
           </div>
         )}

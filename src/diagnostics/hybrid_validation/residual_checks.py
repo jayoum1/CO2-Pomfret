@@ -67,6 +67,12 @@ def evaluate_residual_model(df, curves, outdir: Path, retrain: bool = False):
     # Select features
     X, y, feature_names = select_features(train_table)
     
+    # Calculate mean residual of baseline curve on full dataset (before train/test split)
+    # This is the mean of the actual residuals (delta_obs - delta_base) - the target for XGBoost
+    valid_mask_full = X['PrevDBH_cm'].notna() & y.notna()
+    y_full = y[valid_mask_full]
+    mean_baseline_residual_full = np.mean(y_full)
+    
     # Check if model exists
     model_path = MODELS_DIR / "dbh_residual_model.pkl"
     
@@ -103,6 +109,10 @@ def evaluate_residual_model(df, curves, outdir: Path, retrain: bool = False):
     r2 = r2_score(y_test, y_pred_test_clipped)
     bias = np.mean(y_pred_test_clipped - y_test)
     
+    # Calculate mean residual of baseline curve on test set
+    # This is the mean of the actual residuals (delta_obs - delta_base)
+    mean_baseline_residual = np.mean(y_test)
+    
     # Compute MAPE (Mean Absolute Percentage Error)
     # For residuals, use a robust approach that handles near-zero values
     # Use max(|y_true|, threshold) as denominator to avoid division by very small numbers
@@ -117,6 +127,8 @@ def evaluate_residual_model(df, curves, outdir: Path, retrain: bool = False):
         'r2': r2,
         'bias': bias,
         'mape': mape,
+        'mean_baseline_residual': mean_baseline_residual,  # Mean residual on test set
+        'mean_baseline_residual_full': mean_baseline_residual_full,  # Mean residual on full dataset
         'clip_low': clip_low,
         'clip_high': clip_high,
         'n_train': len(X_train),
@@ -129,6 +141,9 @@ def evaluate_residual_model(df, curves, outdir: Path, retrain: bool = False):
     print(f"  R²:   {r2:.4f}")
     print(f"  Bias: {bias:.4f} cm/year")
     print(f"  MAPE: {mape:.2f}%")
+    print(f"\nBaseline Curve Residual Statistics:")
+    print(f"  Mean residual (test set): {mean_baseline_residual:.4f} cm/year")
+    print(f"  Mean residual (full dataset): {mean_baseline_residual_full:.4f} cm/year")
     
     # Create plots directory
     plots_dir = outdir / "plots"

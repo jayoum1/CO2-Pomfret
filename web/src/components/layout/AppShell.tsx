@@ -7,7 +7,7 @@ import { Menu, X, Cloud, User, Settings } from 'lucide-react'
 
 const navItems = [
   { href: '/', label: 'Dashboard' },
-  { href: '/scenarios', label: 'Planting Scenarios' },
+  { href: '/scenarios', label: 'Forest Modification' },
   { href: '/visualize', label: 'Visualize' },
   { href: '/visualizations', label: 'R Visualizations' },
   { href: '/about', label: 'About' },

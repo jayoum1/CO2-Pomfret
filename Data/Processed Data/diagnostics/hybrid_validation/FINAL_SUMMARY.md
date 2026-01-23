@@ -1,6 +1,6 @@
 # Hybrid Model Validation Summary
 
-Generated: 2026-01-19 21:09:00
+Generated: 2026-01-23 14:59:03
 
 ---
 
@@ -19,6 +19,7 @@ Generated: 2026-01-19 21:09:00
 - **MAE:** 1.4834 cm/year
 - **R²:** -0.0018
 - **Bias:** -0.0004 cm/year
+- **Mean Residual (Baseline Curve):** 0.0210 cm/year
 - **MAPE:** 216.29%
 - **Test set size:** 524
 

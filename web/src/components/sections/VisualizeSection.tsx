@@ -43,24 +43,24 @@ export default function VisualizeSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-[#4ade80]">Visualize Forest</h1>
-        <p className="text-[#4ade80]/70 mt-1">2D and 3D visualization of forest structure</p>
+        <h1 className="text-3xl font-bold text-[var(--secondary)]">Visualize Forest</h1>
+        <p className="text-[var(--text-muted)] mt-1">2D and 3D visualization of forest structure</p>
       </div>
 
       <div className="glass dark-card p-6 rounded-lg shadow">
         <div className="space-y-4 mb-4">
           <div className="flex justify-between items-center">
-            <label className="block text-sm font-medium text-[#4ade80]/70">
-              Years Ahead: <span className="text-[#4ade80] font-bold">{selectedYear}</span>
+            <label className="block text-sm font-medium text-[var(--text-muted)]">
+              Years Ahead: <span className="text-[var(--primary)] font-bold">{selectedYear}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={is3D}
                 onChange={(e) => setIs3D(e.target.checked)}
-                className="w-4 h-4 text-[#4ade80] rounded focus:ring-forest-green"
+                className="w-4 h-4 text-[var(--primary)] rounded focus:ring-[var(--primary)]"
               />
-              <span className="text-sm text-[#4ade80]/70">3D View (coming soon)</span>
+              <span className="text-sm text-[var(--text-muted)]">3D View (coming soon)</span>
             </label>
           </div>
           
@@ -98,10 +98,10 @@ export default function VisualizeSection() {
                 <button
                   key={year}
                   onClick={() => setSelectedYear(year)}
-                  className={`px-3 py-1 text-xs rounded transition-colors ${
+                    className={`px-3 py-1 text-xs rounded transition-colors ${
                     selectedYear === year
-                      ? 'bg-forest-green text-white'
-                      : 'bg-[#334155] text-[#4ade80]/70 hover:bg-[#334155]'
+                      ? 'bg-[var(--primary)] text-white'
+                      : 'bg-[var(--bg-alt)] text-[var(--text-muted)] hover:bg-[var(--bg-alt)] border border-[var(--border)]'
                   }`}
                 >
                   {year}
@@ -121,7 +121,7 @@ export default function VisualizeSection() {
           </div>
         ) : (
           <div className="border-2 border-[#334155] rounded-lg p-8">
-            <h2 className="text-lg font-semibold text-[#4ade80] mb-4">2D Plot View (placeholder)</h2>
+            <h2 className="text-lg font-semibold text-[var(--primary)] mb-4">2D Plot View (placeholder)</h2>
             <div className="relative w-full h-96 bg-[#1e293b] rounded border border-[#334155]">
               {summary && (
                 <>
@@ -129,9 +129,9 @@ export default function VisualizeSection() {
                   {Object.entries(summary.plot_breakdown || {}).map(([plot, data]: [string, any], idx) => {
                     const plotPositions = treePositions.filter((p: any) => p.plot === plot)
                     const colors: Record<string, string> = {
-                      Upper: '#3b82f6',
-                      Middle: '#10b981',
-                      Lower: '#f59e0b',
+                      Upper: 'var(--accent)',
+                      Middle: 'var(--secondary)',
+                      Lower: 'var(--teal-500)',
                     }
                     return (
                       <div key={plot} className="absolute inset-0">
@@ -153,13 +153,13 @@ export default function VisualizeSection() {
                       </div>
                     )
                   })}
-                  <div className="absolute bottom-4 left-4 text-xs text-[#4ade80]/70">
+                  <div className="absolute bottom-4 left-4 text-xs text-[var(--text-muted)]">
                     {summary.num_trees} total trees • Random positions (placeholder)
                   </div>
                 </>
               )}
             </div>
-            <div className="mt-4 text-sm text-[#4ade80]/70">
+            <div className="mt-4 text-sm text-[var(--text-muted)]">
               <p>
                 <strong>Note:</strong> Tree positions are randomly generated for visualization purposes.
                 Actual tree coordinates will be integrated when spatial data is available.
@@ -171,21 +171,21 @@ export default function VisualizeSection() {
 
       {summary && (
         <div className="glass dark-card p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold text-[#4ade80] mb-4">Summary ({selectedYear} years ahead)</h2>
+          <h2 className="text-lg font-semibold text-[var(--primary)] mb-4">Summary ({selectedYear} years ahead)</h2>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <div className="text-sm text-[#4ade80]/70">Total Carbon</div>
-              <div className="text-xl font-bold text-[#4ade80]">
+              <div className="text-sm text-[var(--text-muted)]">Total Carbon</div>
+              <div className="text-xl font-bold text-[var(--teal-600)]">
                 {summary.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
               </div>
             </div>
             <div>
-              <div className="text-sm text-[#4ade80]/70">Mean DBH</div>
-              <div className="text-xl font-bold text-[#4ade80]">{summary.mean_dbh_cm.toFixed(1)} cm</div>
+              <div className="text-sm text-[var(--text-muted)]">Mean DBH</div>
+              <div className="text-xl font-bold text-[var(--accent)]">{summary.mean_dbh_cm.toFixed(1)} cm</div>
             </div>
             <div>
-              <div className="text-sm text-[#4ade80]/70">Number of Trees</div>
-              <div className="text-xl font-bold text-[#4ade80]">{summary.num_trees.toLocaleString()}</div>
+              <div className="text-sm text-[var(--text-muted)]">Number of Trees</div>
+              <div className="text-xl font-bold text-[var(--secondary)]">{summary.num_trees.toLocaleString()}</div>
             </div>
           </div>
         </div>

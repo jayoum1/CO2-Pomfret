@@ -54,23 +54,31 @@ export default function Visualize() {
         ) : summary ? (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {Object.entries(summary.plot_breakdown || {}).map(([plot, data]: [string, any]) => (
-                <div key={plot} className="p-4 bg-[var(--bg-alt)] rounded">
-                  <h3 className="font-semibold mb-2">{plot} Plot</h3>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-muted)]">Trees:</span>
-                      <span className="font-medium">{data.count}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-muted)]">Carbon:</span>
-                      <span className="font-medium">
-                        {data.carbon_at_time.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
-                      </span>
+              {Object.entries(summary.plot_breakdown || {}).map(([plot, data]: [string, any], index) => {
+                const plotColors = [
+                  { border: 'var(--accent)', text: 'var(--accent)' },
+                  { border: 'var(--secondary)', text: 'var(--secondary)' },
+                  { border: 'var(--teal-500)', text: 'var(--teal-600)' },
+                ]
+                const colors = plotColors[index % 3]
+                return (
+                  <div key={plot} className="p-4 bg-[var(--bg-alt)] rounded border-t-4" style={{ borderTopColor: colors.border }}>
+                    <h3 className="font-semibold mb-2">{plot} Plot</h3>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-[var(--text-muted)]">Trees:</span>
+                        <span className="font-medium">{data.count}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[var(--text-muted)]">Carbon:</span>
+                        <span className="font-medium" style={{ color: colors.text }}>
+                          {data.carbon_at_time.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
             <div className="h-96 bg-[var(--bg-alt)] rounded flex items-center justify-center border-2 border-dashed border-[var(--border)]">
               <div className="text-center text-[var(--text-muted)]">

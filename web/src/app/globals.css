@@ -4,16 +4,49 @@
 
 @layer base {
   :root {
-    /* Soft Blue Theme */
+    /* Diverse Color Palette - Cloud Aesthetic with Teal & Green */
     --bg: #e8f4f8;
     --bg-alt: #ffffff;
     --bg-card: #ffffff;
     --text: #1e293b;
     --text-muted: #64748b;
     --border: #e2e8f0;
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --primary-light: #dbeafe;
+    
+    /* Primary - Teal */
+    --primary: #14b8a6;
+    --primary-hover: #0d9488;
+    --primary-light: #ccfbf1;
+    --primary-dark: #0d9488;
+    
+    /* Secondary - Green */
+    --secondary: #10b981;
+    --secondary-hover: #059669;
+    --secondary-light: #d1fae5;
+    
+    /* Accent - Blue */
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-light: #dbeafe;
+    
+    /* Additional Colors */
+    --teal-500: #14b8a6;
+    --teal-600: #0d9488;
+    --green-500: #10b981;
+    --green-600: #059669;
+    --blue-500: #3b82f6;
+    --blue-600: #2563eb;
+    
+    /* Success/Error */
+    --success: #10b981;
+    --error: #ef4444;
+    
+    /* Glow effects */
+    --primary-glow: rgba(20, 184, 166, 0.3);
+    
+    /* Panel colors */
+    --panel: #ffffff;
+    --panel2: #f9fafb;
+    --muted: #64748b;
   }
   
   * {
@@ -72,7 +105,7 @@
   }
   
   .btn-primary:hover {
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(20, 184, 166, 0.2), 0 2px 4px -1px rgba(20, 184, 166, 0.1);
   }
   
   .btn-secondary {
@@ -84,8 +117,8 @@
   }
   
   .input:focus {
-    --tw-ring-color: rgba(59, 130, 246, 0.3);
-    border-color: rgba(59, 130, 246, 0.5);
+    --tw-ring-color: rgba(20, 184, 166, 0.3);
+    border-color: rgba(20, 184, 166, 0.5);
   }
   
   .card {
@@ -101,7 +134,7 @@
   }
   
   .number-input input:focus {
-    --tw-ring-color: rgba(59, 130, 246, 0.3);
+    --tw-ring-color: rgba(20, 184, 166, 0.3);
   }
   
   .number-input button {
