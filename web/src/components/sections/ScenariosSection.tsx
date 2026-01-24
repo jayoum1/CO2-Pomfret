@@ -352,16 +352,47 @@ export default function ScenariosSection() {
                 </div>
                 
                 <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={[0, 5, 10, 20].map(year => ({
-                    years_ahead: year,
-                    baseline: scenarioResult.baseline_by_year[year.toString()]?.total_carbon_kgC || 0,
-                    scenario: scenarioResult.scenario_by_year[year.toString()]?.total_carbon_kgC || 0,
-                  }))}>
+                  <LineChart 
+                    data={(() => {
+                      const data = [0, 5, 10, 20].map(year => ({
+                        years_ahead: year,
+                        baseline: scenarioResult.baseline_by_year[year.toString()]?.total_carbon_kgC || 0,
+                        scenario: scenarioResult.scenario_by_year[year.toString()]?.total_carbon_kgC || 0,
+                      }))
+                      return data
+                    })()}
+                    margin={{ top: 10, right: 20, bottom: 40, left: 60 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis dataKey="years_ahead" stroke="#4ade80" tick={{ fill: '#4ade80' }} />
-                    <YAxis stroke="#4ade80" tick={{ fill: '#4ade80' }} />
+                    <XAxis 
+                      dataKey="years_ahead" 
+                      stroke="#4ade80" 
+                      tick={{ fill: '#4ade80' }}
+                      label={{ value: 'Years Ahead', position: 'outside', offset: 10 }}
+                    />
+                    <YAxis 
+                      stroke="#4ade80" 
+                      tick={{ fill: '#4ade80' }}
+                      label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft', offset: -10 }}
+                      domain={(() => {
+                        const data = [0, 5, 10, 20].map(year => ({
+                          years_ahead: year,
+                          baseline: scenarioResult.baseline_by_year[year.toString()]?.total_carbon_kgC || 0,
+                          scenario: scenarioResult.scenario_by_year[year.toString()]?.total_carbon_kgC || 0,
+                        }))
+                        if (!data || data.length === 0) return [0, 100]
+                        const allValues = [...data.map(d => d.baseline), ...data.map(d => d.scenario)]
+                          .filter(v => v != null && !isNaN(v))
+                        if (allValues.length === 0) return [0, 100]
+                        const min = Math.min(...allValues)
+                        const max = Math.max(...allValues)
+                        const range = max - min
+                        const padding = range * 0.05
+                        return [Math.max(0, min - padding), max + padding]
+                      })()}
+                    />
                     <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #4ade80', color: '#4ade80' }} />
-                    <Legend wrapperStyle={{ color: '#4ade80' }} />
+                    <Legend wrapperStyle={{ paddingTop: '20px', color: '#4ade80' }} />
                     <Line type="monotone" dataKey="baseline" stroke="#4ade80" strokeWidth={2} name="Baseline" />
                     <Line type="monotone" dataKey="scenario" stroke="#4ade80" strokeWidth={3} name="With Planting" />
                   </LineChart>

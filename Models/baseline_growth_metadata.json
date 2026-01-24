@@ -28,5 +28,8 @@
     "white ash|Middle": "global",
     "white pine|Middle": "species_plot",
     "yellow birch|Middle": "global"
-  }
+  },
+  "guardrail_applied": true,
+  "guardrail_method": "tail_monotone",
+  "guardrail_tail_start_quantile": 0.8
 }

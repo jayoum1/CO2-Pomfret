@@ -35,7 +35,7 @@ DESIGN PHILOSOPHY:
 
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import pandas as pd
 import numpy as np
 
@@ -44,6 +44,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import CARBON_ALL_PLOTS, PROCESSED_DATA_DIR, ensure_dir
 from models.dbh_growth_model import predict_dbh_next_year
 from models.forest_metrics import carbon_from_dbh
+from models.baseline_simulation import predict_dbh_next_year_sim
 
 
 def load_base_forest_df(base_year: int | None = None) -> pd.DataFrame:
@@ -262,7 +263,12 @@ def diagnose_dbh_progression(base_forest: pd.DataFrame, years: int = 10, sample_
     print("\n" + "="*70)
 
 
-def simulate_forest_one_year(forest_df: pd.DataFrame, silent: bool = True) -> pd.DataFrame:
+def simulate_forest_one_year(
+    forest_df: pd.DataFrame, 
+    silent: bool = True,
+    mode: str = "baseline",
+    seed: Optional[int] = None
+) -> pd.DataFrame:
     """
     Simulate the forest forward by exactly one year.
     
@@ -282,7 +288,11 @@ def simulate_forest_one_year(forest_df: pd.DataFrame, silent: bool = True) -> pd
         Each row represents one tree.
         DBH_cm represents the DBH at the start of the year (prev_dbh).
     silent : bool
-        If True, suppress warning messages from predict_dbh_next_year (default: True)
+        If True, suppress warning messages (default: True)
+    mode : str
+        Simulation mode: "baseline" (default), "baseline_stochastic", or "hybrid" (legacy)
+    seed : int, optional
+        Random seed for stochastic mode (for reproducibility)
     
     Returns
     -------
@@ -296,11 +306,16 @@ def simulate_forest_one_year(forest_df: pd.DataFrame, silent: bool = True) -> pd
     result_df = forest_df.copy()
     
     if not silent:
-        print(f"Simulating {len(result_df):,} trees forward one year...")
+        print(f"Simulating {len(result_df):,} trees forward one year (mode: {mode})...")
+    
+    # Setup RNG for stochastic mode
+    rng = None
+    if mode == "baseline_stochastic" and seed is not None:
+        rng = np.random.default_rng(seed)
+    elif mode == "baseline_stochastic":
+        rng = np.random.default_rng()
     
     # Apply the one-year growth model to each tree
-    # We iterate row-by-row for clarity, though this could be vectorized later
-    # if performance becomes an issue
     dbh_next_list = []
     carbon_at_time_list = []
     
@@ -310,19 +325,28 @@ def simulate_forest_one_year(forest_df: pd.DataFrame, silent: bool = True) -> pd
         species = row['Species']
         plot = row['Plot']
         
-        # Predict next year's DBH using the growth model
-        # This internally uses encoding.py to build the feature vector
-        next_dbh = predict_dbh_next_year(
-            prev_dbh_cm=prev_dbh,
-            species=species,
-            plot=plot,
-            gap_years=1.0,
-            silent=silent
-        )
+        # Predict next year's DBH based on mode
+        if mode in ["baseline", "baseline_stochastic"]:
+            # Use baseline simulation
+            next_dbh = predict_dbh_next_year_sim(
+                prev_dbh_cm=prev_dbh,
+                species=species,
+                plot=plot,
+                gap_years=1.0,
+                mode=mode,
+                rng=rng
+            )
+        else:
+            # Legacy hybrid mode (fallback to old function)
+            next_dbh = predict_dbh_next_year(
+                prev_dbh_cm=prev_dbh,
+                species=species,
+                plot=plot,
+                gap_years=1.0,
+                silent=silent
+            )
         
-        # Compute carbon metrics:
-        # carbon_now: carbon at start of year (using prev_dbh) - intermediate variable
-        # carbon_at_time: carbon at end of year (using next_dbh) - stored in result
+        # Compute carbon metrics
         carbon_now = carbon_from_dbh(prev_dbh, species)
         carbon_at_time = carbon_from_dbh(next_dbh, species)
         
@@ -330,8 +354,8 @@ def simulate_forest_one_year(forest_df: pd.DataFrame, silent: bool = True) -> pd
         carbon_at_time_list.append(carbon_at_time)
     
     # Update the DataFrame with new values
-    result_df['DBH_cm'] = dbh_next_list  # DBH_cm now represents DBH at end of year
-    result_df['carbon_at_time'] = carbon_at_time_list  # Carbon at end of year
+    result_df['DBH_cm'] = dbh_next_list
+    result_df['carbon_at_time'] = carbon_at_time_list
     
     if not silent:
         print(f"✓ Simulation complete. Mean DBH: {result_df['DBH_cm'].mean():.2f} cm")
@@ -341,7 +365,9 @@ def simulate_forest_one_year(forest_df: pd.DataFrame, silent: bool = True) -> pd
 
 def simulate_forest_years(
     base_forest_df: pd.DataFrame,
-    years: int
+    years: int,
+    mode: str = "baseline",
+    seed: Optional[int] = None
 ) -> pd.DataFrame:
     """
     Simulate the forest forward for `years` discrete one-year steps.
@@ -362,6 +388,10 @@ def simulate_forest_years(
     years : int
         Number of years to simulate (must be >= 0)
         If years=0, returns the base forest unchanged
+    mode : str
+        Simulation mode: "baseline" (default), "baseline_stochastic", or "hybrid" (legacy)
+    seed : int, optional
+        Random seed for stochastic mode (for reproducibility)
     
     Returns
     -------
@@ -379,17 +409,26 @@ def simulate_forest_years(
         result['years_ahead'] = 0
         return result
     
-    print(f"\nSimulating forest forward {years} years...")
+    print(f"\nSimulating forest forward {years} years (mode: {mode})...")
     print(f"Starting with {len(base_forest_df):,} trees")
     
     # Start with the base forest
     # IMPORTANT: Always start from base_forest_df, not from a previous simulation state
     current = base_forest_df.copy()
     
+    # Setup RNG for stochastic mode (use same seed for all years for reproducibility)
+    rng = None
+    if mode == "baseline_stochastic" and seed is not None:
+        rng = np.random.default_rng(seed)
+    elif mode == "baseline_stochastic":
+        rng = np.random.default_rng()
+    
     # Apply the one-year step function exactly `years` times
     # This is a discrete-time simulation: each iteration represents one year
-    for _ in range(years):
-        current = simulate_forest_one_year(current, silent=True)
+    for year_idx in range(years):
+        # For stochastic mode, use a different seed for each year to ensure variation
+        year_seed = seed + year_idx if (seed is not None and mode == "baseline_stochastic") else None
+        current = simulate_forest_one_year(current, silent=True, mode=mode, seed=year_seed)
         # After each year, DBH_cm represents the DBH at that future time point
         # We use this updated DBH as input for the next iteration
     
@@ -404,7 +443,9 @@ def simulate_forest_years(
 def generate_forest_snapshots(
     years_list: List[int],
     base_year: int | None = None,
-    output_dir: str | Path = None
+    output_dir: str | Path = None,
+    mode: str = "baseline",
+    seed: Optional[int] = None
 ) -> None:
     """
     Generate forest snapshots at multiple time points and save them to CSV files.
@@ -444,6 +485,10 @@ def generate_forest_snapshots(
     output_dir : str | Path, optional
         Directory to save snapshot CSV files
         If None, defaults to "Data/Processed Data/forest_snapshots"
+    mode : str
+        Simulation mode: "baseline" (default), "baseline_stochastic", or "hybrid" (legacy)
+    seed : int, optional
+        Random seed for stochastic mode (for reproducibility)
     """
     # Set default output directory
     if output_dir is None:
@@ -489,7 +534,7 @@ def generate_forest_snapshots(
         else:
             # Each call to simulate_forest_years starts from base_forest and applies
             # exactly `years` discrete one-year steps
-            forest_snapshot = simulate_forest_years(base_forest, years)
+            forest_snapshot = simulate_forest_years(base_forest, years, mode=mode, seed=seed)
         
         # Track mean DBH for consistency checking
         mean_dbh_by_year[years] = forest_snapshot['DBH_cm'].mean()

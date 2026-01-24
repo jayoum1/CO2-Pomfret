@@ -13,7 +13,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from config import CARBON_ALL_PLOTS_ENCODED, PROCESSED_DATA_DIR, ensure_dir
-from models.baseline_growth_curve import load_baseline_curves
+from models.baseline_growth_curve import load_baseline_curves, predict_baseline_delta
 from models.dbh_residual_model import predict_delta_hybrid, load_residual_model
 from models.dbh_growth_nn import predict_dbh_next_year_nn
 
@@ -155,6 +155,39 @@ def simulate_tree_forward_hybrid(start_dbh: float, species: str, plot: str, year
     return current_dbh
 
 
+def simulate_tree_forward_baseline_only(start_dbh: float, species: str, plot: str, years: int, curves):
+    """
+    Simulate tree forward using baseline-only model (delta_pred = delta_base).
+    
+    Parameters
+    ----------
+    start_dbh : float
+        Starting DBH
+    species : str
+        Species name
+    plot : str
+        Plot name
+    years : int
+        Number of years to simulate
+    curves : dict
+        Baseline curves
+    
+    Returns
+    -------
+    float
+        Final DBH after simulation
+    """
+    current_dbh = start_dbh
+    
+    for _ in range(years):
+        delta_base = predict_baseline_delta(current_dbh, species, plot, curves)
+        # Clamp to nonnegative
+        delta_used = max(0.0, delta_base)
+        current_dbh = current_dbh + delta_used
+    
+    return current_dbh
+
+
 def simulate_tree_forward_nn(start_dbh: float, species: str, plot: str, years: int):
     """
     Simulate tree forward using NN state model.
@@ -235,8 +268,10 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
             continue
         
         # Simulate forward
+        baseline_only_predictions = []
         hybrid_predictions = []
         nn_predictions = []
+        errors_baseline_only = []
         errors_hybrid = []
         errors_nn = []
         shrink_flags_hybrid = []
@@ -248,6 +283,10 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
             target_dbh = row['target_dbh']
             species = row['species']
             plot = row['plot']
+            
+            # Baseline-only simulation
+            pred_baseline_only = simulate_tree_forward_baseline_only(start_dbh, species, plot, horizon, curves)
+            error_baseline_only = pred_baseline_only - target_dbh
             
             # Hybrid simulation
             pred_hybrid = simulate_tree_forward_hybrid(start_dbh, species, plot, horizon, curves)
@@ -275,21 +314,33 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
                 pred_nn = np.nan
                 error_nn = np.nan
             
+            baseline_only_predictions.append(pred_baseline_only)
             hybrid_predictions.append(pred_hybrid)
             nn_predictions.append(pred_nn)
+            errors_baseline_only.append(error_baseline_only)
             errors_hybrid.append(error_hybrid)
             errors_nn.append(error_nn)
             shrink_flags_hybrid.append(1 if had_shrinkage else 0)
         
+        pairs_df['pred_baseline_only'] = baseline_only_predictions
         pairs_df['pred_hybrid'] = hybrid_predictions
         pairs_df['pred_nn'] = nn_predictions
+        pairs_df['error_baseline_only'] = errors_baseline_only
         pairs_df['error_hybrid'] = errors_hybrid
         pairs_df['error_nn'] = errors_nn
         pairs_df['had_shrinkage'] = shrink_flags_hybrid
         
         # Compute metrics
+        valid_baseline_only = ~np.isnan(errors_baseline_only)
         valid_hybrid = ~np.isnan(errors_hybrid)
         valid_nn = ~np.isnan(errors_nn)
+        
+        if valid_baseline_only.sum() > 0:
+            rmse_baseline_only = np.sqrt(np.mean(np.array(errors_baseline_only)[valid_baseline_only]**2))
+            mae_baseline_only = np.mean(np.abs(np.array(errors_baseline_only)[valid_baseline_only]))
+            bias_baseline_only = np.mean(np.array(errors_baseline_only)[valid_baseline_only])
+        else:
+            rmse_baseline_only = mae_baseline_only = bias_baseline_only = np.nan
         
         if valid_hybrid.sum() > 0:
             rmse_hybrid = np.sqrt(np.mean(np.array(errors_hybrid)[valid_hybrid]**2))
@@ -309,6 +360,9 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
         metrics_row = {
             'horizon': horizon,
             'n_pairs': len(pairs_df),
+            'baseline_only_rmse': rmse_baseline_only,
+            'baseline_only_mae': mae_baseline_only,
+            'baseline_only_bias': bias_baseline_only,
             'hybrid_rmse': rmse_hybrid,
             'hybrid_mae': mae_hybrid,
             'hybrid_bias': bias_hybrid,
@@ -318,6 +372,11 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
             'nn_bias': bias_nn
         }
         all_metrics.append(metrics_row)
+        
+        print(f"\nBaseline-Only Model Metrics:")
+        print(f"  RMSE: {rmse_baseline_only:.4f} cm")
+        print(f"  MAE:  {mae_baseline_only:.4f} cm")
+        print(f"  Bias: {bias_baseline_only:.4f} cm")
         
         print(f"\nHybrid Model Metrics:")
         print(f"  RMSE: {rmse_hybrid:.4f} cm")
@@ -338,6 +397,8 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
         
         # Plot 1: Error distribution
         fig, ax = plt.subplots(figsize=(10, 6))
+        if valid_baseline_only.sum() > 0:
+            ax.hist(np.array(errors_baseline_only)[valid_baseline_only], bins=30, alpha=0.7, label=f'Baseline-only (RMSE={rmse_baseline_only:.2f})', density=True)
         if valid_hybrid.sum() > 0:
             ax.hist(np.array(errors_hybrid)[valid_hybrid], bins=30, alpha=0.7, label=f'Hybrid (RMSE={rmse_hybrid:.2f})', density=True)
         if valid_nn.sum() > 0:
@@ -356,6 +417,10 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
         
         # Plot 2: Scatter plot
         fig, ax = plt.subplots(figsize=(10, 6))
+        if valid_baseline_only.sum() > 0:
+            targets_baseline = np.array(pairs_df['target_dbh'])[valid_baseline_only]
+            preds_baseline = np.array(baseline_only_predictions)[valid_baseline_only]
+            ax.scatter(targets_baseline, preds_baseline, alpha=0.5, s=20, label='Baseline-only')
         if valid_hybrid.sum() > 0:
             targets_hybrid = np.array(pairs_df['target_dbh'])[valid_hybrid]
             preds_hybrid = np.array(hybrid_predictions)[valid_hybrid]
@@ -381,19 +446,34 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
         plt.close()
         print(f"✓ Saved: {scatter_path}")
         
-        # Comparison row
+        # Comparison row (baseline-only vs hybrid vs NN)
+        comparison_row = {
+            'horizon': horizon,
+            'baseline_only_rmse': rmse_baseline_only,
+            'baseline_only_mae': mae_baseline_only,
+            'baseline_only_bias': bias_baseline_only,
+            'hybrid_rmse': rmse_hybrid,
+            'hybrid_mae': mae_hybrid,
+            'hybrid_bias': bias_hybrid,
+            'hybrid_rmse_improvement_vs_baseline': rmse_baseline_only - rmse_hybrid,
+            'hybrid_mae_improvement_vs_baseline': mae_baseline_only - mae_hybrid,
+        }
         if valid_nn.sum() > 0:
-            all_comparisons.append({
-                'horizon': horizon,
-                'hybrid_rmse': rmse_hybrid,
-                'hybrid_mae': mae_hybrid,
-                'hybrid_bias': bias_hybrid,
+            comparison_row.update({
                 'nn_rmse': rmse_nn,
                 'nn_mae': mae_nn,
                 'nn_bias': bias_nn,
-                'rmse_improvement': rmse_nn - rmse_hybrid,
-                'mae_improvement': mae_nn - mae_hybrid
+                'hybrid_rmse_improvement_vs_nn': rmse_nn - rmse_hybrid,
+                'hybrid_mae_improvement_vs_nn': mae_nn - mae_hybrid,
             })
+        all_comparisons.append(comparison_row)
+        
+        # Save baseline-only results
+        baseline_only_df = pairs_df[['TreeID', 'start_year', 'start_dbh', 'target_dbh', 'species', 'plot', 
+                                      'pred_baseline_only', 'error_baseline_only']].copy()
+        baseline_only_path = outdir / f"backtest_baseline_only_h{horizon}.csv"
+        baseline_only_df.to_csv(baseline_only_path, index=False)
+        print(f"✓ Saved: {baseline_only_path}")
     
     # Save metrics
     metrics_df = pd.DataFrame(all_metrics)
@@ -404,9 +484,22 @@ def run_backtest(df, curves, horizons: List[int] = [1, 2, 3], outdir: Path = Non
     # Save comparison
     if all_comparisons:
         comparison_df = pd.DataFrame(all_comparisons)
-        comparison_path = outdir / "backtest_hybrid_vs_nn.csv"
+        comparison_path = outdir / "backtest_compare_baseline_hybrid_nn.csv"
         comparison_df.to_csv(comparison_path, index=False)
         print(f"✓ Saved: {comparison_path}")
+    
+    # Save combined baseline-only results across all horizons
+    baseline_only_all = []
+    for horizon in horizons:
+        baseline_path = outdir / f"backtest_baseline_only_h{horizon}.csv"
+        if baseline_path.exists():
+            df_h = pd.read_csv(baseline_path)
+            baseline_only_all.append(df_h)
+    if baseline_only_all:
+        baseline_only_combined = pd.concat(baseline_only_all, ignore_index=True)
+        baseline_only_combined_path = outdir / "backtest_baseline_only.csv"
+        baseline_only_combined.to_csv(baseline_only_combined_path, index=False)
+        print(f"✓ Saved: {baseline_only_combined_path}")
     
     return metrics_df, comparison_df if all_comparisons else None
 

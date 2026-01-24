@@ -47,7 +47,12 @@ def main():
     df = load_and_prepare_data()
     train_table = make_training_table(df)
     curves, metadata = fit_baseline_curves(train_table)
-    save_baseline_curves(curves, metadata)
+    
+    # Estimate residual sigma for stochastic mode
+    from models.baseline_growth_curve import estimate_residual_sigma
+    sigma_df = estimate_residual_sigma(train_table, curves)
+    
+    save_baseline_curves(curves, metadata, sigma_df)
     
     # Step 2: Train residual model
     print("\n" + "="*70)

@@ -7,6 +7,7 @@ Runs all validation stages and generates final summary report.
 import sys
 from pathlib import Path
 import pandas as pd
+import numpy as np
 from datetime import datetime
 
 # Add src directory to path (same pattern as train_hybrid_model.py)
@@ -29,6 +30,7 @@ def generate_final_summary(
     baseline_quality_df,
     residual_metrics,
     residual_clip_df,
+    one_step_comparison_df,
     backtest_metrics_df,
     backtest_comparison_df,
     stability_results,
@@ -92,8 +94,10 @@ def generate_final_summary(
             f.write(f"- **Bias:** {residual_metrics['bias']:.4f} cm/year\n")
             if 'mean_baseline_residual' in residual_metrics:
                 f.write(f"- **Mean Residual (Baseline Curve):** {residual_metrics['mean_baseline_residual']:.4f} cm/year\n")
-            if 'mape' in residual_metrics:
-                f.write(f"- **MAPE:** {residual_metrics['mape']:.2f}%\n")
+            if 'std_baseline_residual' in residual_metrics:
+                f.write(f"- **Std Residual (Baseline-only RMSE):** {residual_metrics['std_baseline_residual']:.4f} cm/year\n")
+            if 'baseline_only_rmse' in residual_metrics:
+                f.write(f"- **Baseline-only RMSE (predicting 0 residual):** {residual_metrics['baseline_only_rmse']:.4f} cm/year\n")
             f.write(f"- **Test set size:** {residual_metrics['n_test']}\n\n")
             
             if residual_metrics['r2'] < 0:
@@ -105,6 +109,17 @@ def generate_final_summary(
         else:
             f.write("⚠ No residual metrics available.\n\n")
         
+        # One-step model comparison
+        if one_step_comparison_df is not None and len(one_step_comparison_df) > 0:
+            f.write("### One-Step Model Comparison\n\n")
+            f.write("Comparison of baseline-only, hybrid, and NN models on test set:\n\n")
+            f.write("| Model | RMSE (Delta) | MAE (Delta) | RMSE (DBH) | MAE (DBH) |\n")
+            f.write("|-------|--------------|-------------|------------|-----------|\n")
+            for _, row in one_step_comparison_df.iterrows():
+                model_name = row['model']
+                f.write(f"| {model_name} | {row['rmse_delta']:.4f} | {row['mae_delta']:.4f} | {row['rmse_dbh']:.4f} | {row['mae_dbh']:.4f} |\n")
+            f.write("\n")
+        
         if residual_clip_df is not None and len(residual_clip_df) > 0:
             avg_clip_rate = residual_clip_df['pct_clipped'].mean()
             f.write(f"- **Average clip rate:** {avg_clip_rate:.2f}%\n")
@@ -115,23 +130,33 @@ def generate_final_summary(
         f.write("## Stage 3: Multi-Step Backtesting\n\n")
         
         if backtest_metrics_df is not None and len(backtest_metrics_df) > 0:
-            f.write("### Hybrid Model Performance\n\n")
+            f.write("### Model Performance by Horizon\n\n")
             for _, row in backtest_metrics_df.iterrows():
                 horizon = int(row['horizon'])
                 f.write(f"**{horizon}-Year Horizon:**\n")
-                f.write(f"- RMSE: {row['hybrid_rmse']:.4f} cm\n")
-                f.write(f"- MAE: {row['hybrid_mae']:.4f} cm\n")
-                f.write(f"- Bias: {row['hybrid_bias']:.4f} cm\n")
-                f.write(f"- % with shrinkage before clamp: {row['hybrid_pct_shrink']:.1f}%\n\n")
+                if 'baseline_only_rmse' in row:
+                    f.write(f"- Baseline-only RMSE: {row['baseline_only_rmse']:.4f} cm\n")
+                    f.write(f"- Baseline-only MAE: {row['baseline_only_mae']:.4f} cm\n")
+                f.write(f"- Hybrid RMSE: {row['hybrid_rmse']:.4f} cm\n")
+                f.write(f"- Hybrid MAE: {row['hybrid_mae']:.4f} cm\n")
+                f.write(f"- Hybrid Bias: {row['hybrid_bias']:.4f} cm\n")
+                f.write(f"- % with shrinkage before clamp: {row['hybrid_pct_shrink']:.1f}%\n")
+                if 'nn_rmse' in row and pd.notna(row['nn_rmse']):
+                    f.write(f"- NN RMSE: {row['nn_rmse']:.4f} cm\n")
+                    f.write(f"- NN MAE: {row['nn_mae']:.4f} cm\n")
+                f.write("\n")
             
             if backtest_comparison_df is not None and len(backtest_comparison_df) > 0:
-                f.write("### Hybrid vs NN Comparison\n\n")
+                f.write("### Model Comparison\n\n")
                 for _, row in backtest_comparison_df.iterrows():
                     horizon = int(row['horizon'])
                     f.write(f"**{horizon}-Year Horizon:**\n")
-                    f.write(f"- Hybrid RMSE: {row['hybrid_rmse']:.4f} cm\n")
-                    f.write(f"- NN RMSE: {row['nn_rmse']:.4f} cm\n")
-                    f.write(f"- RMSE improvement: {row['rmse_improvement']:.4f} cm\n\n")
+                    if 'hybrid_rmse_improvement_vs_baseline' in row:
+                        improvement_pct = (row['hybrid_rmse_improvement_vs_baseline'] / row['baseline_only_rmse']) * 100 if row['baseline_only_rmse'] > 0 else 0
+                        f.write(f"- Hybrid RMSE improvement vs baseline-only: {row['hybrid_rmse_improvement_vs_baseline']:.4f} cm ({improvement_pct:.2f}%)\n")
+                    if 'nn_rmse' in row and pd.notna(row['nn_rmse']):
+                        f.write(f"- Hybrid RMSE improvement vs NN: {row.get('hybrid_rmse_improvement_vs_nn', 0):.4f} cm\n")
+                    f.write("\n")
         else:
             f.write("⚠ No backtest data available.\n\n")
         
@@ -179,6 +204,41 @@ def generate_final_summary(
         else:
             f.write("✓ **Status:** No major issues identified. Model appears ready for use.\n\n")
         
+        # Conclusion: Baseline-only vs Hybrid
+        f.write("## Conclusion: Baseline-Only vs Hybrid Model\n\n")
+        
+        if backtest_comparison_df is not None and len(backtest_comparison_df) > 0:
+            # Check horizons 2-3
+            horizons_2_3 = backtest_comparison_df[backtest_comparison_df['horizon'].isin([2, 3])]
+            
+            if len(horizons_2_3) > 0 and 'hybrid_rmse_improvement_vs_baseline' in horizons_2_3.columns:
+                avg_improvement_pct = []
+                for _, row in horizons_2_3.iterrows():
+                    if row['baseline_only_rmse'] > 0:
+                        improvement_pct = (row['hybrid_rmse_improvement_vs_baseline'] / row['baseline_only_rmse']) * 100
+                        avg_improvement_pct.append(improvement_pct)
+                
+                if avg_improvement_pct:
+                    mean_improvement = np.mean(avg_improvement_pct)
+                    
+                    f.write(f"**Average RMSE improvement (hybrid vs baseline-only) at horizons 2-3:** {mean_improvement:.2f}%\n\n")
+                    
+                    if mean_improvement < 2.0:
+                        f.write("**Recommendation:** Default simulation to baseline-only model.\n")
+                        f.write("- Hybrid model provides <2% improvement over baseline-only at horizons 2-3.\n")
+                        f.write("- Keep residual ML model optional for users who want marginal improvements.\n")
+                        f.write("- Baseline-only model is simpler, faster, and more interpretable.\n\n")
+                    else:
+                        f.write("**Recommendation:** Use hybrid model as default.\n")
+                        f.write(f"- Hybrid model provides {mean_improvement:.2f}% improvement over baseline-only at horizons 2-3.\n")
+                        f.write("- The improvement justifies the added complexity.\n\n")
+                else:
+                    f.write("⚠ Could not compute improvement percentage.\n\n")
+            else:
+                f.write("⚠ Comparison data not available for horizons 2-3.\n\n")
+        else:
+            f.write("⚠ No comparison data available.\n\n")
+        
         f.write("---\n\n")
         f.write("## Output Files\n\n")
         f.write("All detailed outputs are available in:\n")
@@ -219,15 +279,17 @@ def main():
     try:
         # Stage 2: Residual checks
         print("\n" + "="*70)
-        residual_metrics, residual_clip_df = residual_checks.run_residual_checks(outdir, retrain=False)
+        residual_metrics, residual_clip_df, one_step_comparison_df = residual_checks.run_residual_checks(outdir, retrain=False)
         results['residual_metrics'] = residual_metrics
         results['residual_clip'] = residual_clip_df
+        results['one_step_comparison'] = one_step_comparison_df
     except Exception as e:
         print(f"\n⚠ Error in residual checks: {e}")
         import traceback
         traceback.print_exc()
         results['residual_metrics'] = None
         results['residual_clip'] = None
+        results['one_step_comparison'] = None
     
     try:
         # Stage 3: Backtesting
@@ -262,6 +324,7 @@ def main():
         results.get('baseline'),
         results.get('residual_metrics'),
         results.get('residual_clip'),
+        results.get('one_step_comparison'),
         results.get('backtest_metrics'),
         results.get('backtest_comparison'),
         results.get('stability'),

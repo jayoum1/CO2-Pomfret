@@ -1,0 +1,22 @@
+{
+  "per_tree_stats": {
+    "median_co2e_sigma_kg_per_year": 9.362996358587944,
+    "p75_co2e_sigma_kg_per_year": 26.638471093966764,
+    "mean_co2e_sigma_kg_per_year": 29.274135241849727,
+    "median_equivalent_miles_per_year": 23.40749089646986,
+    "p75_equivalent_miles_per_year": 66.5961777349169
+  },
+  "forest_wide": {
+    "total_co2e_sigma_sum_kg_per_year": 12939.167776897579,
+    "total_co2e_sigma_rss_kg_per_year": 1421.2237155207736,
+    "total_equivalent_miles_sum_per_year": 32347.919442243947,
+    "total_equivalent_miles_rss_per_year": 3553.0592888019337
+  },
+  "n_trees": 442,
+  "methodology": {
+    "dbh_sigma_source": "baseline_residual_sigma.csv",
+    "carbon_conversion": "finite difference approximation",
+    "co2e_factor": 3.667,
+    "co2_per_mile_kg": 0.4
+  }
+}

@@ -1,0 +1,49 @@
+Species,Plot,sigma,n_samples,fallback_level
+autumn olive,Middle,0.38414110302974414,7,global
+basswood,Middle,0.4202313605549848,6,global
+beech,Middle,0.3765804000000002,39,global
+black birch,Middle,0.3348706924613144,382,species_plot
+black oak,Middle,0.5249806133966162,19,global
+buckthorn,Middle,1.1782760924546611,4,global
+burning bush,Middle,2.675526507315783,13,global
+dogwood,Middle,2.4331727739506466,8,global
+hophornbeam,Middle,0.447125179472797,3,global
+mockernut,Middle,0.07606006220112038,3,global
+mockernut hickory,Middle,0.3583043722488183,36,global
+musclewood,Middle,0.46091022433172774,280,species_plot
+norway maple,Middle,0.0753160799999996,11,species
+norway maple,Upper,0.3900926772594048,118,species_plot
+pignut hickory,Middle,0.36043546216123806,33,global
+red maple,Middle,0.5272125599999998,39,species
+red maple,Upper,1.414479525136383,16,species
+red oak,Middle,1.2776186743739937,187,species_plot
+sassafras,Middle,0.1611702738423798,3,global
+shagbark hickory,Middle,0.8749309121647202,37,global
+sugar maple,Middle,0.43974854688251525,464,species_plot
+sugar maple,Upper,0.5253301510351263,810,species_plot
+white ash,Middle,0.8578843035151498,14,global
+white pine,Middle,1.0647822860572866,80,species_plot
+yellow birch,Middle,0.2695704056590034,8,global
+autumn olive,,0.38414110302974414,7,species
+basswood,,0.4202313605549848,6,species
+beech,,0.3765804000000002,39,species
+black birch,,0.3348706924613144,382,species
+black oak,,0.5249806133966162,19,species
+buckthorn,,1.1782760924546611,4,species
+burning bush,,2.675526507315783,13,species
+dogwood,,2.4331727739506466,8,species
+hophornbeam,,0.447125179472797,3,species
+mockernut,,0.07606006220112038,3,species
+mockernut hickory,,0.3583043722488183,36,species
+musclewood,,0.46091022433172774,280,species
+norway maple,,0.31434882498714106,129,species
+pignut hickory,,0.36043546216123806,33,species
+red maple,,0.6025286400000001,55,species
+red oak,,1.2776186743739937,187,species
+sassafras,,0.1611702738423798,3,species
+shagbark hickory,,0.8749309121647202,37,species
+sugar maple,,0.4884820190207965,1274,species
+white ash,,0.8578843035151498,14,species
+white pine,,1.0647822860572866,80,species
+yellow birch,,0.2695704056590034,8,species
+,,0.5053592638641817,2620,global

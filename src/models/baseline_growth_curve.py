@@ -25,6 +25,7 @@ from config import CARBON_ALL_PLOTS_ENCODED, MODELS_DIR, ensure_dir
 # Output paths
 BASELINE_BINS_PATH = MODELS_DIR / "baseline_growth_bins.csv"
 BASELINE_METADATA_PATH = MODELS_DIR / "baseline_growth_metadata.json"
+BASELINE_RESIDUAL_SIGMA_PATH = MODELS_DIR / "baseline_residual_sigma.csv"
 
 
 def make_training_table(df: pd.DataFrame) -> pd.DataFrame:
@@ -134,7 +135,10 @@ def fit_baseline_curves(
         'min_samples': min_samples,
         'bin_width': bin_width,
         'trim_fraction': trim_fraction,
-        'fallback_rules': {}
+        'fallback_rules': {},
+        'guardrail_applied': True,
+        'guardrail_method': 'tail_monotone',
+        'guardrail_tail_start_quantile': 0.8
     }
     
     # Get unique species+plot combinations
@@ -166,7 +170,7 @@ def fit_baseline_curves(
         if len(group_df) >= min_samples:
             # Enough samples: fit species+plot curve
             bins_data = _fit_bins(group_df, bin_edges, trim_fraction)
-            fn = _create_interpolator(bins_data)
+            fn = _create_interpolator(bins_data, apply_guardrail=True)
             curves[group_key] = {
                 'bins': bins_data,
                 'fn': fn,
@@ -180,7 +184,7 @@ def fit_baseline_curves(
             
             if species_df is not None and len(species_df) >= min_samples:
                 bins_data = _fit_bins(species_df, bin_edges, trim_fraction)
-                fn = _create_interpolator(bins_data)
+                fn = _create_interpolator(bins_data, apply_guardrail=True)
                 curves[group_key] = {
                     'bins': bins_data,
                     'fn': fn,
@@ -191,7 +195,7 @@ def fit_baseline_curves(
             else:
                 # Use global fallback
                 bins_data = _fit_bins(global_data, bin_edges, trim_fraction)
-                fn = _create_interpolator(bins_data)
+                fn = _create_interpolator(bins_data, apply_guardrail=True)
                 curves[group_key] = {
                     'bins': bins_data,
                     'fn': fn,
@@ -268,7 +272,251 @@ def _fit_bins(
     return bins_data
 
 
-def _create_interpolator(bins_data: list) -> Callable:
+def apply_high_dbh_guardrail(
+    bin_centers: np.ndarray,
+    delta_values: np.ndarray,
+    method: str = "tail_monotone",
+    tail_start_quantile: float = 0.8
+) -> np.ndarray:
+    """
+    Apply high-DBH guardrail to prevent unrealistic increasing growth at large diameters.
+    
+    Enforces non-increasing tail at high DBH to address sparse data issues.
+    
+    Parameters
+    ----------
+    bin_centers : np.ndarray
+        DBH bin centers
+    delta_values : np.ndarray
+        Delta values (growth rates) for each bin
+    method : str
+        Guardrail method ("tail_monotone")
+    tail_start_quantile : float
+        Quantile to start tail enforcement (default: 0.8 = 80th percentile)
+    
+    Returns
+    -------
+    np.ndarray
+        Guardrailed delta values (nonnegative, non-increasing in tail)
+    """
+    if len(bin_centers) == 0 or len(delta_values) == 0:
+        return delta_values
+    
+    # Ensure nonnegative
+    delta_guarded = np.maximum(0.0, delta_values.copy())
+    
+    if method == "tail_monotone":
+        # Identify tail start
+        if len(bin_centers) < 5:
+            # Too few bins: just ensure non-increasing overall
+            for i in range(1, len(delta_guarded)):
+                delta_guarded[i] = min(delta_guarded[i], delta_guarded[i-1])
+            return delta_guarded
+        
+        # Find tail start index (80th percentile of bin centers)
+        tail_start_dbh = np.quantile(bin_centers, tail_start_quantile)
+        tail_start_idx = np.searchsorted(bin_centers, tail_start_dbh, side='right')
+        
+        # Ensure at least 2 bins in tail, but not more than 50% of bins
+        min_tail_bins = max(2, int(len(bin_centers) * 0.1))
+        max_tail_bins = int(len(bin_centers) * 0.5)
+        tail_start_idx = max(len(bin_centers) - max_tail_bins, 
+                            min(len(bin_centers) - min_tail_bins, tail_start_idx))
+        
+        # Apply monotonicity constraint to tail
+        # For bins in tail: delta[i] <= delta[i-1]
+        for i in range(tail_start_idx, len(delta_guarded)):
+            if i > 0:
+                delta_guarded[i] = min(delta_guarded[i], delta_guarded[i-1])
+        
+        # Ensure still nonnegative (should already be, but double-check)
+        delta_guarded = np.maximum(0.0, delta_guarded)
+    
+    return delta_guarded
+
+
+def estimate_residual_sigma(
+    df_train: pd.DataFrame,
+    curves: Dict[str, Dict],
+    by: Tuple[str, str] = ("Species", "Plot")
+) -> pd.DataFrame:
+    """
+    Estimate residual sigma (standard deviation) for each group using MAD.
+    
+    Computes residuals: resid = delta_obs - delta_base
+    Estimates sigma using robust MAD statistic: sigma ≈ 1.4826 * MAD
+    
+    Parameters
+    ----------
+    df_train : pd.DataFrame
+        Training table with columns: PrevDBH_cm, Species, Plot, delta_obs
+    curves : dict
+        Dictionary of fitted baseline curves
+    by : tuple
+        Grouping columns (default: ("Species", "Plot"))
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns: Species, Plot, sigma, n_samples, fallback_level
+    """
+    print("\nEstimating residual sigma for stochastic mode...")
+    
+    # Compute residuals for each row
+    residuals = []
+    for _, row in df_train.iterrows():
+        prev_dbh = row['PrevDBH_cm']
+        species = row['Species']
+        plot = row['Plot']
+        delta_obs = row['delta_obs']
+        
+        # Predict baseline delta
+        delta_base = predict_baseline_delta(prev_dbh, species, plot, curves)
+        
+        # Compute residual
+        resid = delta_obs - delta_base
+        residuals.append({
+            'Species': species,
+            'Plot': plot,
+            'residual': resid
+        })
+    
+    residuals_df = pd.DataFrame(residuals)
+    
+    # Group by species+plot and compute MAD -> sigma
+    sigma_rows = []
+    groups = df_train.groupby(['Species', 'Plot'])
+    
+    for (species, plot), group_df in groups:
+        group_key = f"{species}|{plot}"
+        group_residuals = residuals_df[
+            (residuals_df['Species'] == species) & 
+            (residuals_df['Plot'] == plot)
+        ]['residual'].values
+        
+        if len(group_residuals) > 1:
+            # Compute MAD (Median Absolute Deviation)
+            median_resid = np.median(group_residuals)
+            mad = np.median(np.abs(group_residuals - median_resid))
+            # Convert MAD to sigma (for normal distribution: sigma ≈ 1.4826 * MAD)
+            sigma = 1.4826 * mad if mad > 0 else 0.0
+            
+            # Get fallback level from curves
+            fallback_level = curves.get(group_key, {}).get('fallback_level', 'unknown')
+            
+            sigma_rows.append({
+                'Species': species,
+                'Plot': plot,
+                'sigma': sigma,
+                'n_samples': len(group_residuals),
+                'fallback_level': fallback_level
+            })
+    
+    # Add fallback groups (species-only, global)
+    # For species-only: aggregate all plots for that species
+    species_groups = df_train.groupby('Species')
+    for species, species_df in species_groups:
+        species_residuals = residuals_df[residuals_df['Species'] == species]['residual'].values
+        if len(species_residuals) > 1:
+            median_resid = np.median(species_residuals)
+            mad = np.median(np.abs(species_residuals - median_resid))
+            sigma = 1.4826 * mad if mad > 0 else 0.0
+            
+            # Check if we already have this species
+            if not any(r['Species'] == species and pd.isna(r.get('Plot')) for r in sigma_rows):
+                sigma_rows.append({
+                    'Species': species,
+                    'Plot': None,
+                    'sigma': sigma,
+                    'n_samples': len(species_residuals),
+                    'fallback_level': 'species'
+                })
+    
+    # Global fallback
+    all_residuals = residuals_df['residual'].values
+    if len(all_residuals) > 1:
+        median_resid = np.median(all_residuals)
+        mad = np.median(np.abs(all_residuals - median_resid))
+        sigma_global = 1.4826 * mad if mad > 0 else 0.0
+        
+        sigma_rows.append({
+            'Species': None,
+            'Plot': None,
+            'sigma': sigma_global,
+            'n_samples': len(all_residuals),
+            'fallback_level': 'global'
+        })
+    
+    sigma_df = pd.DataFrame(sigma_rows)
+    print(f"✓ Estimated sigma for {len(sigma_df)} groups")
+    print(f"  Mean sigma: {sigma_df['sigma'].mean():.4f} cm/year")
+    print(f"  Median sigma: {sigma_df['sigma'].median():.4f} cm/year")
+    
+    return sigma_df
+
+
+def load_residual_sigma() -> pd.DataFrame:
+    """
+    Load residual sigma estimates from disk.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns: Species, Plot, sigma, n_samples, fallback_level
+    """
+    if not BASELINE_RESIDUAL_SIGMA_PATH.exists():
+        raise FileNotFoundError(
+            f"Residual sigma not found: {BASELINE_RESIDUAL_SIGMA_PATH}\n"
+            "Please fit baseline curves first."
+        )
+    
+    return pd.read_csv(BASELINE_RESIDUAL_SIGMA_PATH)
+
+
+def get_residual_sigma(
+    species: str,
+    plot: str,
+    sigma_df: pd.DataFrame
+) -> float:
+    """
+    Get residual sigma for a given species+plot combination.
+    
+    Uses fallback hierarchy: (species, plot) -> species -> global
+    
+    Parameters
+    ----------
+    species : str
+        Species name
+    plot : str
+        Plot name
+    sigma_df : pd.DataFrame
+        DataFrame with sigma estimates
+    
+    Returns
+    -------
+    float
+        Residual sigma in cm/year
+    """
+    # Try species+plot first
+    mask = (sigma_df['Species'] == species) & (sigma_df['Plot'] == plot)
+    if mask.any():
+        return sigma_df[mask]['sigma'].iloc[0]
+    
+    # Try species-only
+    mask = (sigma_df['Species'] == species) & sigma_df['Plot'].isna()
+    if mask.any():
+        return sigma_df[mask]['sigma'].iloc[0]
+    
+    # Fallback to global
+    mask = sigma_df['Species'].isna() & sigma_df['Plot'].isna()
+    if mask.any():
+        return sigma_df[mask]['sigma'].iloc[0]
+    
+    # Default fallback
+    return 3.0  # Reasonable default based on validation results
+
+
+def _create_interpolator(bins_data: list, apply_guardrail: bool = True) -> Callable:
     """
     Create an interpolator function from bin data.
     
@@ -276,6 +524,8 @@ def _create_interpolator(bins_data: list) -> Callable:
     ----------
     bins_data : list
         List of (dbh_center, delta_mean) tuples
+    apply_guardrail : bool
+        Whether to apply high-DBH guardrail (default: True)
     
     Returns
     -------
@@ -293,6 +543,10 @@ def _create_interpolator(bins_data: list) -> Callable:
     # Extract x (DBH) and y (delta) values
     dbh_values = np.array([b[0] for b in bins_data])
     delta_values = np.array([b[1] for b in bins_data])
+    
+    # Apply guardrail if requested
+    if apply_guardrail and len(delta_values) > 1:
+        delta_values = apply_high_dbh_guardrail(dbh_values, delta_values)
     
     # Create linear interpolator
     # Extend beyond range: use nearest endpoint
@@ -359,9 +613,9 @@ def predict_baseline_delta(
     return 0.0
 
 
-def save_baseline_curves(curves: Dict[str, Dict], metadata: Dict):
+def save_baseline_curves(curves: Dict[str, Dict], metadata: Dict, sigma_df: pd.DataFrame = None):
     """
-    Save fitted curves and metadata to disk.
+    Save fitted curves, metadata, and residual sigma to disk.
     
     Parameters
     ----------
@@ -369,6 +623,8 @@ def save_baseline_curves(curves: Dict[str, Dict], metadata: Dict):
         Dictionary of fitted curves
     metadata : dict
         Metadata dictionary
+    sigma_df : pd.DataFrame, optional
+        Residual sigma estimates (if None, will be skipped)
     """
     print("\nSaving baseline curves...")
     
@@ -396,6 +652,11 @@ def save_baseline_curves(curves: Dict[str, Dict], metadata: Dict):
     with open(BASELINE_METADATA_PATH, 'w') as f:
         json.dump(metadata_serializable, f, indent=2)
     print(f"✓ Saved metadata to {BASELINE_METADATA_PATH}")
+    
+    # Save residual sigma if provided
+    if sigma_df is not None:
+        sigma_df.to_csv(BASELINE_RESIDUAL_SIGMA_PATH, index=False)
+        print(f"✓ Saved residual sigma to {BASELINE_RESIDUAL_SIGMA_PATH}")
 
 
 def load_baseline_curves() -> Dict[str, Dict]:
@@ -423,7 +684,7 @@ def load_baseline_curves() -> Dict[str, Dict]:
             (row['DBH_center_cm'], row['delta_mean_cm_per_year'])
             for _, row in group_df.iterrows()
         ]
-        fn = _create_interpolator(bins_data)
+        fn = _create_interpolator(bins_data, apply_guardrail=True)
         curves[group_key] = {
             'bins': bins_data,
             'fn': fn,

@@ -51,6 +51,8 @@ export default function Scenarios() {
   const [scenarioName, setScenarioName] = useState<string>('')
   const [carbonSequestration, setCarbonSequestration] = useState(true)
   const [biodiversityImpact, setBiodiversityImpact] = useState(true)
+  const [simulationMode, setSimulationMode] = useState<'baseline' | 'baseline_stochastic'>('baseline')
+  const [selectedYear, setSelectedYear] = useState<number>(20) // For toggling metrics by year
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -69,7 +71,7 @@ export default function Scenarios() {
         dbh_cm: plantingDbh as number,
         count: plantingCount as number,
       }])
-      setPlantingSpecies('')
+      // Keep species selected, reset only DBH and count
       setPlantingDbh(5.0)
       setPlantingCount(10)
     }
@@ -91,7 +93,7 @@ export default function Scenarios() {
         dbh_cm: removalDbh as number,
         count: removalCount as number,
       }])
-      setRemovalSpecies('')
+      // Keep species selected, reset only DBH and count
       setRemovalDbh(10.0)
       setRemovalCount(10)
     }
@@ -170,7 +172,7 @@ export default function Scenarios() {
       // Get baseline summaries for each year (needed for removal calculations)
       const baselineSummaries: Record<string, any> = {}
       for (const year of yearsList) {
-        const summary = await getSummary(year, 'hybrid')
+        const summary = await getSummary(year, simulationMode)
         baselineSummaries[year.toString()] = {
           num_trees: summary.num_trees,
           mean_dbh_cm: summary.mean_dbh_cm,
@@ -189,6 +191,7 @@ export default function Scenarios() {
         const plantingGroups: PlantingGroup[] = plantings.filter(p => p.species && p.count > 0)
 
         plantingResult = await simulateScenario({
+          mode: simulationMode,
           years_list: yearsList,
           plantings: plantingGroups,
         })
@@ -279,6 +282,15 @@ export default function Scenarios() {
     setScenarioName('')
   }
 
+  const handleDeleteScenario = (index: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation() // Prevent loading the scenario when clicking delete
+    if (confirm(`Delete scenario "${savedScenarios[index].name}"?`)) {
+      const updated = savedScenarios.filter((_, i) => i !== index)
+      setSavedScenarios(updated)
+      localStorage.setItem('savedScenarios', JSON.stringify(updated))
+    }
+  }
+
   const loadScenario = (scenario: any) => {
     // Handle migration from old format
     if (scenario.data.plantings) {
@@ -323,8 +335,8 @@ export default function Scenarios() {
       
       return {
         years_ahead: year,
-        baseline,
-        scenario: Math.max(0, scenario), // Ensure non-negative, removals will make this lower than baseline
+        baseline: baseline * 3.667, // Convert to CO2e
+        scenario: Math.max(0, scenario * 3.667), // Convert to CO2e, ensure non-negative
       }
     })
   }, [scenarioResult])
@@ -635,6 +647,24 @@ export default function Scenarios() {
                 </div>
               </div>
 
+              {/* Simulation Mode Selection */}
+              <div className="space-y-2 pt-2">
+                <label className="block text-sm font-medium">Simulation Mode</label>
+                <select
+                  value={simulationMode}
+                  onChange={(e) => setSimulationMode(e.target.value as 'baseline' | 'baseline_stochastic')}
+                  className="input"
+                >
+                  <option value="baseline">Baseline (default)</option>
+                  <option value="baseline_stochastic">Visual mode (stochastic)</option>
+                </select>
+                {simulationMode === 'baseline_stochastic' && (
+                  <p className="text-xs text-[var(--text-muted)] mt-1">
+                    Adds small random variation calibrated from historical residual spread; improves realism, not accuracy.
+                  </p>
+                )}
+              </div>
+
               {/* Toggle Switches */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">
@@ -708,21 +738,41 @@ export default function Scenarios() {
             
             {scenarioResult ? (
               <div className="space-y-6">
+                {/* Year Selector for Metrics */}
+                <div className="flex items-center justify-between p-3 bg-[var(--bg-alt)] rounded-2xl border border-[var(--border)]">
+                  <span className="text-sm font-medium text-[var(--text-muted)]">View metrics for:</span>
+                  <div className="flex gap-2">
+                    {[0, 5, 10, 20].map((year) => (
+                      <button
+                        key={year}
+                        onClick={() => setSelectedYear(year)}
+                        className={`px-3 py-1.5 text-sm rounded-xl transition-all ${
+                          selectedYear === year
+                            ? 'bg-[var(--primary)] text-white shadow-md'
+                            : 'bg-white text-[var(--text-muted)] border border-[var(--border)] hover:bg-[var(--bg-alt)]'
+                        }`}
+                      >
+                        {year} years
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Summary Breakdown */}
                 {(totalTreesPlanted > 0 || removals.length > 0) && (
                   <div className="p-4 bg-[var(--bg-alt)] rounded-2xl border border-[var(--border)]">
-                    <h3 className="font-semibold mb-3 text-sm">Modification Summary (20 years)</h3>
+                    <h3 className="font-semibold mb-3 text-sm">Modification Summary ({selectedYear} years)</h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-[var(--text-muted)]">Plantings: </span>
                         <span className="font-medium text-[var(--teal-600)]">
-                          +{scenarioResult.cohort_by_year['20']?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                          +{scenarioResult.cohort_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
                         </span>
                       </div>
                       <div>
                         <span className="text-[var(--text-muted)]">Removals: </span>
                         <span className="font-medium text-red-600">
-                          -{(scenarioResult.removal_impact?.['20']?.carbon_kgC || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                          -{(scenarioResult.removal_impact?.[selectedYear.toString()]?.carbon_kgC || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
                         </span>
                       </div>
                     </div>
@@ -732,50 +782,63 @@ export default function Scenarios() {
                 {/* Key Metrics */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="p-4 bg-[var(--primary-light)] rounded-2xl border border-[var(--primary)]/20">
-                    <p className="text-sm text-[var(--text-muted)] mb-1">Total Carbon (20 years)</p>
+                    <p className="text-sm text-[var(--text-muted)] mb-1">Total Carbon ({selectedYear} years)</p>
                     <p className="text-xl font-semibold">
-                      {scenarioResult.scenario_by_year['20']?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                      {scenarioResult.scenario_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
                     </p>
                   </div>
                   <div className="p-4 bg-[var(--primary-light)] rounded-2xl border border-[var(--primary)]/20">
-                    <p className="text-sm text-[var(--text-muted)] mb-1">CO₂e (20 years)</p>
+                    <p className="text-sm text-[var(--text-muted)] mb-1">CO₂e ({selectedYear} years)</p>
                     <p className="text-xl font-semibold">
-                      {(scenarioResult.scenario_by_year['20']?.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg CO₂e
+                      {(scenarioResult.scenario_by_year[selectedYear.toString()]?.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg CO₂e
                     </p>
                   </div>
                   <div className={`p-4 rounded-2xl border ${
-                    (scenarioResult.delta_by_year['20']?.total_carbon_kgC || 0) >= 0
+                    (scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC || 0) >= 0
                       ? 'bg-[var(--secondary-light)] border-[var(--secondary)]/20'
                       : 'bg-red-50 border-red-200'
                   }`}>
                     <p className="text-sm text-[var(--text-muted)] mb-1">Net Change (vs Baseline)</p>
                     <p className={`text-xl font-semibold ${
-                      (scenarioResult.delta_by_year['20']?.total_carbon_kgC || 0) >= 0
+                      (scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC || 0) >= 0
                         ? 'text-[var(--secondary)]'
                         : 'text-red-600'
                     }`}>
-                      {scenarioResult.delta_by_year['20']?.total_carbon_kgC >= 0 ? '+' : ''}
-                      {scenarioResult.delta_by_year['20']?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                      {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC >= 0 ? '+' : ''}
+                      {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
                     </p>
                     <p className="text-xs text-[var(--text-muted)] mt-1">
-                      {scenarioResult.delta_by_year['20']?.total_carbon_kgC >= 0 ? 'Increase' : 'Decrease'}
+                      {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC >= 0 ? 'Increase' : 'Decrease'}
                     </p>
                   </div>
                 </div>
 
                 {/* Chart */}
                 <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={chartData}>
+                  <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 50, left: 70 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis 
                       dataKey="years_ahead" 
                       stroke="#64748b"
-                      label={{ value: 'Years Ahead', position: 'insideBottom', offset: -5 }}
+                      tick={{ fill: '#64748b' }}
+                      label={{ value: 'Years Ahead', position: 'outside', offset: 10 }}
                     />
                     <YAxis 
                       stroke="#64748b"
-                      label={{ value: 'Tons CO₂e', angle: -90, position: 'insideLeft' }}
+                      tick={{ fill: '#64748b' }}
+                      label={{ value: 'Tons CO₂e', angle: -90, position: 'insideLeft', offset: -15 }}
                       tickFormatter={(value) => (value / 1000).toFixed(0)}
+                      domain={(() => {
+                        if (!chartData || chartData.length === 0) return [0, 100]
+                        const allValues = [...chartData.map(d => d.baseline), ...chartData.map(d => d.scenario)]
+                          .filter(v => v != null && !isNaN(v))
+                        if (allValues.length === 0) return [0, 100]
+                        const min = Math.min(...allValues)
+                        const max = Math.max(...allValues)
+                        const range = max - min
+                        const padding = range * 0.05
+                        return [Math.max(0, min - padding), max + padding]
+                      })()}
                     />
                     <Tooltip 
                       contentStyle={{ 
@@ -785,7 +848,7 @@ export default function Scenarios() {
                       }}
                       formatter={(value: number) => `${(value / 1000).toFixed(1)} tCO₂e`}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                     <Line 
                       type="monotone" 
                       dataKey="baseline" 
@@ -820,18 +883,29 @@ export default function Scenarios() {
           <h3 className="font-semibold mb-4">Saved Scenarios</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {savedScenarios.map((scenario, index) => (
-              <button
+              <div
                 key={index}
-                onClick={() => loadScenario(scenario)}
-                className="text-left p-4 rounded-2xl border border-[var(--border)] hover:bg-[var(--bg-alt)] transition-all"
+                className="relative group"
               >
-                <div className="font-medium mb-1">{scenario.name}</div>
-                <div className="text-xs text-[var(--text-muted)]">
-                  {scenario.data.plantings ? scenario.data.plantings.reduce((sum: number, p: PlantingGroup) => sum + p.count, 0) : 
-                   scenario.data.speciesMix ? scenario.data.speciesMix.reduce((sum: number, item: any) => sum + (item.count || 0), 0) : 0} trees planted
-                  {scenario.data.removals?.length > 0 && ` • ${scenario.data.removals.reduce((sum: number, r: RemovalGroup) => sum + r.count, 0)} trees removed`}
-                </div>
-              </button>
+                <button
+                  onClick={() => loadScenario(scenario)}
+                  className="w-full text-left p-4 rounded-2xl border border-[var(--border)] hover:bg-[var(--bg-alt)] transition-all"
+                >
+                  <div className="font-medium mb-1">{scenario.name}</div>
+                  <div className="text-xs text-[var(--text-muted)]">
+                    {scenario.data.plantings ? scenario.data.plantings.reduce((sum: number, p: PlantingGroup) => sum + p.count, 0) : 
+                     scenario.data.speciesMix ? scenario.data.speciesMix.reduce((sum: number, item: any) => sum + (item.count || 0), 0) : 0} trees planted
+                    {scenario.data.removals?.length > 0 && ` • ${scenario.data.removals.reduce((sum: number, r: RemovalGroup) => sum + r.count, 0)} trees removed`}
+                  </div>
+                </button>
+                <button
+                  onClick={(e) => handleDeleteScenario(index, e)}
+                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete scenario"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             ))}
           </div>
         </div>

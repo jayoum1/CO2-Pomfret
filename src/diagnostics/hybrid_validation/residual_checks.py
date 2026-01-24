@@ -28,6 +28,8 @@ from models.dbh_residual_model import (
     load_residual_model,
     predict_delta_hybrid
 )
+from models.baseline_growth_curve import predict_baseline_delta
+from models.dbh_growth_nn import predict_dbh_next_year_nn
 
 
 # Global cache
@@ -113,34 +115,37 @@ def evaluate_residual_model(df, curves, outdir: Path, retrain: bool = False):
     # This is the mean of the actual residuals (delta_obs - delta_base)
     mean_baseline_residual = np.mean(y_test)
     
-    # Compute MAPE (Mean Absolute Percentage Error)
-    # For residuals, use a robust approach that handles near-zero values
-    # Use max(|y_true|, threshold) as denominator to avoid division by very small numbers
-    abs_y_test = np.abs(y_test)
-    threshold = np.percentile(abs_y_test, 10)  # Use 10th percentile as threshold
-    denominator = np.maximum(abs_y_test, threshold)
-    mape = np.mean(np.abs((y_test - y_pred_test_clipped) / denominator)) * 100
+    # Baseline-only: predict 0 residual always
+    y_pred_baseline_only = np.zeros_like(y_test)
+    rmse_baseline_only = np.sqrt(mean_squared_error(y_test, y_pred_baseline_only))
+    mae_baseline_only = mean_absolute_error(y_test, y_pred_baseline_only)
+    std_baseline_residual = np.std(y_test)
     
     metrics = {
         'rmse': rmse,
         'mae': mae,
         'r2': r2,
         'bias': bias,
-        'mape': mape,
         'mean_baseline_residual': mean_baseline_residual,  # Mean residual on test set
         'mean_baseline_residual_full': mean_baseline_residual_full,  # Mean residual on full dataset
+        'std_baseline_residual': std_baseline_residual,  # Std of residuals (baseline-only error)
+        'baseline_only_rmse': rmse_baseline_only,
+        'baseline_only_mae': mae_baseline_only,
         'clip_low': clip_low,
         'clip_high': clip_high,
         'n_train': len(X_train),
         'n_test': len(X_test)
     }
     
-    print(f"\nTest Set Metrics:")
+    print(f"\nTest Set Metrics (Residual Prediction):")
     print(f"  RMSE: {rmse:.4f} cm/year")
     print(f"  MAE:  {mae:.4f} cm/year")
     print(f"  R²:   {r2:.4f}")
     print(f"  Bias: {bias:.4f} cm/year")
-    print(f"  MAPE: {mape:.2f}%")
+    print(f"\nBaseline-Only (predicting 0 residual always):")
+    print(f"  RMSE: {rmse_baseline_only:.4f} cm/year")
+    print(f"  MAE:  {mae_baseline_only:.4f} cm/year")
+    print(f"  Std:  {std_baseline_residual:.4f} cm/year")
     print(f"\nBaseline Curve Residual Statistics:")
     print(f"  Mean residual (test set): {mean_baseline_residual:.4f} cm/year")
     print(f"  Mean residual (full dataset): {mean_baseline_residual_full:.4f} cm/year")
@@ -191,6 +196,164 @@ def evaluate_residual_model(df, curves, outdir: Path, retrain: bool = False):
     print(f"✓ Saved: {metrics_path}")
     
     return metrics
+
+
+def evaluate_one_step_models(df, curves, outdir: Path):
+    """
+    Evaluate one-step models: baseline-only, hybrid, and optionally NN.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Full dataset
+    curves : dict
+        Baseline curves dictionary
+    outdir : Path
+        Output directory
+    
+    Returns
+    -------
+    pd.DataFrame
+        Comparison metrics
+    """
+    print("\n" + "="*70)
+    print("ONE-STEP MODEL EVALUATION")
+    print("="*70)
+    
+    # Build training table
+    train_table = build_training_table(df, curves)
+    
+    # Select features
+    X, y, feature_names = select_features(train_table)
+    
+    # Split data (same split as residual model)
+    valid_mask = X['PrevDBH_cm'].notna() & y.notna()
+    X_clean = X[valid_mask].fillna(0.0).reset_index(drop=True)
+    y_clean = y[valid_mask].reset_index(drop=True)
+    train_table_clean = train_table[valid_mask].reset_index(drop=True).copy()
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_clean, y_clean, test_size=0.2, random_state=42
+    )
+    # Get test indices (they are now 0-based after reset_index)
+    test_indices = X_test.index
+    train_table_test = train_table_clean.iloc[test_indices].copy()
+    
+    # Get observed delta and next DBH
+    delta_obs = y_test.values
+    prev_dbh = train_table_test['PrevDBH_cm'].values
+    next_dbh_obs = prev_dbh + delta_obs
+    
+    # Extract species and plot
+    species_list = train_table_test['Species'].values
+    plot_list = train_table_test['Plot'].values
+    
+    # Predictions
+    delta_pred_baseline_only = []
+    delta_pred_hybrid = []
+    delta_pred_nn = []
+    next_dbh_pred_baseline_only = []
+    next_dbh_pred_hybrid = []
+    next_dbh_pred_nn = []
+    
+    print(f"\nEvaluating {len(X_test)} test samples...")
+    
+    for i in range(len(X_test)):
+        prev_dbh_val = prev_dbh[i]
+        species = species_list[i]
+        plot = plot_list[i]
+        
+        # Baseline-only: delta_pred = delta_base
+        delta_base = predict_baseline_delta(prev_dbh_val, species, plot, curves)
+        delta_pred_baseline_only.append(delta_base)
+        next_dbh_pred_baseline_only.append(prev_dbh_val + max(0.0, delta_base))
+        
+        # Hybrid: delta_pred = delta_base + resid_hat
+        delta_base_hybrid, delta_resid, delta_total = predict_delta_hybrid(
+            prev_dbh_val, species, plot, gap_years=1.0, curves=curves
+        )
+        delta_pred_hybrid.append(delta_total)
+        next_dbh_pred_hybrid.append(prev_dbh_val + max(0.0, delta_total))
+        
+        # NN (optional)
+        try:
+            next_dbh_nn = predict_dbh_next_year_nn(
+                prev_dbh_cm=prev_dbh_val,
+                species=species,
+                plot=plot,
+                gap_years=1.0
+            )
+            delta_nn = max(0.0, next_dbh_nn - prev_dbh_val)
+            delta_pred_nn.append(delta_nn)
+            next_dbh_pred_nn.append(next_dbh_nn)
+        except Exception:
+            delta_pred_nn.append(np.nan)
+            next_dbh_pred_nn.append(np.nan)
+    
+    # Convert to arrays
+    delta_pred_baseline_only = np.array(delta_pred_baseline_only)
+    delta_pred_hybrid = np.array(delta_pred_hybrid)
+    delta_pred_nn = np.array(delta_pred_nn)
+    next_dbh_pred_baseline_only = np.array(next_dbh_pred_baseline_only)
+    next_dbh_pred_hybrid = np.array(next_dbh_pred_hybrid)
+    next_dbh_pred_nn = np.array(next_dbh_pred_nn)
+    
+    # Compute metrics for delta
+    rmse_delta_baseline = np.sqrt(mean_squared_error(delta_obs, delta_pred_baseline_only))
+    mae_delta_baseline = mean_absolute_error(delta_obs, delta_pred_baseline_only)
+    
+    rmse_delta_hybrid = np.sqrt(mean_squared_error(delta_obs, delta_pred_hybrid))
+    mae_delta_hybrid = mean_absolute_error(delta_obs, delta_pred_hybrid)
+    
+    valid_nn = ~np.isnan(delta_pred_nn)
+    if valid_nn.sum() > 0:
+        rmse_delta_nn = np.sqrt(mean_squared_error(delta_obs[valid_nn], delta_pred_nn[valid_nn]))
+        mae_delta_nn = mean_absolute_error(delta_obs[valid_nn], delta_pred_nn[valid_nn])
+    else:
+        rmse_delta_nn = mae_delta_nn = np.nan
+    
+    # Compute metrics for next-year DBH
+    rmse_dbh_baseline = np.sqrt(mean_squared_error(next_dbh_obs, next_dbh_pred_baseline_only))
+    mae_dbh_baseline = mean_absolute_error(next_dbh_obs, next_dbh_pred_baseline_only)
+    
+    rmse_dbh_hybrid = np.sqrt(mean_squared_error(next_dbh_obs, next_dbh_pred_hybrid))
+    mae_dbh_hybrid = mean_absolute_error(next_dbh_obs, next_dbh_pred_hybrid)
+    
+    if valid_nn.sum() > 0:
+        rmse_dbh_nn = np.sqrt(mean_squared_error(next_dbh_obs[valid_nn], next_dbh_pred_nn[valid_nn]))
+        mae_dbh_nn = mean_absolute_error(next_dbh_obs[valid_nn], next_dbh_pred_nn[valid_nn])
+    else:
+        rmse_dbh_nn = mae_dbh_nn = np.nan
+    
+    # Create comparison DataFrame
+    comparison_data = {
+        'model': ['baseline_only', 'hybrid', 'nn'],
+        'rmse_delta': [rmse_delta_baseline, rmse_delta_hybrid, rmse_delta_nn],
+        'mae_delta': [mae_delta_baseline, mae_delta_hybrid, mae_delta_nn],
+        'rmse_dbh': [rmse_dbh_baseline, rmse_dbh_hybrid, rmse_dbh_nn],
+        'mae_dbh': [mae_dbh_baseline, mae_dbh_hybrid, mae_dbh_nn],
+        'n_samples': [len(X_test), len(X_test), valid_nn.sum() if valid_nn.sum() > 0 else 0]
+    }
+    comparison_df = pd.DataFrame(comparison_data)
+    
+    print(f"\nDelta Prediction Metrics:")
+    print(f"  Baseline-only: RMSE={rmse_delta_baseline:.4f}, MAE={mae_delta_baseline:.4f}")
+    print(f"  Hybrid:        RMSE={rmse_delta_hybrid:.4f}, MAE={mae_delta_hybrid:.4f}")
+    if valid_nn.sum() > 0:
+        print(f"  NN:            RMSE={rmse_delta_nn:.4f}, MAE={mae_delta_nn:.4f}")
+    
+    print(f"\nNext-Year DBH Prediction Metrics:")
+    print(f"  Baseline-only: RMSE={rmse_dbh_baseline:.4f}, MAE={mae_dbh_baseline:.4f}")
+    print(f"  Hybrid:        RMSE={rmse_dbh_hybrid:.4f}, MAE={mae_dbh_hybrid:.4f}")
+    if valid_nn.sum() > 0:
+        print(f"  NN:            RMSE={rmse_dbh_nn:.4f}, MAE={mae_dbh_nn:.4f}")
+    
+    # Save CSV
+    comparison_path = outdir / "one_step_model_comparison.csv"
+    comparison_df.to_csv(comparison_path, index=False)
+    print(f"\n✓ Saved: {comparison_path}")
+    
+    return comparison_df
 
 
 def residual_clip_rate(df, curves, model, feature_names, metadata, outdir: Path):
@@ -293,10 +456,13 @@ def run_residual_checks(outdir: Path, retrain: bool = False):
     # Evaluate model
     metrics = evaluate_residual_model(df, curves, outdir, retrain=retrain)
     
+    # Evaluate one-step models
+    one_step_comparison = evaluate_one_step_models(df, curves, outdir)
+    
     # Load model for clip analysis
     model, feature_names, metadata = load_residual_model()
     
     # Analyze clip rates
     clip_df = residual_clip_rate(df, curves, model, feature_names, metadata, outdir)
     
-    return metrics, clip_df
+    return metrics, clip_df, one_step_comparison

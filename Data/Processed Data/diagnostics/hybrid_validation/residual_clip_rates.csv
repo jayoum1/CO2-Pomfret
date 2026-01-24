@@ -1,14 +1,14 @@
 Species,n_samples,n_clipped,pct_clipped
 burning bush,13,4,30.76923076923077
 yellow birch,8,2,25.0
-basswood,6,1,16.666666666666664
-red oak,187,17,9.090909090909092
-mockernut hickory,36,1,2.7777777777777777
-black birch,382,8,2.094240837696335
+red oak,187,18,9.62566844919786
+mockernut hickory,36,2,5.555555555555555
 musclewood,280,5,1.7857142857142856
 white pine,80,1,1.25
-sugar maple,1274,3,0.23547880690737832
+black birch,382,4,1.0471204188481675
+sugar maple,1274,2,0.15698587127158556
 white ash,14,0,0.0
+basswood,6,0,0.0
 mockernut,3,0,0.0
 hophornbeam,3,0,0.0
 buckthorn,4,0,0.0

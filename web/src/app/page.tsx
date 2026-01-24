@@ -26,7 +26,7 @@ export default function Dashboard() {
           
           const timeSeries = []
           for (const year of years) {
-            const yearSummary = await getSummary(year, 'hybrid')
+            const yearSummary = await getSummary(year, 'baseline')
             timeSeries.push({
               years_ahead: year,
               total_carbon: yearSummary.total_carbon_kgC,
@@ -58,6 +58,23 @@ export default function Dashboard() {
     carbon: data.carbon_at_time,
     count: data.count,
   })) : []
+
+  // Calculate Y-axis domain for Total Carbon vs Years chart
+  // Set minimum closer to actual smallest value
+  const calculateCarbonTimeSeriesDomain = () => {
+    if (!timeSeriesData || timeSeriesData.length === 0) return undefined
+    const values = timeSeriesData.map(d => d.total_carbon).filter(v => v != null && !isNaN(v))
+    if (values.length === 0) return undefined
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+    const range = max - min
+    // Use very small padding (1%) to get very close to actual minimum
+    const padding = range * 0.01
+    // Start at 99% of minimum to get very close to actual smallest value
+    return [Math.max(0, min * 0.99), max + padding]
+  }
+
+  const carbonTimeSeriesDomain = calculateCarbonTimeSeriesDomain()
 
   if (error) {
     return (
@@ -143,12 +160,23 @@ export default function Dashboard() {
           <div className="card">
             <h3 className="font-semibold mb-4">Total Carbon vs Years</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={timeSeriesData}>
+              <LineChart data={timeSeriesData} margin={{ top: 10, right: 20, bottom: 40, left: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="years_ahead" label={{ value: 'Years Ahead', position: 'insideBottom', offset: -5 }} stroke="#64748b" />
-                <YAxis label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft' }} stroke="#64748b" />
+                <XAxis 
+                  dataKey="years_ahead" 
+                  label={{ value: 'Years Ahead', position: 'outside', offset: 10 }} 
+                  stroke="#64748b"
+                  tick={{ fill: '#64748b' }}
+                />
+                <YAxis 
+                  label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft', offset: -10 }} 
+                  stroke="#64748b"
+                  tick={{ fill: '#64748b' }}
+                  domain={carbonTimeSeriesDomain}
+                  tickFormatter={(value) => Math.round(value).toLocaleString()}
+                />
                 <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
-                <Legend />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
                 <Line type="monotone" dataKey="total_carbon" stroke="var(--teal-500)" strokeWidth={2} name="Total Carbon (kg C)" dot={{ fill: 'var(--teal-500)', r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -157,12 +185,20 @@ export default function Dashboard() {
           <div className="card">
             <h3 className="font-semibold mb-4">Carbon by Plot</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={plotData}>
+              <BarChart data={plotData} margin={{ top: 10, right: 20, bottom: 20, left: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="plot" stroke="#64748b" />
-                <YAxis label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft' }} stroke="#64748b" />
+                <XAxis 
+                  dataKey="plot" 
+                  stroke="#64748b"
+                  tick={{ fill: '#64748b' }}
+                />
+                <YAxis 
+                  label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft', offset: -10 }} 
+                  stroke="#64748b"
+                  tick={{ fill: '#64748b' }}
+                />
                 <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
-                <Legend />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
                 <Bar dataKey="carbon" fill="var(--green-500)" name="Carbon (kg C)" />
               </BarChart>
             </ResponsiveContainer>

@@ -30,6 +30,7 @@ from config import PROCESSED_DATA_DIR
 from models.forest_snapshots_nn import simulate_forest_years, load_base_forest_df
 from models.forest_metrics import carbon_from_dbh
 from models.dbh_residual_model import predict_delta_hybrid
+from models.baseline_simulation import predict_delta_sim
 
 app = FastAPI(
     title="Carbon DBH Forest Simulation API",
@@ -54,17 +55,22 @@ _snapshot_cache: Dict[tuple, pd.DataFrame] = {}
 _summary_cache: Dict[tuple, Dict] = {}
 
 
-def get_snapshot_dir(mode: str = "hybrid") -> Path:
+def get_snapshot_dir(mode: str = "baseline") -> Path:
     """Get snapshot directory for given mode."""
-    if mode == "hybrid":
+    if mode == "baseline":
+        return PROCESSED_DATA_DIR / "forest_snapshots_baseline"
+    elif mode == "baseline_stochastic":
+        return PROCESSED_DATA_DIR / "forest_snapshots_baseline_stochastic"
+    elif mode == "hybrid":
         return PROCESSED_DATA_DIR / "forest_snapshots_hybrid"
     elif mode == "nn_epsilon":
         return PROCESSED_DATA_DIR / "forest_snapshots_nn_epsilon"
     else:
-        return PROCESSED_DATA_DIR / "forest_snapshots_nn_epsilon"
+        # Default to baseline
+        return PROCESSED_DATA_DIR / "forest_snapshots_baseline"
 
 
-def load_snapshot(years_ahead: int, mode: str = "hybrid") -> pd.DataFrame:
+def load_snapshot(years_ahead: int, mode: str = "baseline") -> pd.DataFrame:
     """Load snapshot with caching."""
     cache_key = (mode, years_ahead)
     
@@ -72,10 +78,15 @@ def load_snapshot(years_ahead: int, mode: str = "hybrid") -> pd.DataFrame:
         return _snapshot_cache[cache_key]
     
     snapshots_dir = get_snapshot_dir(mode)
-    snapshot_file = snapshots_dir / f"forest_nn_{years_ahead}_years.csv"
+    # Baseline snapshots use forest_{years}_years.csv format
+    if mode in ["baseline", "baseline_stochastic"]:
+        snapshot_file = snapshots_dir / f"forest_{years_ahead}_years.csv"
+    else:
+        # Legacy format for hybrid/nn modes
+        snapshot_file = snapshots_dir / f"forest_nn_{years_ahead}_years.csv"
     
     if not snapshot_file.exists():
-        raise FileNotFoundError(f"Snapshot for {years_ahead} years (mode={mode}) not found")
+        raise FileNotFoundError(f"Snapshot for {years_ahead} years (mode={mode}) not found: {snapshot_file}")
     
     df = pd.read_csv(snapshot_file)
     _snapshot_cache[cache_key] = df
@@ -380,7 +391,7 @@ class PlantingGroup(BaseModel):
 
 class ScenarioSimulateRequest(BaseModel):
     """Request model for scenario simulation"""
-    mode: str = Field(default="hybrid", description="Simulation mode: 'hybrid' or 'nn_epsilon'")
+    mode: str = Field(default="baseline", description="Simulation mode: 'baseline' (default), 'baseline_stochastic', 'hybrid' (legacy), or 'nn_epsilon' (legacy)")
     years_list: List[int] = Field(default=[0, 5, 10, 20], description="Years to simulate")
     plantings: List[PlantingGroup] = Field(..., min_items=1, description="List of planting groups")
 
@@ -388,7 +399,7 @@ class ScenarioSimulateRequest(BaseModel):
 def simulate_cohort_forward(
     plantings: List[PlantingGroup],
     years_ahead: int,
-    mode: str = "hybrid"
+    mode: str = "baseline"
 ) -> Dict:
     """
     Simulate a cohort of planted trees forward efficiently.
@@ -403,7 +414,7 @@ def simulate_cohort_forward(
     years_ahead : int
         Number of years to simulate forward
     mode : str
-        Simulation mode: "hybrid" or "nn_epsilon"
+        Simulation mode: "baseline" (default), "baseline_stochastic", "hybrid" (legacy), or "nn_epsilon" (legacy)
     
     Returns
     -------
@@ -457,8 +468,27 @@ def simulate_cohort_forward(
         
         # Simulate forward years_ahead steps
         current_dbh = start_dbh
-        for _ in range(years_ahead):
-            if mode == "hybrid":
+        
+        # Setup RNG for stochastic mode
+        import numpy as np
+        rng = None
+        if mode == "baseline_stochastic":
+            rng = np.random.default_rng(123)  # Fixed seed for reproducibility
+        
+        for year_idx in range(years_ahead):
+            if mode in ["baseline", "baseline_stochastic"]:
+                # Use baseline simulation
+                result = predict_delta_sim(
+                    prev_dbh_cm=current_dbh,
+                    species=species,
+                    plot=plot,
+                    gap_years=1.0,
+                    mode=mode,
+                    rng=rng
+                )
+                delta_used = result['delta_used']
+            elif mode == "hybrid":
+                # Legacy hybrid mode
                 delta_base, delta_resid, delta_total = predict_delta_hybrid(
                     prev_dbh_cm=current_dbh,
                     species=species,
@@ -467,7 +497,7 @@ def simulate_cohort_forward(
                 )
                 delta_used = max(0.0, delta_total)
             else:
-                # Fallback to NN state model
+                # Fallback to NN state model (legacy)
                 from models.dbh_growth_nn import predict_dbh_next_year_nn
                 next_dbh = predict_dbh_next_year_nn(
                     prev_dbh_cm=current_dbh,
@@ -620,7 +650,7 @@ async def get_snapshot(years_ahead: int = 0) -> Dict:
 
 
 @app.get("/summary")
-async def get_summary(years_ahead: int = 0, mode: str = "hybrid") -> Dict:
+async def get_summary(years_ahead: int = 0, mode: str = "baseline") -> Dict:
     """
     Get summary metrics for a specific snapshot year.
     
@@ -629,7 +659,7 @@ async def get_summary(years_ahead: int = 0, mode: str = "hybrid") -> Dict:
     years_ahead : int
         Years ahead to get summary for (0, 5, 10, or 20)
     mode : str
-        Simulation mode: "hybrid" (default) or "nn_epsilon"
+        Simulation mode: "baseline" (default), "baseline_stochastic", "hybrid" (legacy), or "nn_epsilon" (legacy)
     """
     cache_key = (mode, years_ahead)
     
@@ -684,6 +714,37 @@ async def get_summary(years_ahead: int = 0, mode: str = "hybrid") -> Dict:
 # ============================================================================
 # Health Check
 # ============================================================================
+
+@app.get("/uncertainty/summary")
+async def get_uncertainty_summary() -> Dict:
+    """
+    Get model uncertainty summary with CO2e and miles driven analogies.
+    
+    Returns
+    -------
+    Dict
+        Uncertainty metrics including per-tree and forest-wide statistics
+    """
+    import json
+    
+    uncertainty_path = PROCESSED_DATA_DIR / "diagnostics" / "uncertainty_summary.json"
+    
+    if not uncertainty_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Uncertainty summary not found. Please generate it first."
+        )
+    
+    try:
+        with open(uncertainty_path, 'r') as f:
+            data = json.load(f)
+        return {
+            "success": True,
+            **data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/")
 async def root():

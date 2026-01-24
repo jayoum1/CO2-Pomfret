@@ -439,6 +439,10 @@ body::after {
     color: var(--accent);
 }
 
+#accuracy .section-title {
+    color: var(--green-600);
+}
+
 #simulation .section-title {
     color: var(--secondary);
 }
@@ -701,6 +705,214 @@ body::after {
     stroke: #cbd5e1;
     stroke-width: 1.5;
     opacity: 0.6;
+}
+
+/* Accuracy Section Styles */
+.accuracy-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.accuracy-headline {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.accuracy-headline strong {
+    background: linear-gradient(135deg, var(--teal-600), var(--green-600));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.accuracy-description {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.accuracy-metric-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 2.5rem;
+    background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+    border-radius: 24px;
+    border: 2px solid var(--primary);
+    box-shadow: var(--shadow-teal);
+    margin: 2rem 0;
+}
+
+.accuracy-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.accuracy-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.accuracy-number {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--teal-600);
+    line-height: 1;
+}
+
+.accuracy-unit {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    align-self: flex-end;
+    padding-bottom: 0.5rem;
+}
+
+.accuracy-label {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.accuracy-equivalent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background-color: var(--bg-card);
+    border-radius: 20px;
+    border: 2px dashed var(--primary);
+    width: 100%;
+    max-width: 400px;
+}
+
+.car-icon-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+
+.car-icon {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+    animation: carDrift 3s ease-in-out infinite;
+}
+
+@keyframes carDrift {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(10px);
+    }
+}
+
+.equivalent-text {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.equivalent-label {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.equivalent-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--green-600);
+}
+
+.equivalent-unit {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.accuracy-explanation {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    text-align: center;
+    padding: 1.5rem;
+    background-color: var(--bg-alt);
+    border-radius: 16px;
+    border-left: 4px solid var(--primary);
+}
+
+.accuracy-explanation strong {
+    color: var(--teal-600);
+    font-weight: 600;
+}
+
+.accuracy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--teal-500), var(--green-500));
+    color: white;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: var(--shadow-teal);
+    margin: 1rem auto;
+    width: fit-content;
+}
+
+.accuracy-badge svg {
+    width: 20px;
+    height: 20px;
+    stroke: white;
+    fill: none;
+}
+
+@media (max-width: 768px) {
+    .accuracy-number {
+        font-size: 2.5rem;
+    }
+    
+    .accuracy-unit {
+        font-size: 1.2rem;
+    }
+    
+    .equivalent-value {
+        font-size: 1.5rem;
+    }
+    
+    .accuracy-headline {
+        font-size: 1.5rem;
+    }
+    
+    .accuracy-description {
+        font-size: 1rem;
+    }
+    
+    .accuracy-metric-box {
+        padding: 1.5rem;
+    }
 }
 
 /* Simulation Section */
