@@ -2,7 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet CSS */
+@import 'leaflet/dist/leaflet.css';
+@import 'leaflet-draw/dist/leaflet.draw.css';
+
+
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
   :root {
     /* Diverse Color Palette - Cloud Aesthetic with Teal & Green */
     --bg: #e8f4f8;
@@ -63,6 +72,31 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Smooth page transitions */
+  main {
+    animation: fadeIn 0.7s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Smooth link transitions */
+  a {
+    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+  }
+  
+  a:active {
+    transform: scale(0.98);
   }
   
   /* Cloud Background Effect */

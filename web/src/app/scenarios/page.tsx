@@ -45,7 +45,9 @@ export default function Scenarios() {
   const [removalCount, setRemovalCount] = useState<number | ''>(10)
   
   const [scenarioResult, setScenarioResult] = useState<any>(null)
+  const [baselineData, setBaselineData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [baselineLoading, setBaselineLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savedScenarios, setSavedScenarios] = useState<Array<{ name: string; data: any }>>([])
   const [scenarioName, setScenarioName] = useState<string>('')
@@ -53,6 +55,38 @@ export default function Scenarios() {
   const [biodiversityImpact, setBiodiversityImpact] = useState(true)
   const [simulationMode, setSimulationMode] = useState<'baseline' | 'baseline_stochastic'>('baseline')
   const [selectedYear, setSelectedYear] = useState<number>(20) // For toggling metrics by year
+
+  // Load baseline data on mount
+  useEffect(() => {
+    async function loadBaselineData() {
+      try {
+        setBaselineLoading(true)
+        const yearsList = [0, 5, 10, 20]
+        const baselineSummaries: Record<string, any> = {}
+        
+        for (const year of yearsList) {
+          const summary = await getSummary(year, 'baseline')
+          baselineSummaries[year.toString()] = {
+            num_trees: summary.num_trees,
+            mean_dbh_cm: summary.mean_dbh_cm,
+            total_carbon_kgC: summary.total_carbon_kgC,
+          }
+        }
+        
+        setBaselineData({
+          baseline_by_year: baselineSummaries,
+          scenario_by_year: baselineSummaries, // Initially same as baseline
+        })
+      } catch (err: any) {
+        console.error('Error loading baseline data:', err)
+      } finally {
+        setBaselineLoading(false)
+      }
+    }
+    
+    loadBaselineData()
+  }, [])
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -326,20 +360,21 @@ export default function Scenarios() {
 
   // Prepare chart data - ensure removals are properly reflected
   const chartData = useMemo(() => {
-    if (!scenarioResult) return []
+    const dataToUse = scenarioResult || baselineData
+    if (!dataToUse) return []
     
     return [0, 5, 10, 20].map(year => {
       const yearStr = year.toString()
-      const baseline = scenarioResult.baseline_by_year[yearStr]?.total_carbon_kgC || 0
-      const scenario = scenarioResult.scenario_by_year[yearStr]?.total_carbon_kgC || 0
+      const baseline = dataToUse.baseline_by_year[yearStr]?.total_carbon_kgC || 0
+      const scenario = dataToUse.scenario_by_year[yearStr]?.total_carbon_kgC || 0
       
       return {
         years_ahead: year,
         baseline: baseline * 3.667, // Convert to CO2e
-        scenario: Math.max(0, scenario * 3.667), // Convert to CO2e, ensure non-negative
+        scenario: scenarioResult ? Math.max(0, scenario * 3.667) : baseline * 3.667, // Convert to CO2e, ensure non-negative
       }
     })
-  }, [scenarioResult])
+  }, [scenarioResult, baselineData])
 
   return (
     <div className="space-y-6">
@@ -351,16 +386,19 @@ export default function Scenarios() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel: Modification Builder */}
         <div className="lg:col-span-1">
-          <div className="card">
-            <h2 className="font-semibold mb-6 text-lg">Modification Builder</h2>
+          <div className="card flex flex-col left-panel-container" style={{ height: '825px' }}>
+            <h2 className="font-semibold mb-6 text-lg flex-shrink-0">Modification Builder</h2>
             
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex-shrink-0">
                 {error}
               </div>
             )}
 
-            <div className="space-y-6">
+            <div 
+              className="space-y-6 flex-1 overflow-y-auto pr-2"
+              style={{ minHeight: 0 }}
+            >
               {/* Planting Section */}
               <div className="pb-6 border-b border-[var(--border)]">
                 <h3 className="font-semibold mb-4 text-[var(--teal-600)] flex items-center gap-2">
@@ -736,7 +774,11 @@ export default function Scenarios() {
           <div className="card">
             <h2 className="font-semibold mb-6 text-lg">Projected Carbon Storage Over Time</h2>
             
-            {scenarioResult ? (
+            {baselineLoading ? (
+              <div className="text-center py-16 text-[var(--text-muted)]">
+                Loading baseline data...
+              </div>
+            ) : (
               <div className="space-y-6">
                 {/* Year Selector for Metrics */}
                 <div className="flex items-center justify-between p-3 bg-[var(--bg-alt)] rounded-2xl border border-[var(--border)]">
@@ -758,119 +800,146 @@ export default function Scenarios() {
                   </div>
                 </div>
 
-                {/* Summary Breakdown */}
-                {(totalTreesPlanted > 0 || removals.length > 0) && (
-                  <div className="p-4 bg-[var(--bg-alt)] rounded-2xl border border-[var(--border)]">
-                    <h3 className="font-semibold mb-3 text-sm">Modification Summary ({selectedYear} years)</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-[var(--text-muted)]">Plantings: </span>
-                        <span className="font-medium text-[var(--teal-600)]">
-                          +{scenarioResult.cohort_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[var(--text-muted)]">Removals: </span>
-                        <span className="font-medium text-red-600">
-                          -{(scenarioResult.removal_impact?.[selectedYear.toString()]?.carbon_kgC || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
-                        </span>
-                      </div>
+                {/* Summary Breakdown - Always visible */}
+                <div className="p-4 bg-[var(--bg-alt)] rounded-2xl border border-[var(--border)]">
+                  <h3 className="font-semibold mb-3 text-sm">Modification Summary ({selectedYear} years)</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-[var(--text-muted)]">Plantings: </span>
+                      <span className="font-medium text-[var(--teal-600)]">
+                        {scenarioResult 
+                          ? `+${scenarioResult.cohort_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                          : '+0'
+                        } kg C
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[var(--text-muted)]">Removals: </span>
+                      <span className="font-medium text-red-600">
+                        {scenarioResult
+                          ? `-${(scenarioResult.removal_impact?.[selectedYear.toString()]?.carbon_kgC || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                          : '-0'
+                        } kg C
+                      </span>
                     </div>
                   </div>
-                )}
+                </div>
                 
                 {/* Key Metrics */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="p-4 bg-[var(--primary-light)] rounded-2xl border border-[var(--primary)]/20">
                     <p className="text-sm text-[var(--text-muted)] mb-1">Total Carbon ({selectedYear} years)</p>
                     <p className="text-xl font-semibold">
-                      {scenarioResult.scenario_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                      {scenarioResult 
+                        ? scenarioResult.scenario_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                        : baselineData?.baseline_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                      } kg C
                     </p>
                   </div>
                   <div className="p-4 bg-[var(--primary-light)] rounded-2xl border border-[var(--primary)]/20">
                     <p className="text-sm text-[var(--text-muted)] mb-1">CO₂e ({selectedYear} years)</p>
                     <p className="text-xl font-semibold">
-                      {(scenarioResult.scenario_by_year[selectedYear.toString()]?.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })} kg CO₂e
+                      {scenarioResult
+                        ? (scenarioResult.scenario_by_year[selectedYear.toString()]?.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })
+                        : (baselineData?.baseline_by_year[selectedYear.toString()]?.total_carbon_kgC * CO2E_FACTOR).toLocaleString(undefined, { maximumFractionDigits: 0 })
+                      } kg CO₂e
                     </p>
                   </div>
                   <div className={`p-4 rounded-2xl border ${
-                    (scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC || 0) >= 0
+                    scenarioResult && (scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC || 0) >= 0
                       ? 'bg-[var(--secondary-light)] border-[var(--secondary)]/20'
-                      : 'bg-red-50 border-red-200'
+                      : scenarioResult && (scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC || 0) < 0
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-[var(--secondary-light)] border-[var(--secondary)]/20'
                   }`}>
                     <p className="text-sm text-[var(--text-muted)] mb-1">Net Change (vs Baseline)</p>
-                    <p className={`text-xl font-semibold ${
-                      (scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC || 0) >= 0
-                        ? 'text-[var(--secondary)]'
-                        : 'text-red-600'
-                    }`}>
-                      {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC >= 0 ? '+' : ''}
-                      {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
-                    </p>
-                    <p className="text-xs text-[var(--text-muted)] mt-1">
-                      {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC >= 0 ? 'Increase' : 'Decrease'}
-                    </p>
+                    {scenarioResult ? (
+                      <>
+                        <p className={`text-xl font-semibold ${
+                          (scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC || 0) >= 0
+                            ? 'text-[var(--secondary)]'
+                            : 'text-red-600'
+                        }`}>
+                          {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC >= 0 ? '+' : ''}
+                          {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg C
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">
+                          {scenarioResult.delta_by_year[selectedYear.toString()]?.total_carbon_kgC >= 0 ? 'Increase' : 'Decrease'}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xl font-semibold text-[var(--secondary)]">
+                          +0 kg C
+                        </p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">
+                          No change
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* Chart */}
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 50, left: 70 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis 
-                      dataKey="years_ahead" 
-                      stroke="#64748b"
-                      tick={{ fill: '#64748b' }}
-                      label={{ value: 'Years Ahead', position: 'outside', offset: 10 }}
-                    />
-                    <YAxis 
-                      stroke="#64748b"
-                      tick={{ fill: '#64748b' }}
-                      label={{ value: 'Tons CO₂e', angle: -90, position: 'insideLeft', offset: -15 }}
-                      tickFormatter={(value) => (value / 1000).toFixed(0)}
-                      domain={(() => {
-                        if (!chartData || chartData.length === 0) return [0, 100]
-                        const allValues = [...chartData.map(d => d.baseline), ...chartData.map(d => d.scenario)]
-                          .filter(v => v != null && !isNaN(v))
-                        if (allValues.length === 0) return [0, 100]
-                        const min = Math.min(...allValues)
-                        const max = Math.max(...allValues)
-                        const range = max - min
-                        const padding = range * 0.05
-                        return [Math.max(0, min - padding), max + padding]
-                      })()}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
-                        border: '1px solid #cbd5e1', 
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => `${(value / 1000).toFixed(1)} tCO₂e`}
-                    />
-                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="baseline" 
-                      stroke="var(--text-muted)" 
-                      strokeWidth={2} 
-                      name="Baseline" 
-                      dot={{ fill: 'var(--text-muted)', r: 4 }} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="scenario" 
-                      stroke="var(--teal-500)" 
-                      strokeWidth={3} 
-                      name="Modified Forest" 
-                      dot={{ fill: 'var(--teal-500)', r: 6 }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="text-center py-16 text-[var(--text-muted)]">
-                Create a modification scenario to see projected carbon storage
+                {chartData.length > 0 && (
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 50, left: 70 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis 
+                        dataKey="years_ahead" 
+                        stroke="#64748b"
+                        tick={{ fill: '#64748b' }}
+                        label={{ value: 'Years Ahead', position: 'outside', offset: 10 }}
+                      />
+                      <YAxis 
+                        stroke="#64748b"
+                        tick={{ fill: '#64748b' }}
+                        label={{ value: 'Tons CO₂e', angle: -90, position: 'insideLeft', offset: -15 }}
+                        tickFormatter={(value) => (value / 1000).toFixed(0)}
+                        domain={(() => {
+                          if (!chartData || chartData.length === 0) return [0, 100]
+                          const allValues = scenarioResult
+                            ? [...chartData.map(d => d.baseline), ...chartData.map(d => d.scenario)]
+                            : chartData.map(d => d.baseline)
+                          const filtered = allValues.filter(v => v != null && !isNaN(v))
+                          if (filtered.length === 0) return [0, 100]
+                          const min = Math.min(...filtered)
+                          const max = Math.max(...filtered)
+                          const range = max - min
+                          const padding = range * 0.05
+                          return [Math.max(0, min - padding), max + padding]
+                        })()}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #cbd5e1', 
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value: number) => `${(value / 1000).toFixed(1)} tCO₂e`}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="baseline" 
+                        stroke="var(--text-muted)" 
+                        strokeWidth={2} 
+                        name="Baseline" 
+                        dot={{ fill: 'var(--text-muted)', r: 4 }} 
+                      />
+                      {scenarioResult && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="scenario" 
+                          stroke="var(--teal-500)" 
+                          strokeWidth={3} 
+                          name="Modified Forest" 
+                          dot={{ fill: 'var(--teal-500)', r: 6 }} 
+                        />
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             )}
           </div>

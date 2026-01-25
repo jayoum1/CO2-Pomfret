@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Menu, X, Cloud, User, Settings } from 'lucide-react'
+import PageTransition from './PageTransition'
 
 const navItems = [
   { href: '/', label: 'Dashboard' },
   { href: '/scenarios', label: 'Forest Modification' },
+  { href: '/area', label: 'Generalize Area' },
   { href: '/visualize', label: 'Visualize' },
   { href: '/visualizations', label: 'R Visualizations' },
   { href: '/about', label: 'About' },
@@ -36,7 +38,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Cloud className="w-6 h-6 text-[var(--primary)]" />
               </div>
               <div>
-                <Link href="/" className="text-lg font-semibold text-[var(--text)]">
+                <Link href="/" className="text-lg font-semibold text-[var(--text)] no-underline focus:outline-none">
                   CO₂ Pomfret
                 </Link>
               </div>
@@ -48,16 +50,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`text-sm font-medium transition-colors relative ${
+                  className={`text-sm font-medium transition-all duration-200 ease-in-out no-underline focus:outline-none ${
                     pathname === item.href
                       ? 'text-[var(--primary)]'
                       : 'text-[var(--text-muted)] hover:text-[var(--text)]'
                   }`}
                 >
                   {item.label}
-                  {pathname === item.href && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-full" />
-                  )}
                 </Link>
               ))}
             </nav>
@@ -92,7 +91,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-3 py-2 rounded-xl text-base ${
+                  className={`block px-3 py-2 rounded-xl text-base no-underline focus:outline-none ${
                     pathname === item.href
                       ? 'bg-[var(--primary-light)] text-[var(--primary)]'
                       : 'text-[var(--text)] hover:bg-[var(--bg-alt)]'
@@ -108,7 +107,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-        {children}
+        <PageTransition>
+          {children}
+        </PageTransition>
       </main>
 
       {/* Footer */}

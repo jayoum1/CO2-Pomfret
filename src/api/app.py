@@ -31,6 +31,15 @@ from models.forest_snapshots_nn import simulate_forest_years, load_base_forest_d
 from models.forest_metrics import carbon_from_dbh
 from models.dbh_residual_model import predict_delta_hybrid
 from models.baseline_simulation import predict_delta_sim
+from models.area_scaling import (
+    load_plot_areas,
+    set_plot_area,
+    compute_all_densities,
+    scale_to_area,
+    get_snapshot,
+    compute_plot_summaries,
+    compute_plot_densities
+)
 
 app = FastAPI(
     title="Carbon DBH Forest Simulation API",
@@ -714,6 +723,254 @@ async def get_summary(years_ahead: int = 0, mode: str = "baseline") -> Dict:
 # ============================================================================
 # Health Check
 # ============================================================================
+
+# ============================================================================
+# Area Scaling Endpoints
+# ============================================================================
+
+@app.get("/area/plot-areas")
+async def get_plot_areas() -> Dict:
+    """
+    Get current plot areas configuration.
+    
+    Returns
+    -------
+    Dict
+        Dictionary mapping plot names to area dictionaries
+    """
+    try:
+        areas = load_plot_areas()
+        return {
+            "success": True,
+            "plot_areas": areas
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/area/densities")
+async def get_area_densities(mode: str = Query("baseline", description="Simulation mode")) -> Dict:
+    """
+    Get carbon and tree densities by plot at all horizons.
+    
+    Parameters
+    ----------
+    mode : str
+        Simulation mode ('baseline' or 'baseline_stochastic')
+    
+    Returns
+    -------
+    Dict
+        Dictionary with densities by plot and horizon, plus sequestration rates
+    """
+    try:
+        result = compute_all_densities(mode=mode)
+        return {
+            "success": True,
+            "mode": mode,
+            **result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class ScaleAreaRequest(BaseModel):
+    mode: str = Field("baseline", description="Simulation mode")
+    target_area_m2: float = Field(..., description="Target area in square meters")
+    reference: str = Field(..., description="Reference: plot name, 'Average', or 'Range'")
+
+
+@app.post("/area/scale")
+async def scale_area(request: ScaleAreaRequest) -> Dict:
+    """
+    Scale carbon densities to a target area.
+    
+    Parameters
+    ----------
+    request : ScaleAreaRequest
+        Request body with mode, target_area_m2, and reference
+    
+    Returns
+    -------
+    Dict
+        Scaled totals at horizons 0/5/10/20, plus sequestration rates
+    """
+    try:
+        plot_areas = load_plot_areas()
+        densities_data = compute_all_densities(mode=request.mode)
+        densities_by_horizon = densities_data["densities_by_horizon"]
+        sequestration_rates = densities_data["sequestration_rates"]
+        
+        horizons = [0, 5, 10, 20]
+        scaled_results = {}
+        
+        if request.reference == "Average":
+            # Check if all plot areas are available
+            plots_with_areas = densities_data["plots_with_areas"]
+            if len(plots_with_areas) < 3:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot compute average: not all plot areas are configured"
+                )
+            
+            # Average densities across plots
+            for horizon in horizons:
+                carbon_densities = [
+                    densities_by_horizon[horizon][p]["carbon_density_kgC_per_m2"]
+                    for p in plots_with_areas
+                    if densities_by_horizon[horizon][p]["carbon_density_kgC_per_m2"] is not None
+                ]
+                
+                if carbon_densities:
+                    avg_density = np.mean(carbon_densities)
+                    scaled_results[horizon] = {
+                        "total_carbon_kgC": scale_to_area(avg_density, request.target_area_m2),
+                        "reference_density_kgC_per_m2": avg_density,
+                        "reference_type": "Average"
+                    }
+        
+        elif request.reference == "Range":
+            # Use min/max densities
+            plots_with_areas = densities_data["plots_with_areas"]
+            if len(plots_with_areas) < 2:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot compute range: need at least 2 plots with areas configured"
+                )
+            
+            for horizon in horizons:
+                carbon_densities = [
+                    densities_by_horizon[horizon][p]["carbon_density_kgC_per_m2"]
+                    for p in plots_with_areas
+                    if densities_by_horizon[horizon][p]["carbon_density_kgC_per_m2"] is not None
+                ]
+                
+                if carbon_densities:
+                    min_density = min(carbon_densities)
+                    max_density = max(carbon_densities)
+                    scaled_results[horizon] = {
+                        "low": {
+                            "total_carbon_kgC": scale_to_area(min_density, request.target_area_m2),
+                            "reference_density_kgC_per_m2": min_density
+                        },
+                        "high": {
+                            "total_carbon_kgC": scale_to_area(max_density, request.target_area_m2),
+                            "reference_density_kgC_per_m2": max_density
+                        },
+                        "reference_type": "Range"
+                    }
+        
+        else:
+            # Single plot reference
+            if request.reference not in ["Upper", "Middle", "Lower"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid reference: {request.reference}. Must be 'Upper', 'Middle', 'Lower', 'Average', or 'Range'"
+                )
+            
+            plot_area = plot_areas.get(request.reference, {}).get("area_m2")
+            if plot_area is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Plot area not configured for {request.reference}"
+                )
+            
+            for horizon in horizons:
+                density_data = densities_by_horizon[horizon].get(request.reference)
+                if density_data and density_data["carbon_density_kgC_per_m2"] is not None:
+                    density = density_data["carbon_density_kgC_per_m2"]
+                    scaled_results[horizon] = {
+                        "total_carbon_kgC": scale_to_area(density, request.target_area_m2),
+                        "reference_density_kgC_per_m2": density,
+                        "reference_type": request.reference
+                    }
+        
+        # Compute annual sequestration (0→20)
+        annual_sequestration = None
+        if request.reference == "Range":
+            # For range, compute sequestration for both low and high
+            seq_0_20 = sequestration_rates.get("0→20", {})
+            plots_with_areas = densities_data["plots_with_areas"]
+            seq_densities = [
+                seq_0_20.get(p) for p in plots_with_areas
+                if seq_0_20.get(p) is not None
+            ]
+            if seq_densities:
+                min_seq = min(seq_densities)
+                max_seq = max(seq_densities)
+                annual_sequestration = {
+                    "low": {
+                        "kgC_per_year": scale_to_area(min_seq, request.target_area_m2),
+                        "kgCO2e_per_year": scale_to_area(min_seq, request.target_area_m2) * 3.667
+                    },
+                    "high": {
+                        "kgC_per_year": scale_to_area(max_seq, request.target_area_m2),
+                        "kgCO2e_per_year": scale_to_area(max_seq, request.target_area_m2) * 3.667
+                    }
+                }
+        else:
+            # Single reference or average
+            if request.reference == "Average":
+                seq_0_20 = sequestration_rates.get("0→20", {})
+                plots_with_areas = densities_data["plots_with_areas"]
+                seq_densities = [
+                    seq_0_20.get(p) for p in plots_with_areas
+                    if seq_0_20.get(p) is not None
+                ]
+                if seq_densities:
+                    avg_seq = np.mean(seq_densities)
+                    annual_sequestration = {
+                        "kgC_per_year": scale_to_area(avg_seq, request.target_area_m2),
+                        "kgCO2e_per_year": scale_to_area(avg_seq, request.target_area_m2) * 3.667
+                    }
+            else:
+                seq_0_20 = sequestration_rates.get("0→20", {})
+                seq_density = seq_0_20.get(request.reference)
+                if seq_density is not None:
+                    annual_sequestration = {
+                        "kgC_per_year": scale_to_area(seq_density, request.target_area_m2),
+                        "kgCO2e_per_year": scale_to_area(seq_density, request.target_area_m2) * 3.667
+                    }
+        
+        # Format results by horizon
+        results_by_horizon = {}
+        for horizon in horizons:
+            if horizon in scaled_results:
+                result = scaled_results[horizon]
+                if request.reference == "Range":
+                    results_by_horizon[horizon] = {
+                        "low": {
+                            "total_carbon_kgC": result["low"]["total_carbon_kgC"],
+                            "total_co2e_kg": result["low"]["total_carbon_kgC"] * 3.667
+                        },
+                        "high": {
+                            "total_carbon_kgC": result["high"]["total_carbon_kgC"],
+                            "total_co2e_kg": result["high"]["total_carbon_kgC"] * 3.667
+                        }
+                    }
+                else:
+                    results_by_horizon[horizon] = {
+                        "total_carbon_kgC": result["total_carbon_kgC"],
+                        "total_co2e_kg": result["total_carbon_kgC"] * 3.667
+                    }
+        
+        return {
+            "success": True,
+            "mode": request.mode,
+            "target_area_m2": request.target_area_m2,
+            "reference": request.reference,
+            "results_by_horizon": results_by_horizon,
+            "annual_sequestration": annual_sequestration,
+            "metadata": {
+                "densities_used": scaled_results
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/uncertainty/summary")
 async def get_uncertainty_summary() -> Dict:
