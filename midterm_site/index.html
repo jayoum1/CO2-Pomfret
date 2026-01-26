@@ -22,8 +22,8 @@
             <a href="#model" class="nav-link">Model</a>
             <a href="#accuracy" class="nav-link">Accuracy</a>
             <a href="#simulation" class="nav-link">Simulation</a>
+            <a href="#features" class="nav-link">Features</a>
             <a href="#results" class="nav-link">Results</a>
-            <a href="#next" class="nav-link">Next Steps</a>
             <a href="#app-link" class="nav-link">App</a>
         </div>
     </nav>
@@ -35,10 +35,10 @@
             <p class="hero-subtitle">Simulating forest carbon sequestration to compare with Pomfret School emissions.</p>
             <div class="chips">
                 <span class="chip">DBH (cm)</span>
-                <span class="chip">Neural Network</span>
+                <span class="chip">Baseline Growth Curves</span>
+                <span class="chip">Stochastic Mode</span>
                 <span class="chip">Multi-year snapshots</span>
-                <span class="chip">Epsilon simulation rule</span>
-                <span class="chip">No mortality baseline</span>
+                <span class="chip">Forest Modification</span>
             </div>
         </div>
     </section>
@@ -101,92 +101,81 @@
     <!-- Model Section -->
     <section id="model" class="section section-alt">
         <div class="container">
-            <h2 class="section-title">Model</h2>
+            <h2 class="section-title">Growth Model</h2>
             <div class="content-box">
                 <div class="model-content">
                     <div class="model-text">
                         <p class="model-description">
-                            Neural Network predicts <strong>DBH_next_year</strong> from <strong>DBH_current</strong> + <strong>species</strong> + <strong>plot</strong>.
+                            <strong>Baseline Growth Curves</strong> predict annual DBH growth from historical data, 
+                            fitted by species, plot, and tree size. Growth rates are learned from observed increments 
+                            and constrained with a high-DBH guardrail to prevent unrealistic growth at large diameters.
                         </p>
+                        <div class="model-details">
+                            <h3 class="model-subtitle">How It Works</h3>
+                            <ul class="model-list">
+                                <li><strong>Binned Statistics:</strong> Growth curves are fitted using trimmed means/medians at species+plot level</li>
+                                <li><strong>Fallback Hierarchy:</strong> Species-only → Global curves when plot-specific data is sparse</li>
+                                <li><strong>High-DBH Guardrail:</strong> Prevents unrealistic increasing growth at large diameters</li>
+                                <li><strong>Year-by-Year Simulation:</strong> Iteratively applies one-year growth predictions</li>
+                            </ul>
+                        </div>
                         <div class="performance-metrics">
                             <div class="metric">
-                                <span class="metric-label">R²</span>
-                                <span class="metric-value">≈ 0.966</span>
+                                <span class="metric-label">Model Type</span>
+                                <span class="metric-value">Baseline Curves</span>
                             </div>
                             <div class="metric">
-                                <span class="metric-label">RMSE</span>
-                                <span class="metric-value">≈ 3.80 cm</span>
+                                <span class="metric-label">Stochastic Mode</span>
+                                <span class="metric-value">Available</span>
                             </div>
                             <div class="metric">
-                                <span class="metric-label">MAE</span>
-                                <span class="metric-value">≈ 1.82 cm</span>
+                                <span class="metric-label">Horizons</span>
+                                <span class="metric-value">0, 5, 10, 20 years</span>
                             </div>
                         </div>
                     </div>
-                    <div class="nn-diagram">
+                    <div class="model-diagram">
                         <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Input Layer -->
+                            <!-- Data Input -->
                             <g class="layer">
-                                <circle cx="80" cy="60" r="15" class="node input"/>
-                                <text x="80" y="40" text-anchor="middle" class="node-label">DBH</text>
-                                
-                                <circle cx="80" cy="120" r="15" class="node input"/>
-                                <text x="80" y="140" text-anchor="middle" class="node-label">Species</text>
-                                
-                                <circle cx="80" cy="180" r="15" class="node input"/>
-                                <text x="80" y="200" text-anchor="middle" class="node-label">Plot</text>
+                                <rect x="30" y="50" width="100" height="60" rx="5" class="diagram-box"/>
+                                <text x="80" y="80" text-anchor="middle" class="diagram-text">Historical</text>
+                                <text x="80" y="100" text-anchor="middle" class="diagram-text">DBH Data</text>
                             </g>
                             
-                            <!-- Hidden Layer 1 -->
+                            <!-- Arrow 1 -->
+                            <path d="M 130 80 L 170 80" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                            
+                            <!-- Curve Fitting -->
                             <g class="layer">
-                                <circle cx="220" cy="50" r="12" class="node hidden"/>
-                                <circle cx="220" cy="100" r="12" class="node hidden"/>
-                                <circle cx="220" cy="150" r="12" class="node hidden"/>
-                                <circle cx="220" cy="200" r="12" class="node hidden"/>
-                                <circle cx="220" cy="250" r="12" class="node hidden"/>
+                                <rect x="170" y="50" width="100" height="60" rx="5" class="diagram-box"/>
+                                <text x="220" y="80" text-anchor="middle" class="diagram-text">Binned</text>
+                                <text x="220" y="100" text-anchor="middle" class="diagram-text">Statistics</text>
                             </g>
                             
-                            <!-- Hidden Layer 2 -->
+                            <!-- Arrow 2 -->
+                            <path d="M 270 80 L 310 80" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                            
+                            <!-- Growth Curves -->
                             <g class="layer">
-                                <circle cx="360" cy="100" r="12" class="node hidden"/>
-                                <circle cx="360" cy="150" r="12" class="node hidden"/>
-                                <circle cx="360" cy="200" r="12" class="node hidden"/>
+                                <rect x="310" y="50" width="100" height="60" rx="5" class="diagram-box"/>
+                                <text x="360" y="80" text-anchor="middle" class="diagram-text">Growth</text>
+                                <text x="360" y="100" text-anchor="middle" class="diagram-text">Curves</text>
                             </g>
                             
-                            <!-- Output Layer -->
+                            <!-- Growth Curve Visualization -->
                             <g class="layer">
-                                <circle cx="450" cy="150" r="18" class="node output"/>
-                                <text x="450" y="185" text-anchor="middle" class="node-label">DBH_next</text>
+                                <path d="M 80 200 Q 150 180, 220 170 T 360 160" stroke="#14b8a6" stroke-width="3" fill="none"/>
+                                <text x="220" y="250" text-anchor="middle" class="diagram-text-small">DBH Growth Rate</text>
+                                <text x="220" y="270" text-anchor="middle" class="diagram-text-small">decreases with size</text>
                             </g>
                             
-                            <!-- Connections Input -> Hidden 1 -->
-                            <g class="connections">
-                                <line x1="95" y1="60" x2="208" y2="50" class="connection"/>
-                                <line x1="95" y1="60" x2="208" y2="100" class="connection"/>
-                                <line x1="95" y1="60" x2="208" y2="150" class="connection"/>
-                                <line x1="95" y1="120" x2="208" y2="50" class="connection"/>
-                                <line x1="95" y1="120" x2="208" y2="100" class="connection"/>
-                                <line x1="95" y1="120" x2="208" y2="150" class="connection"/>
-                                <line x1="95" y1="180" x2="208" y2="150" class="connection"/>
-                                <line x1="95" y1="180" x2="208" y2="200" class="connection"/>
-                                <line x1="95" y1="180" x2="208" y2="250" class="connection"/>
-                            </g>
-                            
-                            <!-- Connections Hidden 1 -> Hidden 2 -->
-                            <g class="connections">
-                                <line x1="232" y1="50" x2="348" y2="100" class="connection"/>
-                                <line x1="232" y1="100" x2="348" y2="100" class="connection"/>
-                                <line x1="232" y1="150" x2="348" y2="150" class="connection"/>
-                                <line x1="232" y1="200" x2="348" y2="200" class="connection"/>
-                                <line x1="232" y1="250" x2="348" y2="200" class="connection"/>
-                            </g>
-                            
-                            <!-- Connections Hidden 2 -> Output -->
-                            <g class="connections">
-                                <line x1="372" y1="100" x2="432" y2="150" class="connection"/>
-                                <line x1="372" y1="150" x2="432" y2="150" class="connection"/>
-                                <line x1="372" y1="200" x2="432" y2="150" class="connection"/>
-                            </g>
+                            <!-- Arrow marker definition -->
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                    <polygon points="0 0, 10 3, 0 6" fill="currentColor"/>
+                                </marker>
+                            </defs>
                         </svg>
                     </div>
                 </div>
@@ -276,11 +265,21 @@
                 <div class="simulation-content">
                     <div class="simulation-text">
                         <p>
-                            We generate multi-year forest snapshots at <strong>0, 5, 10, and 20 years</strong> ahead by iteratively applying the one-year prediction model.
+                            We generate multi-year forest snapshots at <strong>0, 5, 10, and 20 years</strong> ahead by iteratively applying the baseline growth model year-by-year.
                         </p>
-                        <p class="epsilon-explanation">
-                            <strong>Epsilon Correction:</strong> Negative predicted DBH change is treated as near-zero growth (ε = 0.02 cm) in simulation mode only. This prevents nonphysical forest shrinkage and avoids simulation "stuck" behavior where trees stop growing.
+                        <p class="simulation-modes">
+                            <strong>Two Simulation Modes:</strong>
                         </p>
+                        <ul class="modes-list">
+                            <li>
+                                <strong>Baseline Mode (Default):</strong> Uses deterministic growth curves for stable, biologically plausible projections. 
+                                Each tree's DBH is updated year-by-year using species and plot-specific growth rates.
+                            </li>
+                            <li>
+                                <strong>Visual Mode (Stochastic):</strong> Adds calibrated random variation from historical residual spread. 
+                                Improves visual realism by showing natural growth variability, but does not claim improved accuracy.
+                            </li>
+                        </ul>
                     </div>
                     <div class="assumptions-box">
                         <h3 class="assumptions-title">
@@ -294,8 +293,63 @@
                         <ul class="assumptions-list">
                             <li>DBH in centimeters (cm)</li>
                             <li>Growth-only baseline (no mortality/disturbance)</li>
-                            <li>Epsilon rule for long-horizon visualization</li>
+                            <li>High-DBH guardrail prevents unrealistic growth</li>
+                            <li>Year-by-year iterative simulation</li>
                         </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">App Features</h2>
+            <div class="content-box">
+                <div class="features-content">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Forest Modification</h3>
+                        <p class="feature-description">
+                            Simulate tree planting and removal scenarios to understand their impact on carbon sequestration. 
+                            Plant trees by species, plot, and size class, or remove existing trees to model cutting scenarios. 
+                            See how your modifications affect carbon storage over 5, 10, and 20 years.
+                        </p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <path d="M3 9h18M9 3v18"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Area Generalizer</h3>
+                        <p class="feature-description">
+                            Scale carbon sequestration results from our measured plots to any target area. 
+                            Use manual area input or draw polygons on an interactive map to calculate 
+                            forest carbon densities and project sequestration for your specific area.
+                        </p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="2" x2="12" y2="22"/>
+                                <polyline points="19 15 12 8 5 15"/>
+                            </svg>
+                        </div>
+                        <h3 class="feature-title">Interactive Dashboard</h3>
+                        <p class="feature-description">
+                            Explore forest snapshots at different time horizons with interactive charts showing 
+                            total carbon storage, carbon by plot, and mean DBH over time. Toggle between 
+                            baseline and stochastic simulation modes.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -337,36 +391,6 @@
         </div>
     </section>
 
-    <!-- What's Next -->
-    <section id="next" class="section">
-        <div class="container">
-            <h2 class="section-title">What's Next</h2>
-            <div class="content-box">
-                <div class="next-content">
-                    <ul class="next-list">
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                            <strong>App MVP</strong> — Time slider + user-designed tree prediction
-                        </li>
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                            <strong>3D Map Integration</strong> — Tree positions (improved later)
-                        </li>
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                            <strong>Yearly Updates</strong> — New DBH data → retrain → refresh snapshots
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- App Link Section -->
     <section id="app-link" class="section">

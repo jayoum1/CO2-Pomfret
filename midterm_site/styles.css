@@ -658,7 +658,8 @@ body::after {
     color: var(--secondary);
 }
 
-.nn-diagram {
+.nn-diagram,
+.model-diagram {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -937,11 +938,70 @@ body::after {
     font-weight: 600;
 }
 
-.epsilon-explanation {
+.epsilon-explanation,
+.simulation-modes {
     background: linear-gradient(135deg, var(--bg-alt) 0%, var(--secondary-light) 100%);
     padding: 1.5rem;
     border-radius: 16px;
     border-left: 4px solid var(--secondary);
+    margin-top: 1.5rem;
+}
+
+.modes-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.modes-list li {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: var(--bg-alt);
+    border-radius: 12px;
+    border-left: 3px solid var(--teal-500);
+    line-height: 1.7;
+}
+
+.modes-list li strong {
+    color: var(--teal-600);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.model-details {
+    margin-top: 2rem;
+}
+
+.model-subtitle {
+    font-size: 1.2rem;
+    color: var(--teal-600);
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.model-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.model-list li {
+    padding: 0.75rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    line-height: 1.7;
+}
+
+.model-list li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--teal-500);
+    font-weight: bold;
+}
+
+.model-list li strong {
+    color: var(--teal-600);
 }
 
 .assumptions-box {
@@ -1065,84 +1125,51 @@ body::after {
     font-size: 1rem;
 }
 
-/* What's Next */
-.next-content {
-    max-width: 800px;
-    margin: 0 auto;
+/* Features Section */
+.features-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
 }
 
-.next-list {
-    list-style: none;
-    font-size: 1.2rem;
-    line-height: 2.5;
-}
-
-.next-list li {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.5rem;
+.feature-item {
+    padding: 2rem;
     background-color: var(--bg-card);
-    border-radius: 16px;
-    margin-bottom: 1rem;
+    border-radius: 20px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
-    border-left: 4px solid var(--teal-500);
-    transition: transform 0.2s, border-color 0.2s;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.next-list li:nth-child(1) {
-    border-left-color: var(--teal-500);
+.feature-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
 }
 
-.next-list li:nth-child(2) {
-    border-left-color: var(--accent);
-}
-
-.next-list li:nth-child(3) {
-    border-left-color: var(--secondary);
-}
-
-.next-list li:hover {
-    transform: translateX(8px);
-}
-
-.next-list li:nth-child(1):hover {
-    border-left-color: var(--teal-600);
-}
-
-.next-list li:nth-child(2):hover {
-    border-left-color: var(--accent-hover);
-}
-
-.next-list li:nth-child(3):hover {
-    border-left-color: var(--secondary-hover);
-}
-
-.next-list li svg {
+.feature-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1.5rem;
     color: var(--teal-500);
-    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-light);
+    border-radius: 16px;
 }
 
-.next-list li:nth-child(2) svg {
-    color: var(--accent);
-}
-
-.next-list li:nth-child(3) svg {
-    color: var(--secondary);
-}
-
-.next-list li strong {
+.feature-title {
+    font-size: 1.5rem;
+    font-weight: 700;
     color: var(--teal-600);
-    font-weight: 600;
+    margin-bottom: 1rem;
 }
 
-.next-list li:nth-child(2) strong {
-    color: var(--accent);
-}
-
-.next-list li:nth-child(3) strong {
-    color: var(--secondary);
+.feature-description {
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 1rem;
 }
 
 /* App Link Section */
