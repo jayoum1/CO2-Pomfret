@@ -1,5 +1,5 @@
 """
-Streamlit Frontend for Carbon DBH Forest Simulation
+Streamlit Frontend for CO2 Pomfret Forest Simulation
 
 Main features:
 - Time slider for viewing forest snapshots

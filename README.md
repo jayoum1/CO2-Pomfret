@@ -1,4 +1,4 @@
-# Carbon DBH Analysis Project
+# CO2 Pomfret Analysis Project
 
 Data analysis project exploring carbon sequestration and tree growth in the Pomfret School forest.
 
@@ -12,7 +12,7 @@ This project analyzes DBH (diameter at breast height) data for ~450 trees across
 ## Project Structure
 
 ```
-Carbon DBH/
+CO2 Pomfret/
 ├── src/                          # Source code
 │   ├── config.py                # Centralized paths & constants
 │   ├── preprocessing/            # Data cleaning & transformation
@@ -46,8 +46,8 @@ Carbon DBH/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/jayoum1/Carbon-DBH.git
-cd Carbon-DBH
+git clone https://github.com/jayoum1/CO2-Pomfret.git
+cd CO2-Pomfret
 ```
 
 2. Install dependencies:

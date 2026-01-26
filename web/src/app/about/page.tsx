@@ -28,7 +28,7 @@ export default function About() {
       <div className="card">
         <h2 className="font-semibold mb-4">Project Overview</h2>
         <p className="text-[var(--text)] leading-relaxed mb-4">
-          The Carbon DBH project uses measured DBH (diameter at breast height), species, and plot data to train 
+          The CO2 Pomfret project uses measured DBH (diameter at breast height), species, and plot data to train 
           a Neural Network that predicts next-year DBH. We generate multi-year forest snapshots (0/5/10/20 years) 
           to visualize forest carbon sequestration over time.
         </p>

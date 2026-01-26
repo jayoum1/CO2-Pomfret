@@ -1,5 +1,5 @@
 """
-Configuration file for Carbon DBH project.
+Configuration file for CO2 Pomfret project.
 Centralizes all file paths and project constants.
 """
 import os
@@ -19,9 +19,9 @@ DATA_DIR = PROJECT_ROOT / "Data"
 
 # Raw Data
 RAW_DATA_DIR = DATA_DIR / "Raw Data"
-RAW_DATA_UPPER = RAW_DATA_DIR / "Carbon DBH Raw Data - Upper.csv"
-RAW_DATA_MIDDLE = RAW_DATA_DIR / "Carbon DBH Raw Data - Middle.csv"
-RAW_DATA_LOWER = RAW_DATA_DIR / "Carbon DBH Raw Data - Lower.csv"
+RAW_DATA_UPPER = RAW_DATA_DIR / "CO2 Pomfret Raw Data - Upper.csv"
+RAW_DATA_MIDDLE = RAW_DATA_DIR / "CO2 Pomfret Raw Data - Middle.csv"
+RAW_DATA_LOWER = RAW_DATA_DIR / "CO2 Pomfret Raw Data - Lower.csv"
 
 # Processed Data
 PROCESSED_DATA_DIR = DATA_DIR / "Processed Data"

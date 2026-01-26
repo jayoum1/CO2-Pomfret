@@ -4,13 +4,13 @@
 
 ### Option A: Using pip (Recommended)
 ```bash
-cd "/Users/jay/Desktop/Carbon DBH"
+cd "/Users/jay/Desktop/CO2 Pomfret"
 pip install -r requirements.txt
 ```
 
 ### Option B: Using conda (if you prefer conda)
 ```bash
-cd "/Users/jay/Desktop/Carbon DBH"
+cd "/Users/jay/Desktop/CO2 Pomfret"
 conda install pandas numpy scikit-learn scipy statsmodels matplotlib
 ```
 
@@ -37,9 +37,9 @@ from pathlib import Path
 
 # Check all data files
 files_to_check = [
-    'Data/Raw Data/Carbon DBH Raw Data - Upper.csv',
-    'Data/Raw Data/Carbon DBH Raw Data - Middle.csv',
-    'Data/Raw Data/Carbon DBH Raw Data - Lower.csv',
+    'Data/Raw Data/CO2 Pomfret Raw Data - Upper.csv',
+    'Data/Raw Data/CO2 Pomfret Raw Data - Middle.csv',
+    'Data/Raw Data/CO2 Pomfret Raw Data - Lower.csv',
     'Data/Processed Data/DBH/lower_long_with_growth.csv',
     'Data/Processed Data/Carbon/upper_with_carbon.csv',
     'Data/Processed Data/Carbon/middle_with_carbon.csv',
@@ -230,7 +230,7 @@ Check that:
 If you get `ModuleNotFoundError`:
 ```bash
 # Make sure you're in the project root
-cd "/Users/jay/Desktop/Carbon DBH"
+cd "/Users/jay/Desktop/CO2 Pomfret"
 
 # Verify Python can find src/
 python3 -c "import sys; sys.path.insert(0, 'src'); from config import PROJECT_ROOT; print(PROJECT_ROOT)"

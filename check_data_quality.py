@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Data Quality Check Script for Carbon DBH Project
+Data Quality Check Script for CO2 Pomfret Project
 
 Run this after installing packages to verify data integrity.
 """

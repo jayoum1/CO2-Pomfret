@@ -1,0 +1,70 @@
+Species,Plot,n_trees,n_records
+american hophornbeam,Upper,0,0
+american hophornbeam,Middle,1,4
+american hophornbeam,Lower,0,0
+autumn olive,Upper,0,0
+autumn olive,Middle,0,0
+autumn olive,Lower,1,5
+basswood,Upper,0,0
+basswood,Middle,2,8
+basswood,Lower,0,0
+beech,Upper,0,0
+beech,Middle,6,17
+beech,Lower,5,33
+black birch,Upper,0,0
+black birch,Middle,1,2
+black birch,Lower,53,434
+black oak,Upper,0,0
+black oak,Middle,1,4
+black oak,Lower,2,18
+buckthorn,Upper,0,0
+buckthorn,Middle,0,0
+buckthorn,Lower,1,5
+burning bush,Upper,0,0
+burning bush,Middle,0,0
+burning bush,Lower,3,16
+dogwood,Upper,0,0
+dogwood,Middle,0,0
+dogwood,Lower,1,9
+hophornbeam,Upper,0,0
+hophornbeam,Middle,1,4
+hophornbeam,Lower,0,0
+mockernut,Upper,0,0
+mockernut,Middle,1,4
+mockernut,Lower,0,0
+mockernut hickory,Upper,0,0
+mockernut hickory,Middle,8,32
+mockernut hickory,Lower,2,14
+musclewood,Upper,0,0
+musclewood,Middle,0,0
+musclewood,Lower,46,326
+norway maple,Upper,15,133
+norway maple,Middle,1,4
+norway maple,Lower,1,9
+pignut hickory,Upper,0,0
+pignut hickory,Middle,3,12
+pignut hickory,Lower,3,27
+red maple,Upper,2,18
+red maple,Middle,1,2
+red maple,Lower,6,44
+red oak,Upper,0,0
+red oak,Middle,12,47
+red oak,Lower,19,171
+sassafras,Upper,0,0
+sassafras,Middle,1,4
+sassafras,Lower,0,0
+shagbark hickory,Upper,0,0
+shagbark hickory,Middle,0,0
+shagbark hickory,Lower,7,44
+sugar maple,Upper,104,914
+sugar maple,Middle,89,346
+sugar maple,Lower,29,236
+white ash,Upper,0,0
+white ash,Middle,3,9
+white ash,Lower,1,9
+white pine,Upper,0,0
+white pine,Middle,0,0
+white pine,Lower,10,90
+yellow birch,Upper,0,0
+yellow birch,Middle,0,0
+yellow birch,Lower,1,9

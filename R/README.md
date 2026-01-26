@@ -1,4 +1,4 @@
-# R Scripts for Carbon DBH Analysis
+# R Scripts for CO2 Pomfret Analysis
 
 This directory contains R scripts for data visualization and model diagnostics.
 
@@ -74,7 +74,7 @@ Rscript R/model_diagnostics.R
 Or from R/RStudio:
 
 ```r
-setwd("/path/to/Carbon DBH")
+setwd("/path/to/CO2 Pomfret")
 source("R/plots_dbh.R")
 ```
 

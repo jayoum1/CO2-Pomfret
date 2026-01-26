@@ -1,4 +1,4 @@
 """
-Analysis modules for Carbon DBH project.
+Analysis modules for CO2 Pomfret project.
 """
 

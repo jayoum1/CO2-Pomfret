@@ -39,8 +39,8 @@ COMPREHENSIVE DIAGNOSTIC REPORT: TreeID 1 Neural Network Predictions
 ----------------------------------------------------------------------
    Current state (2025): DBH = 27.43 cm
    Forward predictions:
-✓ Loaded model from /Users/jay/Desktop/Carbon DBH/Models/dbh_growth_nn_model.pkl
-✓ Loaded scaler from /Users/jay/Desktop/Carbon DBH/Models/dbh_growth_nn_scaler.pkl
+✓ Loaded model from /Users/jay/Desktop/CO2 Pomfret/Models/dbh_growth_nn_model.pkl
+✓ Loaded scaler from /Users/jay/Desktop/CO2 Pomfret/Models/dbh_growth_nn_scaler.pkl
 ✓ Loaded 29 feature names
      Year 2026: 27.43 → 26.79 cm (change: -0.65 cm, -2.4%)
      Year 2027: 26.79 → 26.18 cm (change: -0.60 cm, -2.2%)

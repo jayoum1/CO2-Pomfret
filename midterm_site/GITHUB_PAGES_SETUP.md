@@ -4,7 +4,7 @@ Your midterm site has been pushed to GitHub. To make it accessible via GitHub Pa
 
 ## Option 1: Enable GitHub Pages via Repository Settings (Recommended)
 
-1. Go to your repository: https://github.com/jayoum1/Carbon-DBH
+1. Go to your repository: https://github.com/jayoum1/CO2-Pomfret
 2. Click on **Settings** (top right)
 3. Scroll down to **Pages** in the left sidebar
 4. Under **Source**, select:
@@ -13,7 +13,7 @@ Your midterm site has been pushed to GitHub. To make it accessible via GitHub Pa
 5. Click **Save**
 
 Your site will be available at:
-**https://jayoum1.github.io/Carbon-DBH/**
+**https://jayoum1.github.io/CO2-Pomfret/**
 
 (Note: It may take a few minutes for GitHub to build and deploy)
 

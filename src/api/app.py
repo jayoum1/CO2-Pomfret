@@ -1,5 +1,5 @@
 """
-FastAPI Application for Carbon DBH Forest Simulation
+FastAPI Application for CO2 Pomfret Forest Simulation
 
 Provides REST API endpoints for:
 - Single tree prediction (user-designed tree)
@@ -40,9 +40,16 @@ from models.area_scaling import (
     compute_plot_summaries,
     compute_plot_densities
 )
+from models.removal_options import (
+    get_dbh_bins, 
+    get_removal_options,
+    get_planting_dbh_bins,
+    get_bin_midpoint,
+    sample_dbh_from_bin
+)
 
 app = FastAPI(
-    title="Carbon DBH Forest Simulation API",
+    title="CO2 Pomfret Forest Simulation API",
     description="API for forest growth simulation and planting scenario analysis",
     version="1.0.0"
 )
@@ -972,6 +979,103 @@ async def scale_area(request: ScaleAreaRequest) -> Dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/removal/options")
+async def get_removal_options_endpoint(
+    plot: str = Query(..., description="Plot name (Upper, Middle, Lower)"),
+    species: str = Query(..., description="Species name")
+) -> Dict:
+    """
+    Get removal options (DBH bins with tree counts) for a given plot and species.
+    
+    Parameters
+    ----------
+    plot : str
+        Plot name ('Upper', 'Middle', 'Lower')
+    species : str
+        Species name
+        
+    Returns
+    -------
+    Dict
+        Dictionary with:
+        - bins: List of bin labels
+        - options: Dictionary mapping bin labels to count and metadata
+    """
+    try:
+        if plot not in ['Upper', 'Middle', 'Lower']:
+            raise HTTPException(status_code=400, detail=f"Invalid plot: {plot}. Must be Upper, Middle, or Lower")
+        
+        options = get_removal_options(plot, species)
+        bins = get_dbh_bins()
+        bin_labels = [label for _, _, label in bins]
+        
+        return {
+            "success": True,
+            "plot": plot,
+            "species": species,
+            "bins": bin_labels,
+            "options": options
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/removal/dbh-bins")
+async def get_dbh_bins_endpoint() -> Dict:
+    """
+    Get DBH bin definitions for removal (existing trees).
+    
+    Returns
+    -------
+    Dict
+        Dictionary with bin definitions
+    """
+    try:
+        bins = get_dbh_bins()
+        return {
+            "success": True,
+            "bins": [
+                {
+                    "label": label,
+                    "min_dbh": min_dbh,
+                    "max_dbh": max_dbh if max_dbh != float('inf') else None
+                }
+                for min_dbh, max_dbh, label in bins
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/planting/dbh-bins")
+async def get_planting_dbh_bins_endpoint() -> Dict:
+    """
+    Get DBH bin definitions for planting (new trees).
+    
+    Returns
+    -------
+    Dict
+        Dictionary with bin definitions optimized for planting
+    """
+    try:
+        bins = get_planting_dbh_bins()
+        return {
+            "success": True,
+            "bins": [
+                {
+                    "label": label,
+                    "min_dbh": min_dbh,
+                    "max_dbh": max_dbh if max_dbh != float('inf') else None,
+                    "description": description,
+                    "midpoint": get_bin_midpoint(min_dbh, max_dbh)
+                }
+                for min_dbh, max_dbh, label, description in bins
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/uncertainty/summary")
 async def get_uncertainty_summary() -> Dict:
     """
@@ -1007,7 +1111,7 @@ async def get_uncertainty_summary() -> Dict:
 async def root():
     """Root endpoint - API information"""
     return {
-        "name": "Carbon DBH Forest Simulation API",
+        "name": "CO2 Pomfret Forest Simulation API",
         "version": "1.0.0",
         "endpoints": {
             "single_tree": "/predict/tree",

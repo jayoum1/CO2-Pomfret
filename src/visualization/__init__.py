@@ -1,4 +1,4 @@
 """
-Visualization modules for Carbon DBH project.
+Visualization modules for CO2 Pomfret project.
 """
 

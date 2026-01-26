@@ -1,5 +1,5 @@
 # ==============================================================================
-# Setup Packages for Carbon DBH R Analysis
+# Setup Packages for CO2 Pomfret R Analysis
 # ==============================================================================
 # This script ensures all required R packages are installed and loaded.
 # Source this file at the beginning of other R scripts to guarantee
@@ -28,7 +28,7 @@ check_and_install <- function(pkg) {
 
 # Install and load all required packages
 message("=")
-message("Setting up R packages for Carbon DBH analysis...")
+message("Setting up R packages for CO2 Pomfret analysis...")
 message("=")
 
 for (pkg in required_packages) {

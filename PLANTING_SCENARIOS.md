@@ -169,7 +169,7 @@ The comparison function returns a DataFrame with columns:
 ## File Structure
 
 ```
-Carbon DBH/
+CO2 Pomfret/
 ├── src/
 │   ├── scenarios/
 │   │   ├── __init__.py

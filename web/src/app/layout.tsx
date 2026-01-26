@@ -3,7 +3,7 @@ import './globals.css'
 import AppShell from '@/components/layout/AppShell'
 
 export const metadata: Metadata = {
-  title: 'Carbon DBH - Forest Simulation & Analysis',
+  title: 'CO2 Pomfret - Forest Simulation & Analysis',
   description: 'Forest growth and carbon sequestration simulation for Pomfret School',
 }
 

@@ -1,31 +1,75 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { simulateScenario, PlantingGroup, getSummary } from '@/lib/api'
+import { simulateScenario, PlantingGroup, getSummary, getRemovalOptions, RemovalOptions, getDbhBins, DbhBin, getPlantingDbhBins, PlantingDbhBin } from '@/lib/api'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Plus, X, Save, Loader2, Play, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 
 const CO2E_FACTOR = 3.667
 
 // Available tree species based on forest data
+// Includes only species with ≥5 trees AND baseline growth curves for reliable simulation
+// See SPECIES_UI_RECOMMENDATIONS.md for full analysis
 const AVAILABLE_SPECIES = [
   'red oak',
   'sugar maple',
-  'white oak',
-  'black oak',
   'white pine',
-  'eastern hemlock',
-  'yellow birch',
-  'tulip poplar',
-  'american beech',
-  'black cherry',
   'red maple',
+  'black birch',
+  'musclewood',
+  'norway maple',
+  'beech',
+  'mockernut hickory',
+  'shagbark hickory',
+  'pignut hickory',
 ] as const
+
+// Species available per plot (based on actual forest data)
+// Used to filter removal options based on selected plot
+// Only includes species from AVAILABLE_SPECIES that actually exist in each plot
+const SPECIES_BY_PLOT: Record<'Upper' | 'Middle' | 'Lower', string[]> = {
+  Upper: ['sugar maple', 'norway maple', 'red maple'],
+  Middle: ['sugar maple', 'red oak', 'mockernut hickory', 'beech', 'pignut hickory', 'black birch', 'norway maple', 'red maple'],
+  Lower: ['black birch', 'musclewood', 'sugar maple', 'red oak', 'white pine', 'shagbark hickory', 'red maple', 'beech', 'mockernut hickory', 'pignut hickory', 'norway maple'],
+}
+
+// Maximum number of trees available for removal by plot and species
+// Based on actual tree counts in the forest dataset
+const MAX_TREES_BY_PLOT_SPECIES: Record<string, Record<string, number>> = {
+  Upper: {
+    'norway maple': 15,
+    'red maple': 2,
+    'sugar maple': 104,
+  },
+  Middle: {
+    'beech': 6,
+    'black birch': 1,
+    'mockernut hickory': 8,
+    'norway maple': 1,
+    'pignut hickory': 3,
+    'red maple': 1,
+    'red oak': 12,
+    'sugar maple': 89,
+  },
+  Lower: {
+    'beech': 5,
+    'black birch': 53,
+    'mockernut hickory': 2,
+    'musclewood': 46,
+    'norway maple': 1,
+    'pignut hickory': 3,
+    'red maple': 6,
+    'red oak': 19,
+    'shagbark hickory': 7,
+    'sugar maple': 29,
+    'white pine': 10,
+  },
+}
 
 interface RemovalGroup {
   plot: 'Upper' | 'Middle' | 'Lower'
   species: string
-  dbh_cm: number
+  dbh_bin: string  // Changed from dbh_cm to dbh_bin (e.g., "0-10", "10-20", "120+")
   count: number
 }
 
@@ -34,15 +78,23 @@ export default function Scenarios() {
   const [plantings, setPlantings] = useState<PlantingGroup[]>([])
   const [plantingPlot, setPlantingPlot] = useState<'Upper' | 'Middle' | 'Lower'>('Middle')
   const [plantingSpecies, setPlantingSpecies] = useState<string>('')
-  const [plantingDbh, setPlantingDbh] = useState<number | ''>(5.0)
+  const [plantingDbhBin, setPlantingDbhBin] = useState<string>('')
+  const [plantingDbhOverride, setPlantingDbhOverride] = useState<number | ''>('') // Optional override within bin
   const [plantingCount, setPlantingCount] = useState<number | ''>(10)
+  const [advancedMode, setAdvancedMode] = useState(false) // For allowing >20 cm planting
+  const [plantingDbhBins, setPlantingDbhBins] = useState<PlantingDbhBin[]>([])
   
   // Removal state
   const [removals, setRemovals] = useState<RemovalGroup[]>([])
   const [removalPlot, setRemovalPlot] = useState<'Upper' | 'Middle' | 'Lower'>('Middle')
   const [removalSpecies, setRemovalSpecies] = useState<string>('')
-  const [removalDbh, setRemovalDbh] = useState<number | ''>(10.0)
-  const [removalCount, setRemovalCount] = useState<number | ''>(10)
+  const [removalDbhBin, setRemovalDbhBin] = useState<string>('')
+  const [removalCount, setRemovalCount] = useState<number | ''>(1)
+  
+  // Removal options state
+  const [removalOptions, setRemovalOptions] = useState<RemovalOptions | null>(null)
+  const [dbhBins, setDbhBins] = useState<DbhBin[]>([])
+  const [loadingRemovalOptions, setLoadingRemovalOptions] = useState(false)
   
   const [scenarioResult, setScenarioResult] = useState<any>(null)
   const [baselineData, setBaselineData] = useState<any>(null)
@@ -55,6 +107,107 @@ export default function Scenarios() {
   const [biodiversityImpact, setBiodiversityImpact] = useState(true)
   const [simulationMode, setSimulationMode] = useState<'baseline' | 'baseline_stochastic'>('baseline')
   const [selectedYear, setSelectedYear] = useState<number>(20) // For toggling metrics by year
+
+  // Filter available species for removal based on selected plot
+  const availableRemovalSpecies = useMemo(() => {
+    return AVAILABLE_SPECIES.filter(species => 
+      SPECIES_BY_PLOT[removalPlot].includes(species)
+    )
+  }, [removalPlot])
+
+  // Load DBH bins on mount
+  useEffect(() => {
+    async function loadDbhBins() {
+      try {
+        const bins = await getDbhBins()
+        setDbhBins(bins)
+      } catch (err) {
+        console.error('Error loading DBH bins:', err)
+      }
+    }
+    loadDbhBins()
+  }, [])
+
+  // Load planting DBH bins on mount
+  useEffect(() => {
+    async function loadPlantingDbhBins() {
+      try {
+        const bins = await getPlantingDbhBins()
+        setPlantingDbhBins(bins)
+      } catch (err) {
+        console.error('Error loading planting DBH bins:', err)
+      }
+    }
+    loadPlantingDbhBins()
+  }, [])
+
+  // Load removal options when plot and species are selected
+  useEffect(() => {
+    async function loadRemovalOptions() {
+      if (!removalPlot || !removalSpecies) {
+        setRemovalOptions(null)
+        setRemovalDbhBin('')
+        setRemovalCount(1)
+        return
+      }
+      
+      try {
+        setLoadingRemovalOptions(true)
+        setError(null) // Clear any previous errors
+        const response = await getRemovalOptions(removalPlot, removalSpecies)
+        console.log('Removal options response:', response)
+        console.log('Response bins:', response?.bins)
+        console.log('Response options keys:', response?.options ? Object.keys(response.options) : 'none')
+        
+        // Accept response if it has options and bins, regardless of success field
+        if (response && response.options && Array.isArray(response.bins)) {
+          setRemovalOptions(response)
+          // Reset DBH bin selection when options change
+          setRemovalDbhBin('')
+          setRemovalCount(1)
+          console.log(`Loaded ${response.bins.length} DBH bins for ${removalSpecies} in ${removalPlot}`)
+          const binsWithTrees = response.bins.filter((bin: string) => (response.options[bin]?.count || 0) > 0)
+          console.log(`Bins with available trees: ${binsWithTrees.length}`)
+        } else {
+          console.error('Invalid removal options response:', response)
+          setRemovalOptions(null)
+          setError(`Failed to load removal options for ${removalSpecies} in ${removalPlot} plot`)
+        }
+      } catch (err: any) {
+        console.error('Error loading removal options:', err)
+        setRemovalOptions(null)
+        setError(`Error loading removal options: ${err.message || 'Unknown error'}`)
+      } finally {
+        setLoadingRemovalOptions(false)
+      }
+    }
+    
+    loadRemovalOptions()
+  }, [removalPlot, removalSpecies])
+
+  // Get maximum trees available for removal based on selected DBH bin
+  const maxRemovalTrees = useMemo(() => {
+    if (!removalOptions || !removalDbhBin) return null
+    return removalOptions.options[removalDbhBin]?.count || null
+  }, [removalOptions, removalDbhBin])
+
+  // Reset removal species if current selection is not available in new plot
+  useEffect(() => {
+    if (removalSpecies && !(availableRemovalSpecies as string[]).includes(removalSpecies)) {
+      setRemovalSpecies('')
+      setRemovalDbhBin('')
+      setRemovalCount(1)
+    }
+  }, [removalPlot, removalSpecies, availableRemovalSpecies])
+
+  // Reset removal count if it exceeds maximum when bin changes
+  useEffect(() => {
+    if (maxRemovalTrees !== null && removalCount !== '' && typeof removalCount === 'number') {
+      if (removalCount > maxRemovalTrees) {
+        setRemovalCount(maxRemovalTrees)
+      }
+    }
+  }, [removalDbhBin, maxRemovalTrees, removalCount])
 
   // Load baseline data on mount
   useEffect(() => {
@@ -97,17 +250,56 @@ export default function Scenarios() {
     }
   }, [])
 
+  // Get current planting DBH value (from bin midpoint or override)
+  const getPlantingDbhValue = useMemo(() => {
+    if (!plantingDbhBin) return null
+    
+    const bin = plantingDbhBins.find(b => b.label === plantingDbhBin)
+    if (!bin) return null
+    
+    // Use override if provided, otherwise use midpoint
+    if (plantingDbhOverride !== '' && typeof plantingDbhOverride === 'number') {
+      // Validate override is within bin range
+      const min = bin.min_dbh
+      const max = bin.max_dbh || 200
+      return Math.max(min, Math.min(max, plantingDbhOverride))
+    }
+    
+    return bin.midpoint
+  }, [plantingDbhBin, plantingDbhOverride, plantingDbhBins])
+
   const addPlanting = () => {
-    if (plantingSpecies && plantingDbh !== '' && plantingCount !== '') {
+    if (plantingSpecies && plantingDbhBin && plantingCount !== '') {
+      const dbhValue = getPlantingDbhValue
+      
+      if (dbhValue === null) {
+        setError('Invalid DBH bin selected')
+        return
+      }
+      
+      // Validation: prevent planting >20 cm unless advanced mode
+      const bin = plantingDbhBins.find(b => b.label === plantingDbhBin)
+      if (bin && !advancedMode && bin.max_dbh !== null && bin.max_dbh > 20) {
+        setError('Planting trees >20 cm DBH requires Advanced Mode. Enable it to plant larger trees.')
+        return
+      }
+      
+      if (dbhValue > 20 && !advancedMode) {
+        setError('Planting trees >20 cm DBH requires Advanced Mode. Enable it to plant larger trees.')
+        return
+      }
+      
       setPlantings([...plantings, {
         plot: plantingPlot,
         species: plantingSpecies,
-        dbh_cm: plantingDbh as number,
+        dbh_cm: dbhValue,
         count: plantingCount as number,
       }])
-      // Keep species selected, reset only DBH and count
-      setPlantingDbh(5.0)
+      // Keep species and plot selected, reset only DBH bin and count
+      setPlantingDbhBin('')
+      setPlantingDbhOverride('')
       setPlantingCount(10)
+      setError(null) // Clear any previous errors
     }
   }
 
@@ -120,16 +312,30 @@ export default function Scenarios() {
   }, [plantings])
 
   const addRemoval = () => {
-    if (removalSpecies && removalDbh !== '' && removalCount !== '') {
+    if (removalSpecies && removalDbhBin && removalCount !== '') {
+      const count = removalCount as number
+      const maxAllowed = maxRemovalTrees !== null ? maxRemovalTrees : Infinity
+      
+      // Validate count doesn't exceed maximum
+      if (count > maxAllowed) {
+        setError(`Cannot remove more than ${maxAllowed} ${removalSpecies} tree${maxAllowed !== 1 ? 's' : ''} in ${removalDbhBin} cm DBH bin from ${removalPlot} plot`)
+        return
+      }
+      
+      if (count <= 0) {
+        setError('Count must be at least 1')
+        return
+      }
+      
       setRemovals([...removals, {
         plot: removalPlot,
         species: removalSpecies,
-        dbh_cm: removalDbh as number,
-        count: removalCount as number,
+        dbh_bin: removalDbhBin,
+        count: count,
       }])
-      // Keep species selected, reset only DBH and count
-      setRemovalDbh(10.0)
-      setRemovalCount(10)
+      // Keep species and plot selected, reset only DBH bin and count
+      setRemovalDbhBin('')
+      setRemovalCount(1)
     }
   }
 
@@ -165,20 +371,57 @@ export default function Scenarios() {
       return impact
     }
     
+    // Load removal options for all removal groups to get mean carbon values
+    const removalOptionsMap: Record<string, RemovalOptions> = {}
+    
+    for (const removal of removals) {
+      const key = `${removal.plot}_${removal.species}`
+      if (!removalOptionsMap[key]) {
+        try {
+          const options = await getRemovalOptions(removal.plot, removal.species)
+          removalOptionsMap[key] = options
+        } catch (err) {
+          console.error(`Error loading removal options for ${removal.plot}/${removal.species}:`, err)
+        }
+      }
+    }
+    
     for (const year of yearsList) {
       let totalCarbonLoss = 0
       let totalTreesRemoved = removals.reduce((sum, r) => sum + r.count, 0)
       
       // For each removal group, calculate carbon that would have been stored at this year if trees weren't removed
       for (const removal of removals) {
-        // Simulate what the DBH would be at this year if trees weren't removed
-        const futureDbh = simulateDbhGrowth(removal.dbh_cm, year, removal.species, removal.plot)
+        const key = `${removal.plot}_${removal.species}`
+        const options = removalOptionsMap[key]
         
-        // Calculate carbon that would have been stored at this future year
-        const futureCarbon = estimateCarbonFromDbh(futureDbh, removal.species)
-        
-        // Total carbon loss = carbon per tree at this year * number of trees removed
-        totalCarbonLoss += futureCarbon * removal.count
+        if (options && options.options[removal.dbh_bin]) {
+          // Use mean carbon from the bin
+          const binData = options.options[removal.dbh_bin]
+          const meanCarbon = binData.mean_carbon || 0
+          
+          // For future years, estimate growth using a simple growth factor
+          // This approximates how carbon would increase as trees grow
+          const growthFactor = 1 + (year * 0.02) // ~2% carbon increase per year
+          const futureCarbon = meanCarbon * growthFactor
+          
+          totalCarbonLoss += futureCarbon * removal.count
+        } else {
+          // Fallback: estimate from bin midpoint
+          const [minStr, maxStr] = removal.dbh_bin.replace('+', '').split('-')
+          const minDbh = parseFloat(minStr) || 0
+          const maxDbh = maxStr ? parseFloat(maxStr) : minDbh + 10
+          const midDbh = (minDbh + maxDbh) / 2
+          
+          // Simplified carbon estimation
+          const a = 0.15
+          const b = 2.4
+          const currentCarbon = a * Math.pow(midDbh, b)
+          const growthFactor = 1 + (year * 0.02)
+          const futureCarbon = currentCarbon * growthFactor
+          
+          totalCarbonLoss += futureCarbon * removal.count
+        }
       }
       
       impact[year.toString()] = {
@@ -328,6 +571,7 @@ export default function Scenarios() {
   const loadScenario = (scenario: any) => {
     // Handle migration from old format
     if (scenario.data.plantings) {
+      // Plantings already have dbh_cm, which is fine for backward compatibility
       setPlantings(scenario.data.plantings)
     } else if (scenario.data.speciesMix) {
       // Old format: convert speciesMix to plantings
@@ -343,7 +587,35 @@ export default function Scenarios() {
         }))
       setPlantings(migratedPlantings)
     }
-    if (scenario.data.removals) setRemovals(scenario.data.removals)
+    if (scenario.data.removals) {
+      // Migrate old removals with dbh_cm to dbh_bin format
+      const migratedRemovals: RemovalGroup[] = scenario.data.removals.map((removal: any) => {
+        if (removal.dbh_cm !== undefined && !removal.dbh_bin) {
+          // Convert dbh_cm to dbh_bin
+          const dbh = removal.dbh_cm
+          let binLabel = '120+'
+          if (dbh < 10) binLabel = '0-10'
+          else if (dbh < 20) binLabel = '10-20'
+          else if (dbh < 30) binLabel = '20-30'
+          else if (dbh < 40) binLabel = '30-40'
+          else if (dbh < 50) binLabel = '40-50'
+          else if (dbh < 60) binLabel = '50-60'
+          else if (dbh < 70) binLabel = '60-70'
+          else if (dbh < 80) binLabel = '70-80'
+          else if (dbh < 90) binLabel = '80-90'
+          else if (dbh < 100) binLabel = '90-100'
+          else if (dbh < 110) binLabel = '100-110'
+          else if (dbh < 120) binLabel = '110-120'
+          
+          return {
+            ...removal,
+            dbh_bin: binLabel
+          }
+        }
+        return removal
+      })
+      setRemovals(migratedRemovals)
+    }
     if (scenario.data.carbonSequestration !== undefined) setCarbonSequestration(scenario.data.carbonSequestration)
     if (scenario.data.biodiversityImpact !== undefined) setBiodiversityImpact(scenario.data.biodiversityImpact)
   }
@@ -444,36 +716,73 @@ export default function Scenarios() {
                     </div>
                   </div>
 
-                  {/* Planting DBH */}
+                  {/* Planting DBH Bin */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Initial DBH (cm)</label>
-                    <div className="number-input">
-                      <button
-                        type="button"
-                        onClick={() => decrementNumber(setPlantingDbh, plantingDbh, 0.1)}
-                        className="rounded-l-lg rounded-r-none"
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={plantingDbh}
+                    <label className="block text-sm font-medium mb-2">
+                      Initial DBH Size Class
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={plantingDbhBin}
                         onChange={(e) => {
-                          const value = e.target.value
-                          setPlantingDbh(value === '' ? '' : parseFloat(value) || '')
+                          setPlantingDbhBin(e.target.value)
+                          setPlantingDbhOverride('') // Reset override when bin changes
                         }}
-                        className="rounded-none border-x-0"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => incrementNumber(setPlantingDbh, plantingDbh, 0.1)}
-                        className="rounded-r-lg rounded-l-none"
+                        className="input appearance-none pr-8"
+                        disabled={!plantingSpecies || plantingDbhBins.length === 0}
                       >
-                        <ChevronUp className="w-4 h-4" />
-                      </button>
+                        <option value="">
+                          {plantingDbhBins.length === 0 ? 'Loading bins...' : 'Select DBH size class'}
+                        </option>
+                        {plantingDbhBins.map(bin => {
+                          const isDisabled = !advancedMode && bin.max_dbh !== null && bin.max_dbh > 20
+                          return (
+                            <option 
+                              key={bin.label} 
+                              value={bin.label}
+                              disabled={isDisabled}
+                            >
+                              {bin.label} cm ({bin.description})
+                              {isDisabled && ' - Enable Advanced Mode'}
+                            </option>
+                          )
+                        })}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
                     </div>
+                    {plantingDbhBin && (() => {
+                      const bin = plantingDbhBins.find(b => b.label === plantingDbhBin)
+                      if (!bin) return null
+                      const currentDbh = getPlantingDbhValue
+                      if (currentDbh === null) return null
+                      return (
+                        <div className="mt-2 p-2 bg-[var(--bg-alt)] rounded-lg text-xs">
+                          <div className="text-[var(--text-muted)]">
+                            DBH value: <span className="font-semibold text-[var(--text)]">{currentDbh.toFixed(1)} cm</span> {plantingDbhOverride === '' ? '(midpoint)' : '(custom)'}
+                          </div>
+                          <div className="text-[var(--text-muted)] mt-1">
+                            Range: {bin.min_dbh}-{bin.max_dbh || '200'} cm • {bin.description}
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
+
+                  {/* Advanced Mode Toggle */}
+                  {plantingDbhBins.some(bin => bin.max_dbh !== null && bin.max_dbh > 20) && (
+                    <div className="flex items-center gap-2 p-2 bg-[var(--bg-alt)] rounded-lg">
+                      <input
+                        type="checkbox"
+                        id="advanced-mode"
+                        checked={advancedMode}
+                        onChange={(e) => setAdvancedMode(e.target.checked)}
+                        className="w-4 h-4 rounded border-[var(--border)] cursor-pointer"
+                      />
+                      <label htmlFor="advanced-mode" className="text-sm text-[var(--text-muted)] cursor-pointer">
+                        Advanced Mode (allow planting trees &gt;20 cm DBH)
+                      </label>
+                    </div>
+                  )}
 
                   {/* Planting Count */}
                   <div>
@@ -508,7 +817,7 @@ export default function Scenarios() {
                   {/* Add Planting Button */}
                   <button
                     onClick={addPlanting}
-                    disabled={!plantingSpecies || plantingDbh === '' || plantingCount === ''}
+                    disabled={!plantingSpecies || !plantingDbhBin || plantingCount === ''}
                     className="w-full btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
@@ -552,26 +861,6 @@ export default function Scenarios() {
                 </h3>
                 
                 <div className="space-y-4">
-                  {/* Removal Species */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Species to Remove</label>
-                    <div className="relative">
-                      <select
-                        value={removalSpecies}
-                        onChange={(e) => setRemovalSpecies(e.target.value)}
-                        className="input appearance-none pr-8"
-                      >
-                        <option value="">Select species</option>
-                        {AVAILABLE_SPECIES.map(species => (
-                          <option key={species} value={species}>
-                            {species.charAt(0).toUpperCase() + species.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
-                    </div>
-                  </div>
-
                   {/* Removal Plot */}
                   <div>
                     <label className="block text-sm font-medium mb-2">Plot Location</label>
@@ -589,71 +878,184 @@ export default function Scenarios() {
                     </div>
                   </div>
 
-                  {/* Removal DBH */}
+                  {/* Removal Species */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">DBH to Remove (cm)</label>
-                    <div className="number-input">
-                      <button
-                        type="button"
-                        onClick={() => decrementNumber(setRemovalDbh, removalDbh, 0.1)}
-                        className="rounded-l-lg rounded-r-none"
+                    <label className="block text-sm font-medium mb-2">Species to Remove</label>
+                    <div className="relative">
+                      <select
+                        value={removalSpecies}
+                        onChange={(e) => setRemovalSpecies(e.target.value)}
+                        className="input appearance-none pr-8"
+                        disabled={availableRemovalSpecies.length === 0}
                       >
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={removalDbh}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          setRemovalDbh(value === '' ? '' : parseFloat(value) || '')
-                        }}
-                        className="rounded-none border-x-0"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => incrementNumber(setRemovalDbh, removalDbh, 0.1)}
-                        className="rounded-r-lg rounded-l-none"
-                      >
-                        <ChevronUp className="w-4 h-4" />
-                      </button>
+                        <option value="">
+                          {availableRemovalSpecies.length === 0 
+                            ? `No species available in ${removalPlot} plot` 
+                            : 'Select species'}
+                        </option>
+                        {availableRemovalSpecies.map(species => (
+                          <option key={species} value={species}>
+                            {species.charAt(0).toUpperCase() + species.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
                     </div>
+                    {availableRemovalSpecies.length > 0 && (
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        {availableRemovalSpecies.length} species available in {removalPlot} plot
+                      </p>
+                    )}
                   </div>
+
+                  {/* Removal DBH Bin */}
+                  {removalSpecies && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2">DBH Size Class</label>
+                      {loadingRemovalOptions ? (
+                        <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading options...
+                        </div>
+                      ) : removalOptions ? (
+                        <>
+                          <div className="relative">
+                            <select
+                              value={removalDbhBin}
+                              onChange={(e) => {
+                                console.log('DBH bin selected:', e.target.value)
+                                setRemovalDbhBin(e.target.value)
+                              }}
+                              className="input appearance-none pr-8 w-full cursor-pointer"
+                              disabled={loadingRemovalOptions}
+                              style={{ zIndex: 1 }}
+                            >
+                              <option value="">Select DBH size class</option>
+                              {removalOptions.bins && removalOptions.bins.length > 0 ? (
+                                removalOptions.bins.map(binLabel => {
+                                  const binData = removalOptions.options[binLabel]
+                                  const available = binData?.count || 0
+                                  const isDisabled = available === 0
+                                  return (
+                                    <option 
+                                      key={binLabel} 
+                                      value={binLabel}
+                                      disabled={isDisabled}
+                                      style={isDisabled ? { color: '#94a3b8' } : {}}
+                                    >
+                                      {binLabel} cm {available === 0 ? '(0 available)' : `(${available} available)`}
+                                    </option>
+                                  )
+                                })
+                              ) : (
+                                <option value="" disabled>No bins available</option>
+                              )}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none z-0" />
+                          </div>
+                          {removalOptions.bins && removalOptions.bins.length > 0 && (
+                            <p className="text-xs text-[var(--text-muted)] mt-1">
+                              {removalOptions.bins.filter(bin => (removalOptions.options[bin]?.count || 0) > 0).length} of {removalOptions.bins.length} bins have available trees
+                            </p>
+                          )}
+                          {removalDbhBin && removalOptions.options[removalDbhBin] && (
+                            <div className="mt-2 p-2 bg-[var(--bg-alt)] rounded-lg text-xs">
+                              <div className="text-[var(--text-muted)]">
+                                Available in dataset: <span className="font-semibold text-[var(--text)]">{removalOptions.options[removalDbhBin].count} trees</span>
+                              </div>
+                              {removalOptions.options[removalDbhBin].mean_dbh > 0 && (
+                                <div className="text-[var(--text-muted)] mt-1">
+                                  Mean DBH: {removalOptions.options[removalDbhBin].mean_dbh.toFixed(1)} cm • 
+                                  Mean Carbon: {removalOptions.options[removalDbhBin].mean_carbon.toFixed(2)} kg C
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      ) : removalOptions === null && removalSpecies && !loadingRemovalOptions ? (
+                        <div className="text-sm text-[var(--error)]">
+                          Failed to load DBH size classes. {error && <span className="text-xs">({error})</span>}
+                        </div>
+                      ) : removalOptions === null && !removalSpecies ? (
+                        <p className="text-sm text-[var(--text-muted)]">Select a species to see DBH size classes</p>
+                      ) : null}
+                    </div>
+                  )}
 
                   {/* Removal Count */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Number of Trees</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Number of Trees
+                      {maxRemovalTrees !== null && (
+                        <span className="text-xs font-normal text-[var(--text-muted)] ml-2">
+                          (max: {maxRemovalTrees})
+                        </span>
+                      )}
+                    </label>
                     <div className="number-input">
                       <button
                         type="button"
-                        onClick={() => decrementNumber(setRemovalCount, removalCount)}
+                        onClick={() => {
+                          const current = typeof removalCount === 'number' ? removalCount : 0
+                          const newValue = Math.max(1, current - 1)
+                          setRemovalCount(maxRemovalTrees !== null ? Math.min(newValue, maxRemovalTrees) : newValue)
+                        }}
                         className="rounded-l-lg rounded-r-none"
+                        disabled={!removalSpecies || !removalDbhBin || loadingRemovalOptions || (typeof removalCount === 'number' && removalCount <= 1)}
                       >
                         <ChevronDown className="w-4 h-4" />
                       </button>
                       <input
                         type="number"
+                        step="1"
+                        min="1"
+                        max={maxRemovalTrees !== null ? maxRemovalTrees : undefined}
                         value={removalCount}
                         onChange={(e) => {
                           const value = e.target.value
-                          setRemovalCount(value === '' ? '' : parseInt(value) || '')
+                          if (value === '') {
+                            setRemovalCount('')
+                            return
+                          }
+                          const numValue = parseInt(value) || 1
+                          if (maxRemovalTrees !== null) {
+                            setRemovalCount(Math.min(Math.max(1, numValue), maxRemovalTrees))
+                          } else {
+                            setRemovalCount(Math.max(1, numValue))
+                          }
                         }}
                         className="rounded-none border-x-0"
+                        disabled={!removalSpecies || !removalDbhBin || loadingRemovalOptions}
                       />
                       <button
                         type="button"
-                        onClick={() => incrementNumber(setRemovalCount, removalCount)}
+                        onClick={() => {
+                          const current = typeof removalCount === 'number' ? removalCount : 0
+                          const newValue = current + 1
+                          setRemovalCount(maxRemovalTrees !== null ? Math.min(newValue, maxRemovalTrees) : newValue)
+                        }}
                         className="rounded-r-lg rounded-l-none"
+                        disabled={!removalSpecies || !removalDbhBin || loadingRemovalOptions || (maxRemovalTrees !== null && typeof removalCount === 'number' && removalCount >= maxRemovalTrees)}
                       >
                         <ChevronUp className="w-4 h-4" />
                       </button>
                     </div>
+                    {maxRemovalTrees !== null && removalDbhBin && (
+                      <p className="text-xs text-[var(--text-muted)] mt-1">
+                        Max removable: <span className="font-semibold">{maxRemovalTrees}</span> trees in {removalDbhBin} cm DBH bin
+                      </p>
+                    )}
+                    {maxRemovalTrees !== null && typeof removalCount === 'number' && removalCount > maxRemovalTrees && (
+                      <p className="text-xs text-[var(--error)] mt-1">
+                        Cannot remove more than {maxRemovalTrees} tree{maxRemovalTrees !== 1 ? 's' : ''} in this DBH bin
+                      </p>
+                    )}
                   </div>
 
                   {/* Add Removal Button */}
                   <button
                     onClick={addRemoval}
-                    disabled={!removalSpecies || removalDbh === '' || removalCount === ''}
+                    disabled={!removalSpecies || !removalDbhBin || removalCount === ''}
                     className="w-full btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
@@ -669,7 +1071,7 @@ export default function Scenarios() {
                           <div className="text-sm">
                             <div className="font-medium">{removal.count} trees</div>
                             <div className="text-xs text-[var(--text-muted)]">
-                              {removal.species} • {removal.plot} • {removal.dbh_cm} cm DBH
+                              {removal.species} • {removal.plot} • {removal.dbh_bin} cm DBH bin
                             </div>
                           </div>
                           <button

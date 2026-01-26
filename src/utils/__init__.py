@@ -1,4 +1,4 @@
 """
-Utility modules for Carbon DBH project.
+Utility modules for CO2 Pomfret project.
 """
 

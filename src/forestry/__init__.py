@@ -1,5 +1,5 @@
 """
-Forestry domain-specific modules for Carbon DBH project.
+Forestry domain-specific modules for CO2 Pomfret project.
 
 This package contains:
 - Species classification (hardwood/softwood)

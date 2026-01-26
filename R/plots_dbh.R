@@ -1,5 +1,5 @@
 # ==============================================================================
-# DBH Plotting Script for Carbon DBH Project
+# DBH Plotting Script for CO2 Pomfret Project
 # ==============================================================================
 # Creates publication-quality plots for DBH analysis
 # ==============================================================================
