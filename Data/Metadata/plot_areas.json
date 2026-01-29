@@ -1,5 +1,5 @@
 {
-  "Upper": {"area_m2": null},
-  "Middle": {"area_m2": null},
-  "Lower": {"area_m2": null}
+  "Upper": {"area_m2": 2500},
+  "Middle": {"area_m2": 2500},
+  "Lower": {"area_m2": 2500}
 }

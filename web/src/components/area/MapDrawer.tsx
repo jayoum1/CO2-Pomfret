@@ -17,12 +17,15 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
   useEffect(() => {
     if (mapInitialized || typeof window === 'undefined') return
 
-    // Dynamically import Leaflet to avoid SSR issues
+    // Dynamically import Leaflet and leaflet-draw to avoid SSR issues
     Promise.all([
       import('leaflet'),
       import('leaflet-draw')
-    ]).then(([LModule, DrawModule]) => {
+    ]).then(([LModule]) => {
       const L = LModule.default
+      
+      // leaflet-draw modifies the L namespace when imported
+      // The import above ensures it's loaded
 
       // Fix for default marker icons in Next.js
       delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -50,73 +53,89 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
       drawnLayer.addTo(map)
       drawnLayerRef.current = drawnLayer
 
-      // Initialize draw control
-      // leaflet-draw exports Draw directly, not as default
-      const Draw = (DrawModule as any).default || DrawModule
-      const drawControl = new Draw.Draw({
-        draw: {
-          polygon: {
-            allowIntersection: false,
-            showArea: false,
-            drawError: {
-              color: '#e1e100',
-              message: '<strong>Oh snap!</strong> you can\'t draw that!',
+      // Wait a tick to ensure leaflet-draw has modified L namespace
+      setTimeout(() => {
+        // Initialize draw control - leaflet-draw attaches to L.Control.Draw
+        const DrawControl = (L.Control as any).Draw
+        if (!DrawControl) {
+          console.error('Leaflet Draw not available. Make sure leaflet-draw is imported.')
+          return
+        }
+
+        const drawControl = new DrawControl({
+          draw: {
+            polygon: {
+              allowIntersection: false,
+              showArea: false,
+              drawError: {
+                color: '#e1e100',
+                message: '<strong>Oh snap!</strong> you can\'t draw that!',
+              },
+              shapeOptions: {
+                color: '#14b8a6', // Teal color to match theme
+                fillColor: '#14b8a6',
+                fillOpacity: 0.2,
+                weight: 3,
+              },
             },
-            shapeOptions: {
-              color: '#97009c',
-            },
+            polyline: false,
+            circle: false,
+            rectangle: false,
+            marker: false,
+            circlemarker: false,
           },
-          polyline: false,
-          circle: false,
-          rectangle: false,
-          marker: false,
-          circlemarker: false,
-        },
-        edit: {
-          featureGroup: drawnLayer,
-          remove: true,
-        },
-      })
-
-      map.addControl(drawControl)
-      drawControlRef.current = drawControl
-
-      // Handle polygon drawing completion
-      map.on(Draw.Event.CREATED, (e: any) => {
-        const layer = e.layer
-        drawnLayer.addLayer(layer)
-
-        // Calculate area
-        const geoJson = layer.toGeoJSON()
-        const areaM2 = area(geoJson) * 1000000 // Convert from km² to m²
-        setCalculatedArea(areaM2)
-        onAreaCalculated(areaM2)
-      })
-
-      // Handle polygon editing
-      map.on(Draw.Event.EDITED, (e: any) => {
-        const layers = e.layers
-        layers.eachLayer((layer: any) => {
-          if (layer instanceof L.Polygon) {
-            const geoJson = layer.toGeoJSON()
-            const areaM2 = area(geoJson) * 1000000
-            setCalculatedArea(areaM2)
-            onAreaCalculated(areaM2)
-          }
+          edit: {
+            featureGroup: drawnLayer,
+            remove: true,
+          },
         })
-      })
 
-      // Handle polygon deletion
-      map.on(Draw.Event.DELETED, () => {
-        setCalculatedArea(null)
-      })
+        map.addControl(drawControl)
+        drawControlRef.current = drawControl
 
-      mapRef.current = map
-      setMapInitialized(true)
+        // Handle polygon drawing completion
+        map.on((L.Draw as any).Event.CREATED, (e: any) => {
+          const layer = e.layer
+          drawnLayer.addLayer(layer)
+
+          // Calculate area
+          const geoJson = layer.toGeoJSON()
+          const areaM2 = area(geoJson) * 1000000 // Convert from km² to m²
+          setCalculatedArea(areaM2)
+          onAreaCalculated(areaM2)
+        })
+
+        // Handle polygon editing
+        map.on((L.Draw as any).Event.EDITED, (e: any) => {
+          const layers = e.layers
+          layers.eachLayer((layer: any) => {
+            if (layer instanceof L.Polygon) {
+              const geoJson = layer.toGeoJSON()
+              const areaM2 = area(geoJson) * 1000000
+              setCalculatedArea(areaM2)
+              onAreaCalculated(areaM2)
+            }
+          })
+        })
+
+        // Handle polygon deletion
+        map.on((L.Draw as any).Event.DELETED, () => {
+          setCalculatedArea(null)
+          onAreaCalculated(0) // Reset area when deleted
+        })
+
+        mapRef.current = map
+        setMapInitialized(true)
+      }, 0)
+    }).catch((error) => {
+      console.error('Error initializing map:', error)
     })
 
     return () => {
       if (mapRef.current) {
+        if (drawControlRef.current) {
+          mapRef.current.removeControl(drawControlRef.current)
+        }
         mapRef.current.remove()
         mapRef.current = null
       }
@@ -133,6 +152,10 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
     <div className="space-y-4">
       <div className="text-sm text-[var(--text-muted)]">
         <p>Draw a polygon on the map to calculate its area. Click "Use this area" to apply it to the scaling calculation.</p>
+        <p className="mt-2 text-xs">
+          <strong>How to draw:</strong> Click the polygon tool in the top-right corner of the map, then click on the map to place vertices. 
+          Double-click or click the first point to finish drawing.
+        </p>
       </div>
       
       <div id="map-container" className="w-full h-96 rounded-lg border border-[var(--border)]" />
