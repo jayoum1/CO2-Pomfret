@@ -12,7 +12,7 @@ const MapComponent = dynamic(() => import('@/components/area/MapDrawer'), { ssr:
 export default function AreaGeneralizer() {
   const [plotAreas, setPlotAreas] = useState<any>(null)
   const [targetArea, setTargetArea] = useState<string>('')
-  const [areaUnit, setAreaUnit] = useState<'m2' | 'hectares' | 'acres'>('hectares')
+  const [areaUnit, setAreaUnit] = useState<'m2' | 'hectares' | 'acres'>('m2')
   const [reference, setReference] = useState<'Upper' | 'Middle' | 'Lower' | 'Average' | 'Range'>('Average')
   const [mode, setMode] = useState<'baseline' | 'baseline_stochastic'>('baseline')
   const [loading, setLoading] = useState(false)
@@ -66,7 +66,7 @@ export default function AreaGeneralizer() {
 
     try {
       const areaM2 = convertToM2(parseFloat(targetArea), areaUnit)
-      
+
       const request: ScaleAreaRequest = {
         mode,
         target_area_m2: areaM2,
@@ -101,22 +101,22 @@ export default function AreaGeneralizer() {
   // Prepare chart data
   const chartData = result?.results_by_horizon
     ? [0, 5, 10, 20].map((year) => {
-        const yearData = result.results_by_horizon[year]
-        if (!yearData) return null
-        
-        if (reference === 'Range' && yearData.low && yearData.high) {
-          return {
-            years_ahead: year,
-            low: yearData.low.total_co2e_kg / 1000, // Convert to metric tons
-            high: yearData.high.total_co2e_kg / 1000,
-          }
-        } else {
-          return {
-            years_ahead: year,
-            value: yearData.total_co2e_kg / 1000, // Convert to metric tons
-          }
+      const yearData = result.results_by_horizon[year]
+      if (!yearData) return null
+
+      if (reference === 'Range' && yearData.low && yearData.high) {
+        return {
+          years_ahead: year,
+          low: yearData.low.total_co2e_kg / 1000, // Convert to metric tons
+          high: yearData.high.total_co2e_kg / 1000,
         }
-      }).filter(Boolean)
+      } else {
+        return {
+          years_ahead: year,
+          value: yearData.total_co2e_kg / 1000, // Convert to metric tons
+        }
+      }
+    }).filter(Boolean)
     : []
 
   return (
@@ -321,50 +321,50 @@ export default function AreaGeneralizer() {
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis 
-                      dataKey="years_ahead" 
+                    <XAxis
+                      dataKey="years_ahead"
                       label={{ value: 'Years Ahead', position: 'outside', offset: 10 }}
                       stroke="#64748b"
                       tick={{ fill: '#64748b' }}
                     />
-                    <YAxis 
+                    <YAxis
                       label={{ value: 'CO₂e (metric tons)', angle: -90, position: 'insideLeft', offset: -10 }}
                       stroke="#64748b"
                       tick={{ fill: '#64748b' }}
                       tickFormatter={(value) => value.toLocaleString()}
                     />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px' }}
                       formatter={(value: number) => `${value.toFixed(1)} tCO₂e`}
                     />
                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
                     {reference === 'Range' ? (
                       <>
-                        <Line 
-                          type="monotone" 
-                          dataKey="low" 
-                          stroke="var(--accent)" 
-                          strokeWidth={2} 
-                          name="Low Estimate" 
-                          dot={{ fill: 'var(--accent)', r: 4 }} 
+                        <Line
+                          type="monotone"
+                          dataKey="low"
+                          stroke="var(--accent)"
+                          strokeWidth={2}
+                          name="Low Estimate"
+                          dot={{ fill: 'var(--accent)', r: 4 }}
                         />
-                        <Line 
-                          type="monotone" 
-                          dataKey="high" 
-                          stroke="var(--teal-500)" 
-                          strokeWidth={2} 
-                          name="High Estimate" 
-                          dot={{ fill: 'var(--teal-500)', r: 4 }} 
+                        <Line
+                          type="monotone"
+                          dataKey="high"
+                          stroke="var(--teal-500)"
+                          strokeWidth={2}
+                          name="High Estimate"
+                          dot={{ fill: 'var(--teal-500)', r: 4 }}
                         />
                       </>
                     ) : (
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="var(--teal-500)" 
-                        strokeWidth={2} 
-                        name="Total CO₂e" 
-                        dot={{ fill: 'var(--teal-500)', r: 4 }} 
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="var(--teal-500)"
+                        strokeWidth={2}
+                        name="Total CO₂e"
+                        dot={{ fill: 'var(--teal-500)', r: 4 }}
                       />
                     )}
                   </LineChart>
@@ -375,7 +375,7 @@ export default function AreaGeneralizer() {
             {/* Callout */}
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-900">
-                <strong>Note:</strong> This assumes the selected area is similar to the reference plot(s) in terms of 
+                <strong>Note:</strong> This assumes the selected area is similar to the reference plot(s) in terms of
                 forest structure, species composition, and environmental conditions.
               </p>
             </div>

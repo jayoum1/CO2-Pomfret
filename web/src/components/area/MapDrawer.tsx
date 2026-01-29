@@ -11,51 +11,56 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
   const mapRef = useRef<any>(null)
   const drawControlRef = useRef<any>(null)
   const drawnLayerRef = useRef<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null)
-  const [mapInitialized, setMapInitialized] = useState(false)
+  const initStartedRef = useRef(false)
 
   useEffect(() => {
-    if (mapInitialized || typeof window === 'undefined') return
+    // Guard against double initialization in React Strict Mode
+    if (initStartedRef.current || typeof window === 'undefined') return
+    if (!containerRef.current) return
 
-    // Dynamically import Leaflet and leaflet-draw to avoid SSR issues
-    Promise.all([
-      import('leaflet'),
-      import('leaflet-draw')
-    ]).then(([LModule]) => {
-      const L = LModule.default
-      
-      // leaflet-draw modifies the L namespace when imported
-      // The import above ensures it's loaded
+    initStartedRef.current = true
 
-      // Fix for default marker icons in Next.js
-      delete (L.Icon.Default.prototype as any)._getIconUrl
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-      })
+    // Dynamically import Leaflet first, then leaflet-draw
+    // leaflet-draw expects L to be globally available
+    const initMap = async () => {
+      try {
+        const LModule = await import('leaflet')
+        const L = LModule.default
 
-      // Initialize map centered near Pomfret School, CT
-      // Approximate coordinates: 41.8967° N, 71.9625° W
-      const map = L.map('map-container', {
-        center: [41.8967, -71.9625],
-        zoom: 15,
-      })
+          // Assign L to window so leaflet-draw can find it
+          ; (window as any).L = L
 
-      // Add OpenStreetMap tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-      }).addTo(map)
+        // Now import leaflet-draw - it will attach to window.L
+        await import('leaflet-draw')
 
-      // Create a layer group for drawn features
-      const drawnLayer = new L.LayerGroup()
-      drawnLayer.addTo(map)
-      drawnLayerRef.current = drawnLayer
+        // Fix for default marker icons in Next.js
+        delete (L.Icon.Default.prototype as any)._getIconUrl
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        })
 
-      // Wait a tick to ensure leaflet-draw has modified L namespace
-      setTimeout(() => {
-        // Initialize draw control - leaflet-draw attaches to L.Control.Draw
+        // Initialize map centered near Pomfret School, CT
+        const map = L.map(containerRef.current!, {
+          center: [41.8967, -71.9625],
+          zoom: 15,
+        })
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19,
+        }).addTo(map)
+
+        // Create a FeatureGroup for drawn features (NOT LayerGroup - leaflet-draw requires FeatureGroup)
+        const drawnLayer = new L.FeatureGroup()
+        drawnLayer.addTo(map)
+        drawnLayerRef.current = drawnLayer
+
+        // Initialize draw control
         const DrawControl = (L.Control as any).Draw
         if (!DrawControl) {
           console.error('Leaflet Draw not available. Make sure leaflet-draw is imported.')
@@ -98,9 +103,9 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
           const layer = e.layer
           drawnLayer.addLayer(layer)
 
-          // Calculate area
+          // Calculate area - Turf returns area in m² directly
           const geoJson = layer.toGeoJSON()
-          const areaM2 = area(geoJson) * 1000000 // Convert from km² to m²
+          const areaM2 = area(geoJson)
           setCalculatedArea(areaM2)
           onAreaCalculated(areaM2)
         })
@@ -111,7 +116,7 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
           layers.eachLayer((layer: any) => {
             if (layer instanceof L.Polygon) {
               const geoJson = layer.toGeoJSON()
-              const areaM2 = area(geoJson) * 1000000
+              const areaM2 = area(geoJson)
               setCalculatedArea(areaM2)
               onAreaCalculated(areaM2)
             }
@@ -125,11 +130,12 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
         })
 
         mapRef.current = map
-        setMapInitialized(true)
-      }, 0)
-    }).catch((error) => {
-      console.error('Error initializing map:', error)
-    })
+      } catch (error) {
+        console.error('Error initializing map:', error)
+      }
+    }
+
+    initMap()
 
     return () => {
       if (mapRef.current) {
@@ -140,7 +146,7 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
         mapRef.current = null
       }
     }
-  }, [mapInitialized, onAreaCalculated])
+  }, [onAreaCalculated])
 
   const formatArea = (areaM2: number): string => {
     const hectares = (areaM2 / 10000).toFixed(2)
@@ -153,13 +159,13 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
       <div className="text-sm text-[var(--text-muted)]">
         <p>Draw a polygon on the map to calculate its area. Click "Use this area" to apply it to the scaling calculation.</p>
         <p className="mt-2 text-xs">
-          <strong>How to draw:</strong> Click the polygon tool in the top-right corner of the map, then click on the map to place vertices. 
+          <strong>How to draw:</strong> Click the polygon tool in the top-right corner of the map, then click on the map to place vertices.
           Double-click or click the first point to finish drawing.
         </p>
       </div>
-      
-      <div id="map-container" className="w-full h-96 rounded-lg border border-[var(--border)]" />
-      
+
+      <div ref={containerRef} className="w-full h-96 rounded-lg border border-[var(--border)]" />
+
       {calculatedArea !== null && (
         <div className="p-4 bg-[var(--primary-light)] rounded-lg border border-[var(--primary)]/20">
           <div className="flex items-center justify-between">
