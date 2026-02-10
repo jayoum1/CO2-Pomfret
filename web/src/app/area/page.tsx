@@ -84,6 +84,11 @@ export default function AreaGeneralizer() {
   }
 
   const handleMapAreaSelected = (areaM2: number) => {
+    if (areaM2 <= 0) {
+      setTargetArea('')
+      setMapArea(null)
+      return
+    }
     const displayArea = convertFromM2(areaM2, areaUnit)
     setTargetArea(displayArea.toFixed(2))
     setMapArea(areaM2)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { area } from '@turf/turf'
 
 interface MapDrawerProps {
@@ -13,7 +13,20 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
   const drawnLayerRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [calculatedArea, setCalculatedArea] = useState<number | null>(null)
+  const [polygonCount, setPolygonCount] = useState(0)
   const initStartedRef = useRef(false)
+  const onAreaCalculatedRef = useRef(onAreaCalculated)
+  onAreaCalculatedRef.current = onAreaCalculated
+
+  const clearAllPolygons = useCallback(() => {
+    const layerGroup = drawnLayerRef.current
+    if (layerGroup) {
+      layerGroup.clearLayers()
+      setCalculatedArea(null)
+      setPolygonCount(0)
+      onAreaCalculatedRef.current(0)
+    }
+  }, [])
 
   useEffect(() => {
     // Guard against double initialization in React Strict Mode
@@ -60,6 +73,24 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
         drawnLayer.addTo(map)
         drawnLayerRef.current = drawnLayer
 
+        // Recompute total area from all polygons in the layer (areas stack up)
+        const updateTotalFromDrawnLayer = () => {
+          const layers = drawnLayer.getLayers()
+          let total = 0
+          layers.forEach((layer: any) => {
+            if (layer.toGeoJSON) {
+              total += area(layer.toGeoJSON())
+            }
+          })
+          setPolygonCount(layers.length)
+          if (total === 0) {
+            setCalculatedArea(null)
+            onAreaCalculatedRef.current(0)
+          } else {
+            setCalculatedArea(total)
+          }
+        }
+
         // Initialize draw control
         const DrawControl = (L.Control as any).Draw
         if (!DrawControl) {
@@ -98,35 +129,21 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
         map.addControl(drawControl)
         drawControlRef.current = drawControl
 
-        // Handle polygon drawing completion
+        // When a new polygon is drawn, add it to the layer; total area = sum of all polygons
         map.on((L.Draw as any).Event.CREATED, (e: any) => {
           const layer = e.layer
           drawnLayer.addLayer(layer)
-
-          // Calculate area - Turf returns area in m² directly
-          const geoJson = layer.toGeoJSON()
-          const areaM2 = area(geoJson)
-          setCalculatedArea(areaM2)
-          onAreaCalculated(areaM2)
+          updateTotalFromDrawnLayer()
         })
 
-        // Handle polygon editing
-        map.on((L.Draw as any).Event.EDITED, (e: any) => {
-          const layers = e.layers
-          layers.eachLayer((layer: any) => {
-            if (layer instanceof L.Polygon) {
-              const geoJson = layer.toGeoJSON()
-              const areaM2 = area(geoJson)
-              setCalculatedArea(areaM2)
-              onAreaCalculated(areaM2)
-            }
-          })
+        // When a polygon is edited, recalculate total from all layers
+        map.on((L.Draw as any).Event.EDITED, () => {
+          updateTotalFromDrawnLayer()
         })
 
-        // Handle polygon deletion
+        // When one or more polygons are deleted (individual or multi), recalculate from remaining layers
         map.on((L.Draw as any).Event.DELETED, () => {
-          setCalculatedArea(null)
-          onAreaCalculated(0) // Reset area when deleted
+          updateTotalFromDrawnLayer()
         })
 
         mapRef.current = map
@@ -146,7 +163,7 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
         mapRef.current = null
       }
     }
-  }, [onAreaCalculated])
+  }, [])
 
   const formatArea = (areaM2: number): string => {
     const hectares = (areaM2 / 10000).toFixed(2)
@@ -157,34 +174,48 @@ export default function MapDrawer({ onAreaCalculated }: MapDrawerProps) {
   return (
     <div className="space-y-4">
       <div className="text-sm text-[var(--text-muted)]">
-        <p>Draw a polygon on the map to calculate its area. Click "Use this area" to apply it to the scaling calculation.</p>
+        <p>Draw one or more polygons on the map; their areas add up. Click &quot;Use this area&quot; to apply the total to the scaling calculation.</p>
         <p className="mt-2 text-xs">
-          <strong>How to draw:</strong> Click the polygon tool in the top-right corner of the map, then click on the map to place vertices.
-          Double-click or click the first point to finish drawing.
+          <strong>Draw:</strong> Click the polygon tool (top-right), place vertices on the map, then double-click or click the first point to finish.
+        </p>
+        <p className="mt-1 text-xs">
+          <strong>Delete one polygon:</strong> Click the edit (pencil) tool, click a polygon to select it, then click the delete (trash) tool.
         </p>
       </div>
 
       <div ref={containerRef} className="w-full h-96 rounded-lg border border-[var(--border)]" />
 
-      {calculatedArea !== null && (
+      {calculatedArea !== null && calculatedArea > 0 && (
         <div className="p-4 bg-[var(--primary-light)] rounded-lg border border-[var(--primary)]/20">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-[var(--text-muted)] mb-1">Calculated Area</p>
+              <p className="text-sm font-medium text-[var(--text-muted)] mb-1">
+                Total area {polygonCount > 1 ? `(${polygonCount} polygons)` : ''}
+              </p>
               <p className="text-lg font-semibold" style={{ color: 'var(--teal-600)' }}>
                 {formatArea(calculatedArea)}
               </p>
             </div>
-            <button
-              onClick={() => {
-                if (calculatedArea !== null) {
-                  onAreaCalculated(calculatedArea)
-                }
-              }}
-              className="btn btn-primary"
-            >
-              Use this area
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={clearAllPolygons}
+                className="btn border border-[var(--border)] bg-[var(--bg-alt)] hover:bg-[var(--border)] text-[var(--text)]"
+              >
+                Clear all
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (calculatedArea !== null) {
+                    onAreaCalculated(calculatedArea)
+                  }
+                }}
+                className="btn btn-primary"
+              >
+                Use this area
+              </button>
+            </div>
           </div>
         </div>
       )}
