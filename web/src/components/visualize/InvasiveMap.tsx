@@ -1,22 +1,40 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { AreaBoundary } from '@/lib/geo/boundaries'
-import { GridState } from '@/lib/sim/invasiveSpread'
+import { GridState, OutbreakPoint } from '@/lib/sim/invasiveSpread'
 
 interface InvasiveMapProps {
   selectedArea: AreaBoundary
   gridState: GridState | null
+  placeOutbreakMode: boolean
   onMapReady: () => void
+  onOutbreakClick: (lat: number, lng: number) => void
 }
 
-export default function InvasiveMap({ selectedArea, gridState, onMapReady }: InvasiveMapProps) {
+export default function InvasiveMap({
+  selectedArea,
+  gridState,
+  placeOutbreakMode,
+  onMapReady,
+  onOutbreakClick
+}: InvasiveMapProps) {
   const mapRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const boundaryLayerRef = useRef<any>(null)
-  const overlayLayerRef = useRef<any>(null)
+  const canvasOverlayRef = useRef<HTMLCanvasElement | null>(null)
+  const outbreakMarkersRef = useRef<any[]>([])
   const initStartedRef = useRef(false)
   const LRef = useRef<any>(null)
+  
+  // Use ref to avoid stale closure in click handler
+  const placeOutbreakModeRef = useRef(placeOutbreakMode)
+  const onOutbreakClickRef = useRef(onOutbreakClick)
+  
+  useEffect(() => {
+    placeOutbreakModeRef.current = placeOutbreakMode
+    onOutbreakClickRef.current = onOutbreakClick
+  }, [placeOutbreakMode, onOutbreakClick])
 
   // Initialize map
   useEffect(() => {
@@ -51,6 +69,34 @@ export default function InvasiveMap({ selectedArea, gridState, onMapReady }: Inv
           maxZoom: 19,
         }).addTo(map)
 
+        // Add click handler for outbreak placement
+        map.on('click', (e: any) => {
+          console.log('[InvasiveMap] Map clicked:', {
+            lat: e.latlng.lat,
+            lng: e.latlng.lng,
+            placeOutbreakMode: placeOutbreakModeRef.current
+          })
+          
+          if (placeOutbreakModeRef.current) {
+            onOutbreakClickRef.current(e.latlng.lat, e.latlng.lng)
+          }
+        })
+
+        // Create canvas overlay for rendering infected cells
+        const canvas = document.createElement('canvas')
+        canvas.style.position = 'absolute'
+        canvas.style.top = '0'
+        canvas.style.left = '0'
+        canvas.style.pointerEvents = 'none' // Allow clicks to pass through
+        canvas.style.zIndex = '400' // Above tiles, below markers
+        canvasOverlayRef.current = canvas
+
+        // Add canvas to map pane
+        const mapPane = map.getPane('overlayPane')
+        if (mapPane) {
+          mapPane.appendChild(canvas)
+        }
+
         mapRef.current = map
         onMapReady()
       } catch (error) {
@@ -64,6 +110,10 @@ export default function InvasiveMap({ selectedArea, gridState, onMapReady }: Inv
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
+      }
+      if (canvasOverlayRef.current && canvasOverlayRef.current.parentNode) {
+        canvasOverlayRef.current.parentNode.removeChild(canvasOverlayRef.current)
+        canvasOverlayRef.current = null
       }
     }
   }, [])
@@ -99,55 +149,121 @@ export default function InvasiveMap({ selectedArea, gridState, onMapReady }: Inv
 
   }, [selectedArea])
 
-  // Render infected cells overlay
+  // Update map cursor based on placeOutbreakMode
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    const mapContainer = mapRef.current.getContainer()
+    if (placeOutbreakMode) {
+      mapContainer.style.cursor = 'crosshair'
+    } else {
+      mapContainer.style.cursor = ''
+    }
+  }, [placeOutbreakMode])
+
+  // Render outbreak point markers
   useEffect(() => {
     if (!mapRef.current || !LRef.current || !gridState) return
 
     const map = mapRef.current
     const L = LRef.current
 
-    // Clear old overlay
-    if (overlayLayerRef.current) {
-      map.removeLayer(overlayLayerRef.current)
-    }
+    // Clear old markers
+    outbreakMarkersRef.current.forEach(marker => map.removeLayer(marker))
+    outbreakMarkersRef.current = []
 
-    // Create layer group for infected cells
-    const overlayLayer = L.layerGroup()
+    // Add markers for each outbreak point
+    gridState.outbreakPoints.forEach((point: OutbreakPoint) => {
+      const marker = L.circleMarker([point.lat, point.lng], {
+        radius: 8,
+        fillColor: '#ef4444',
+        color: '#dc2626',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.7
+      })
 
-    // Render infected cells
+      // Add pulsing effect
+      marker.bindTooltip('Outbreak origin', { permanent: false, direction: 'top' })
+      marker.addTo(map)
+      outbreakMarkersRef.current.push(marker)
+    })
+
+  }, [gridState?.outbreakPoints])
+
+  // Render infected cells as rectangular grid patches (expansion is circular/organic via sim logic)
+  useEffect(() => {
+    if (!mapRef.current || !canvasOverlayRef.current || !gridState) return
+
+    const map = mapRef.current
+    const canvas = canvasOverlayRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // Update canvas size to match map
+    const size = map.getSize()
+    canvas.width = size.x
+    canvas.height = size.y
+
+    // Position canvas to match map
+    const topLeft = map.containerPointToLayerPoint([0, 0])
+    canvas.style.transform = `translate(${topLeft.x}px, ${topLeft.y}px)`
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    const latStep = gridState.latStep
+    const lngStep = gridState.lngStep
+
+    // Draw each infected cell as a rectangle aligned to the grid
     for (let row = 0; row < gridState.rows; row++) {
       for (let col = 0; col < gridState.cols; col++) {
         const cell = gridState.cells[row][col]
         if (!cell.infected || !cell.insideArea) continue
 
-        // Compute cell bounds
-        const latMargin = (selectedArea.bounds[0].lat - selectedArea.bounds[2].lat) / gridState.rows
-        const lngMargin = (selectedArea.bounds[1].lng - selectedArea.bounds[0].lng) / gridState.cols
+        // Cell bounds in lat/lng (cell center ± half step)
+        const north = cell.lat + latStep / 2
+        const south = cell.lat - latStep / 2
+        const west = cell.lng - lngStep / 2
+        const east = cell.lng + lngStep / 2
 
-        const cellBounds: [number, number][] = [
-          [cell.lat - latMargin / 2, cell.lng - lngMargin / 2],
-          [cell.lat - latMargin / 2, cell.lng + lngMargin / 2],
-          [cell.lat + latMargin / 2, cell.lng + lngMargin / 2],
-          [cell.lat + latMargin / 2, cell.lng - lngMargin / 2]
-        ]
+        // Convert corners to container pixels
+        const topLeftPx = map.latLngToContainerPoint([north, west])
+        const bottomRightPx = map.latLngToContainerPoint([south, east])
 
-        // Draw infected cell patch
-        const patch = L.rectangle(cellBounds, {
-          color: '#ef4444', // Red
-          fillColor: '#ef4444',
-          fillOpacity: 0.3 + cell.severity * 0.3, // 0.3-0.6 opacity based on severity
-          weight: 0,
-          interactive: false
-        })
+        const x = Math.min(topLeftPx.x, bottomRightPx.x)
+        const y = Math.min(topLeftPx.y, bottomRightPx.y)
+        const w = Math.abs(bottomRightPx.x - topLeftPx.x)
+        const h = Math.abs(bottomRightPx.y - topLeftPx.y)
 
-        patch.addTo(overlayLayer)
+        // Draw rectangular patch (opacity by severity)
+        const alpha = 0.35 + cell.severity * 0.4 // 0.35–0.75
+        ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`
+        ctx.fillRect(x, y, w, h)
       }
     }
 
-    overlayLayer.addTo(map)
-    overlayLayerRef.current = overlayLayer
-
   }, [gridState, selectedArea])
+
+  // Redraw canvas on map move/zoom
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    const map = mapRef.current
+
+    const handleMapUpdate = () => {
+      // Trigger re-render by updating a dummy state or calling render directly
+      // The gridState effect will handle the redraw
+    }
+
+    map.on('moveend', handleMapUpdate)
+    map.on('zoomend', handleMapUpdate)
+
+    return () => {
+      map.off('moveend', handleMapUpdate)
+      map.off('zoomend', handleMapUpdate)
+    }
+  }, [])
 
   return (
     <div ref={containerRef} className="w-full h-full rounded-lg border border-[var(--border)]" style={{ minHeight: '500px' }} />
