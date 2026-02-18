@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { POMFRET_FOREST, CONNECTICUT, AreaBoundary, getAreaById } from '@/lib/geo/boundaries'
 import {
-  createGrid,
+  createGridMeters,
   addOutbreakPoint,
   clearOutbreakPoints,
-  spreadTickRadial,
+  spreadTickFrontier,
   resetInfection,
   GridState,
   SpreadParams
@@ -52,30 +52,47 @@ export default function Visualize() {
     if (!mapReady) return
 
     let grid: GridState
+    const cellSizeMeters = selectedArea.id === 'connecticut' ? 2000 : 35 // CT: 2km cells, Pomfret: 35m cells
     
     if (constrainToBoundary) {
       // Use selected area boundary
-      const resolution = selectedArea.id === 'connecticut' ? 60 : 40
-      grid = createGrid(selectedArea.bounds, resolution)
-    } else {
-      // Use a large viewport-based grid (no polygon constraint)
-      // Create a bounding box around a default center
-      const defaultBounds = [
-        { lat: 42.0, lng: -72.5 },  // NW
-        { lat: 42.0, lng: -71.5 },  // NE
-        { lat: 41.5, lng: -71.5 },  // SE
-        { lat: 41.5, lng: -72.5 },  // SW
-      ]
-      const resolution = 50 // Medium resolution for unconstrained
-      grid = createGrid(defaultBounds, resolution)
+      // Calculate bounding box center and extent
+      const lats = selectedArea.bounds.map(p => p.lat)
+      const lngs = selectedArea.bounds.map(p => p.lng)
+      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2
+      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2
       
-      // Mark ALL cells as inside area (no constraint)
-      grid.cells.forEach(row => {
-        row.forEach(cell => {
-          cell.insideArea = true
-        })
-      })
-      grid.totalCellsInArea = grid.rows * grid.cols
+      // Extent: distance from center to furthest corner + buffer
+      const maxLatDist = Math.max(...lats) - centerLat
+      const maxLngDist = Math.max(...lngs) - centerLng
+      // Convert to meters (approximate)
+      const extentMeters = Math.max(
+        maxLatDist * 111320,
+        maxLngDist * 111320 * Math.cos(centerLat * Math.PI / 180)
+      ) + cellSizeMeters * 5 // Add buffer
+      
+      grid = createGridMeters(
+        selectedArea.bounds,
+        centerLat,
+        centerLng,
+        extentMeters,
+        cellSizeMeters,
+        true // constrain to bounds
+      )
+    } else {
+      // Unconstrained mode: grid only around outbreak seeds (if any)
+      // Start with a default center (Pomfret School)
+      const defaultCenter = { lat: 41.8967, lng: -71.9625 }
+      const extentMeters = 1500 // Default extent for initial grid
+      
+      grid = createGridMeters(
+        null,
+        defaultCenter.lat,
+        defaultCenter.lng,
+        extentMeters,
+        cellSizeMeters,
+        false // no bounds constraint
+      )
     }
     
     setGridState(grid)
@@ -107,14 +124,7 @@ export default function Visualize() {
       }
     } else {
       // No boundary constraint, allow any click
-      // Use a dummy bounds that encompasses the click
-      const dummyBounds = [
-        { lat: lat + 1, lng: lng - 1 },
-        { lat: lat + 1, lng: lng + 1 },
-        { lat: lat - 1, lng: lng + 1 },
-        { lat: lat - 1, lng: lng - 1 },
-      ]
-      updated = addOutbreakPoint(gridState, lat, lng, dummyBounds)
+      updated = addOutbreakPoint(gridState, lat, lng, null)
     }
     
     if (updated) {
@@ -151,28 +161,37 @@ export default function Visualize() {
 
     setSimStatus('running')
 
-    // Start interval for spread ticks using preset params
     const params: SpreadParams = {
-      expansionSpeed: selectedPreset.params.expansionSpeed,
-      spreadRadius: selectedPreset.params.spreadRadius,
+      targetInfectedCells: selectedPreset.params.targetInfectedCells,
+      newInfectionsPerTick: selectedPreset.params.newInfectionsPerTick,
+      jumpChance: selectedPreset.params.jumpChance,
+      jumpRadiusCells: selectedPreset.params.jumpRadiusCells,
       intensity: selectedPreset.params.intensity,
-      edgeRoughness: selectedPreset.params.edgeRoughness,
       mortalityMultiplier: baseMortalityMultiplier,
-      tickIntervalMs: 300,
-      noiseSeed: 42
+      tickIntervalMs: 300
     }
 
     intervalRef.current = setInterval(() => {
-      setTimeSteps(prev => {
-        const nextStep = prev + 1
-        setGridState(prevGrid => {
-          if (!prevGrid) return prevGrid
-          return spreadTickRadial(prevGrid, nextStep, params)
-        })
-        return nextStep
+      setGridState(prevGrid => {
+        if (!prevGrid) return prevGrid
+        const next = spreadTickFrontier(prevGrid, params)
+        if (next.infectedCount >= params.targetInfectedCells && intervalRef.current) {
+          clearInterval(intervalRef.current)
+          intervalRef.current = null
+        }
+        return next
       })
+      setTimeSteps(prev => prev + 1)
     }, params.tickIntervalMs)
   }, [gridState, simStatus, selectedPreset])
+
+  // Pause when we hit target (so UI shows paused, not still "running")
+  useEffect(() => {
+    if (!gridState || simStatus !== 'running') return
+    if (gridState.infectedCount >= selectedPreset.params.targetInfectedCells) {
+      setSimStatus('paused')
+    }
+  }, [gridState?.infectedCount, simStatus, selectedPreset.params.targetInfectedCells])
 
   const handlePause = useCallback(() => {
     setSimStatus('paused')

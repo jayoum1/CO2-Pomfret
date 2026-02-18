@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { AreaBoundary } from '@/lib/geo/boundaries'
 import { GridState, OutbreakPoint } from '@/lib/sim/invasiveSpread'
+import { createInfectedOverlayLayer } from './InfectedOverlayLayer'
 
 interface InvasiveMapProps {
   selectedArea: AreaBoundary
@@ -22,19 +23,23 @@ export default function InvasiveMap({
   const mapRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const boundaryLayerRef = useRef<any>(null)
-  const canvasOverlayRef = useRef<HTMLCanvasElement | null>(null)
+  const overlayLayerRef = useRef<any>(null)
   const outbreakMarkersRef = useRef<any[]>([])
   const initStartedRef = useRef(false)
   const LRef = useRef<any>(null)
-  
-  // Use ref to avoid stale closure in click handler
+
   const placeOutbreakModeRef = useRef(placeOutbreakMode)
   const onOutbreakClickRef = useRef(onOutbreakClick)
-  
+  const gridStateRef = useRef<GridState | null>(gridState)
+
   useEffect(() => {
     placeOutbreakModeRef.current = placeOutbreakMode
     onOutbreakClickRef.current = onOutbreakClick
   }, [placeOutbreakMode, onOutbreakClick])
+
+  useEffect(() => {
+    gridStateRef.current = gridState
+  }, [gridState])
 
   // Initialize map
   useEffect(() => {
@@ -49,7 +54,6 @@ export default function InvasiveMap({
         const L = LModule.default
         LRef.current = L
 
-        // Fix for default marker icons
         delete (L.Icon.Default.prototype as any)._getIconUrl
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -57,45 +61,25 @@ export default function InvasiveMap({
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         })
 
-        // Initialize map
         const map = L.map(containerRef.current!, {
           center: [selectedArea.center.lat, selectedArea.center.lng],
           zoom: selectedArea.zoom,
         })
 
-        // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
           maxZoom: 19,
         }).addTo(map)
 
-        // Add click handler for outbreak placement
         map.on('click', (e: any) => {
-          console.log('[InvasiveMap] Map clicked:', {
-            lat: e.latlng.lat,
-            lng: e.latlng.lng,
-            placeOutbreakMode: placeOutbreakModeRef.current
-          })
-          
           if (placeOutbreakModeRef.current) {
             onOutbreakClickRef.current(e.latlng.lat, e.latlng.lng)
           }
         })
 
-        // Create canvas overlay for rendering infected cells
-        const canvas = document.createElement('canvas')
-        canvas.style.position = 'absolute'
-        canvas.style.top = '0'
-        canvas.style.left = '0'
-        canvas.style.pointerEvents = 'none' // Allow clicks to pass through
-        canvas.style.zIndex = '400' // Above tiles, below markers
-        canvasOverlayRef.current = canvas
-
-        // Add canvas to map pane
-        const mapPane = map.getPane('overlayPane')
-        if (mapPane) {
-          mapPane.appendChild(canvas)
-        }
+        const infectedLayer = createInfectedOverlayLayer(() => gridStateRef.current)
+        infectedLayer.onAdd(map)
+        overlayLayerRef.current = infectedLayer
 
         mapRef.current = map
         onMapReady()
@@ -107,13 +91,13 @@ export default function InvasiveMap({
     initMap()
 
     return () => {
+      if (mapRef.current && overlayLayerRef.current) {
+        overlayLayerRef.current.onRemove(mapRef.current)
+        overlayLayerRef.current = null
+      }
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
-      }
-      if (canvasOverlayRef.current && canvasOverlayRef.current.parentNode) {
-        canvasOverlayRef.current.parentNode.removeChild(canvasOverlayRef.current)
-        canvasOverlayRef.current = null
       }
     }
   }, [])
@@ -191,79 +175,12 @@ export default function InvasiveMap({
 
   }, [gridState?.outbreakPoints])
 
-  // Render infected cells as rectangular grid patches (expansion is circular/organic via sim logic)
+  // Redraw overlay when gridState changes (each sim tick)
   useEffect(() => {
-    if (!mapRef.current || !canvasOverlayRef.current || !gridState) return
-
-    const map = mapRef.current
-    const canvas = canvasOverlayRef.current
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    // Update canvas size to match map
-    const size = map.getSize()
-    canvas.width = size.x
-    canvas.height = size.y
-
-    // Position canvas to match map
-    const topLeft = map.containerPointToLayerPoint([0, 0])
-    canvas.style.transform = `translate(${topLeft.x}px, ${topLeft.y}px)`
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    const latStep = gridState.latStep
-    const lngStep = gridState.lngStep
-
-    // Draw each infected cell as a rectangle aligned to the grid
-    for (let row = 0; row < gridState.rows; row++) {
-      for (let col = 0; col < gridState.cols; col++) {
-        const cell = gridState.cells[row][col]
-        if (!cell.infected || !cell.insideArea) continue
-
-        // Cell bounds in lat/lng (cell center ± half step)
-        const north = cell.lat + latStep / 2
-        const south = cell.lat - latStep / 2
-        const west = cell.lng - lngStep / 2
-        const east = cell.lng + lngStep / 2
-
-        // Convert corners to container pixels
-        const topLeftPx = map.latLngToContainerPoint([north, west])
-        const bottomRightPx = map.latLngToContainerPoint([south, east])
-
-        const x = Math.min(topLeftPx.x, bottomRightPx.x)
-        const y = Math.min(topLeftPx.y, bottomRightPx.y)
-        const w = Math.abs(bottomRightPx.x - topLeftPx.x)
-        const h = Math.abs(bottomRightPx.y - topLeftPx.y)
-
-        // Draw rectangular patch (opacity by severity)
-        const alpha = 0.35 + cell.severity * 0.4 // 0.35–0.75
-        ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`
-        ctx.fillRect(x, y, w, h)
-      }
+    if (overlayLayerRef.current && gridState) {
+      overlayLayerRef.current.redraw()
     }
-
-  }, [gridState, selectedArea])
-
-  // Redraw canvas on map move/zoom
-  useEffect(() => {
-    if (!mapRef.current) return
-
-    const map = mapRef.current
-
-    const handleMapUpdate = () => {
-      // Trigger re-render by updating a dummy state or calling render directly
-      // The gridState effect will handle the redraw
-    }
-
-    map.on('moveend', handleMapUpdate)
-    map.on('zoomend', handleMapUpdate)
-
-    return () => {
-      map.off('moveend', handleMapUpdate)
-      map.off('zoomend', handleMapUpdate)
-    }
-  }, [])
+  }, [gridState])
 
   return (
     <div ref={containerRef} className="w-full h-full rounded-lg border border-[var(--border)]" style={{ minHeight: '500px' }} />

@@ -11,6 +11,7 @@ const navItems = [
   { href: '/scenarios', label: 'Forest Modification' },
   { href: '/area', label: 'Generalize Area' },
   { href: '/visualize', label: 'Visualize' },
+  { href: '/vector-forest', label: 'Vector Forest' },
   { href: '/visualizations', label: 'R Visualizations' },
   { href: '/about', label: 'About' },
 ]
