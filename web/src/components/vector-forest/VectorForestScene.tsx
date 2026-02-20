@@ -5,10 +5,15 @@ import TreeSVG from './TreeSVG'
 import { getTreeState, type TreeInstance } from '@/lib/vectorForest/treeModel'
 import type { TreeState } from '@/lib/vectorForest/treeModel'
 import { visualParamsFromTreeState } from '@/lib/vectorForest/visualMapping'
-import { applyScenario, getFallDirection, isInvasiveOutbreakConfig } from '@/lib/vectorForest/scenarios'
+import { applyScenario, getFallDirection } from '@/lib/vectorForest/scenarios'
 import type { ScenarioConfig } from '@/lib/vectorForest/scenarios'
+import type { ScenarioId, ScenarioCard } from '@/lib/vectorForest/scenarioCatalog'
+import ScenarioCarousel from './ScenarioCarousel'
+import { TREE_SPECIES_WITH_IMAGES, type TreeSpeciesKey } from '@/lib/vectorForest/treeSpeciesImages'
 
-const PAN_THRESHOLD_PX = 5
+const PAN_THRESHOLD_PX = 6
+const PAN_EXTENT = 1.5
+const CAPTURE_THRESHOLD_PX = 6
 
 export type TreeSelection = { treeId: string; tree: TreeInstance; state: TreeState } | null
 
@@ -32,6 +37,14 @@ function seededRandom(seed: number): () => number {
   }
 }
 
+function getScenarioProgress(year: number, scenarioConfig: ScenarioConfig): number {
+  if (scenarioConfig.id === 'baseline') return 0
+  const startYear = 'startYear' in scenarioConfig ? scenarioConfig.startYear : 0
+  const durationYears = 'durationYears' in scenarioConfig ? scenarioConfig.durationYears : 30
+  if (year < startYear) return 0
+  return Math.min(1, (year - startYear) / Math.max(1, durationYears))
+}
+
 export default function VectorForestScene({
   year,
   containerWidth,
@@ -39,6 +52,13 @@ export default function VectorForestScene({
   selectedTreeId,
   onSelectionChange,
   scenarioConfig,
+  scenarioId,
+  scenarioCard,
+  scenarioStartYear,
+  onScenarioStartYearChange,
+  onScenarioPrev,
+  onScenarioNext,
+  onResetScenario,
   metaById,
   onRecordDeath,
   onStatsChange,
@@ -49,6 +69,13 @@ export default function VectorForestScene({
   selectedTreeId: string | null
   onSelectionChange?: (selection: TreeSelection) => void
   scenarioConfig: ScenarioConfig
+  scenarioId: ScenarioId
+  scenarioCard: ScenarioCard
+  scenarioStartYear: number
+  onScenarioStartYearChange: (y: number) => void
+  onScenarioPrev: () => void
+  onScenarioNext: () => void
+  onResetScenario?: () => void
   metaById: Record<string, TreeMeta>
   onRecordDeath?: (treeId: string, deathYear: number, fallDir: number) => void
   onStatsChange?: (stats: {
@@ -68,9 +95,11 @@ export default function VectorForestScene({
 
   const trees = useMemo((): TreeInstance[] => {
     const count = Math.min(80, Math.max(30, Math.floor((containerWidth * containerHeight) / 12000)))
+    const speciesKeys = TREE_SPECIES_WITH_IMAGES as readonly string[]
     const list: TreeInstance[] = []
     for (let i = 0; i < count; i++) {
       const depth = rng()
+      const speciesKey = speciesKeys[Math.floor(rng() * speciesKeys.length)] as TreeSpeciesKey
       list.push({
         id: `tree-${i}`,
         species: 'generic',
@@ -81,6 +110,7 @@ export default function VectorForestScene({
         jitter: rng(),
         hueBase: 100 + Math.floor(rng() * 50),
         lightnessBase: 28 + Math.floor(rng() * 12),
+        speciesKey,
       })
     }
     list.sort((a, b) => a.depth - b.depth)
@@ -89,6 +119,20 @@ export default function VectorForestScene({
 
   const paddingPx = 24
   const groundY = containerHeight * 0.88
+  const sceneHeight = containerHeight || 400
+  const progress = getScenarioProgress(year, scenarioConfig)
+
+  useEffect(() => {
+    const w = containerWidth || 800
+    const h = containerHeight || 400
+    const maxX = w * PAN_EXTENT
+    const maxY = h * PAN_EXTENT
+    setPan((prev) => ({
+      x: Math.max(-maxX, Math.min(maxX, prev.x)),
+      y: Math.max(-maxY, Math.min(maxY, prev.y)),
+    }))
+  }, [containerWidth, containerHeight])
+
   const selectedTree = selectedTreeId ? trees.find((t) => t.id === selectedTreeId) ?? null : null
   const selectedState = selectedTree
     ? applyScenario(getTreeState(selectedTree, year), selectedTree, year, scenarioConfig)
@@ -105,16 +149,16 @@ export default function VectorForestScene({
   }, [selectedTreeId, selectedTree, year, scenarioConfig])
 
   useEffect(() => {
-    if (!onRecordDeath || !isInvasiveOutbreakConfig(scenarioConfig)) return
-    const seed = scenarioConfig.seed
+    if (!onRecordDeath || scenarioConfig.id === 'baseline') return
+    const seed = 'seed' in scenarioConfig ? scenarioConfig.seed : 42
     trees.forEach((tree) => {
       const base = getTreeState(tree, year)
       const state = applyScenario(base, tree, year, scenarioConfig)
       if (!state.alive && !metaById[tree.id]) {
-        onRecordDeath(tree.id, year, getFallDirection(tree.id, seed))
+        onRecordDeath(tree.id, year, getFallDirection(tree.id, seed, scenarioId))
       }
     })
-  }, [trees, year, scenarioConfig, metaById, onRecordDeath])
+  }, [trees, year, scenarioConfig, scenarioId, metaById, onRecordDeath])
 
   useEffect(() => {
     if (!onStatsChange) return
@@ -133,29 +177,57 @@ export default function VectorForestScene({
     onStatsChange({ baselineCarbon, baselineAlive, scenarioCarbon, scenarioAlive })
   }, [trees, year, scenarioConfig, onStatsChange])
 
-  const handlePanLayerPointerDown = useCallback((e: React.PointerEvent) => {
+  const clearPanState = useCallback(() => {
+    panStartRef.current = null
+    isPanningRef.current = false
+  }, [])
+
+  /**
+   * Pan handlers on scene root. We only setPointerCapture AFTER movement exceeds threshold,
+   * so simple clicks and slider drags never capture. UI and trees are ignored via target check.
+   */
+  const handleScenePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return
-    e.currentTarget.setPointerCapture(e.pointerId)
+    const target = e.target as HTMLElement
+    if (target.closest('[data-tree-click="true"]')) return
+    if (target.closest('[data-ui-overlay="true"]')) return
     panStartRef.current = { x: e.clientX, y: e.clientY }
     isPanningRef.current = false
   }, [])
 
-  const handlePanLayerPointerMove = useCallback((e: React.PointerEvent) => {
-    if (panStartRef.current === null) return
-    const dx = e.clientX - panStartRef.current.x
-    const dy = e.clientY - panStartRef.current.y
-    if (!isPanningRef.current && (Math.abs(dx) > PAN_THRESHOLD_PX || Math.abs(dy) > PAN_THRESHOLD_PX)) {
-      isPanningRef.current = true
-    }
-    if (isPanningRef.current) {
-      setPan((prev) => ({ x: prev.x + dx, y: prev.y + dy }))
-      panStartRef.current = { x: e.clientX, y: e.clientY }
-    }
-  }, [])
+  const handleScenePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (panStartRef.current === null) return
+      const dx = e.clientX - panStartRef.current.x
+      const dy = e.clientY - panStartRef.current.y
+      const moved = Math.abs(dx) > CAPTURE_THRESHOLD_PX || Math.abs(dy) > CAPTURE_THRESHOLD_PX
+      if (moved && !isPanningRef.current) {
+        isPanningRef.current = true
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId)
+        } catch (_) {}
+      }
+      if (isPanningRef.current) {
+        const w = containerWidth || 800
+        const h = containerHeight || 400
+        const maxX = w * PAN_EXTENT
+        const maxY = h * PAN_EXTENT
+        setPan((prev) => ({
+          x: Math.max(-maxX, Math.min(maxX, prev.x + dx)),
+          y: Math.max(-maxY, Math.min(maxY, prev.y + dy)),
+        }))
+        panStartRef.current = { x: e.clientX, y: e.clientY }
+      }
+    },
+    [containerWidth, containerHeight]
+  )
 
-  const handlePanLayerPointerUp = useCallback((e: React.PointerEvent) => {
+  const handleScenePointerUp = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return
-    e.currentTarget.releasePointerCapture(e.pointerId)
+    if (panStartRef.current === null) return
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch (_) {}
     const wasPanning = isPanningRef.current
     panStartRef.current = null
     isPanningRef.current = false
@@ -164,12 +236,37 @@ export default function VectorForestScene({
     }
   }, [])
 
-  const handlePanLayerPointerLeave = useCallback((e: React.PointerEvent) => {
-    if (panStartRef.current === null) return
-    e.currentTarget.releasePointerCapture(e.pointerId)
+  const handleScenePointerCancel = useCallback((e: React.PointerEvent) => {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch (_) {}
     panStartRef.current = null
     isPanningRef.current = false
   }, [])
+
+  const handleLostPointerCapture = useCallback((e: React.PointerEvent) => {
+    panStartRef.current = null
+    isPanningRef.current = false
+  }, [])
+
+  const sceneRootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onBlur = () => clearPanState()
+    const onPointerUp = (ev: PointerEvent) => {
+      if (panStartRef.current === null) return
+      const root = sceneRootRef.current
+      const target = ev.target as Node
+      if (root && root.contains(target)) return
+      clearPanState()
+    }
+    window.addEventListener('blur', onBlur)
+    window.addEventListener('pointerup', onPointerUp, true)
+    return () => {
+      window.removeEventListener('blur', onBlur)
+      window.removeEventListener('pointerup', onPointerUp, true)
+    }
+  }, [clearPanState])
 
   const handleTreeClick = useCallback(
     (e: React.MouseEvent, id: string) => {
@@ -198,14 +295,71 @@ export default function VectorForestScene({
     [trees, year, scenarioConfig, onSelectionChange]
   )
 
-  const sceneHeight = containerHeight || 400
+  const handleResetView = useCallback(() => {
+    setPan({ x: 0, y: 0 })
+  }, [])
+
+  // Full-scene overlays (below trees so tree clicks work); pointer-events-none; z-10
+  const waterlineFraction = scenarioId === 'flood' ? lerp(1.05, 0.55, progress) : 0
+
+  const scenarioOverlay =
+    scenarioId === 'tornado' && progress > 0 ? (
+      <div
+        className="absolute inset-0 bg-[rgba(60,60,60,0.25)] pointer-events-none z-10"
+        style={{
+          backgroundImage: 'repeating-linear-gradient(105deg, transparent, transparent 40px, rgba(255,255,255,0.06) 40px, rgba(255,255,255,0.06) 42px)',
+          backgroundSize: '200% 100%',
+          animation: 'windStreak 8s linear infinite',
+        }}
+      />
+    ) : scenarioId === 'flood' && progress > 0 ? (
+      <div
+        className="absolute bottom-0 left-0 right-0 transition-all duration-700 pointer-events-none z-10"
+        style={{
+          height: `${Math.min(1, Math.max(0, 1 - waterlineFraction)) * 100}%`,
+          background: 'linear-gradient(180deg, rgba(30,80,140,0.35) 0%, rgba(20,60,120,0.5) 100%)',
+          clipPath: 'polygon(0 10%, 5% 5%, 10% 8%, 15% 4%, 20% 7%, 25% 3%, 30% 6%, 35% 2%, 40% 5%, 45% 4%, 50% 6%, 55% 3%, 60% 5%, 65% 4%, 70% 6%, 75% 3%, 80% 5%, 85% 4%, 90% 6%, 95% 5%, 100% 4%, 100% 100%, 0 100%)',
+        }}
+      />
+    ) : scenarioId === 'fire' && progress > 0 ? (
+      <div
+        className="absolute inset-0 transition-all duration-700 pointer-events-none z-10"
+        style={{
+          background: 'linear-gradient(135deg, rgba(220,90,40,0.5) 0%, rgba(180,50,20,0.45) 40%, rgba(255,120,50,0.4) 100%)',
+          animation: 'fireFlash 3s ease-out forwards',
+        }}
+      />
+    ) : null
 
   return (
     <div
+      ref={sceneRootRef}
       role="presentation"
-      className="relative w-full h-full rounded-lg overflow-hidden touch-none"
+      className="relative w-full h-full rounded-lg overflow-hidden touch-none cursor-grab active:cursor-grabbing"
       style={{ height: sceneHeight }}
+      onPointerDown={handleScenePointerDown}
+      onPointerMove={handleScenePointerMove}
+      onPointerUp={handleScenePointerUp}
+      onPointerCancel={handleScenePointerCancel}
+      onLostPointerCapture={handleLostPointerCapture}
     >
+      <button
+        type="button"
+        data-ui-overlay="true"
+        onClick={handleResetView}
+        aria-label="Reset view to original position"
+        className="absolute bottom-3 left-3 z-[250] px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--bg)]/90 hover:bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] shadow-sm pointer-events-auto transition-colors"
+      >
+        Reset view
+      </button>
+      <ScenarioCarousel
+        card={scenarioCard}
+        startYear={scenarioStartYear}
+        onStartYearChange={onScenarioStartYearChange}
+        onPrev={onScenarioPrev}
+        onNext={onScenarioNext}
+        onReset={onResetScenario}
+      />
       <div
         className="absolute inset-0"
         style={{
@@ -215,22 +369,20 @@ export default function VectorForestScene({
         }}
       >
         <div
-          role="presentation"
-          className="absolute cursor-grab active:cursor-grabbing"
+          aria-hidden
+          className="absolute"
           style={{
             width: '400%',
             height: '400%',
             left: '-150%',
             top: '-150%',
             background: 'linear-gradient(180deg, #e0f2e9 0%, #c8e6d4 40%, #a8d4b8 100%)',
-            touchAction: 'none',
           }}
-          onPointerDown={handlePanLayerPointerDown}
-          onPointerMove={handlePanLayerPointerMove}
-          onPointerUp={handlePanLayerPointerUp}
-          onPointerCancel={handlePanLayerPointerUp}
-          onPointerLeave={handlePanLayerPointerLeave}
         />
+        {/* Scenario overlay behind tree layer so tree clicks always register */}
+        <div className="absolute inset-0 pointer-events-none z-10" aria-hidden>
+          {scenarioOverlay}
+        </div>
         {trees.map((tree) => {
           const baseState = getTreeState(tree, year)
           const state = applyScenario(baseState, tree, year, scenarioConfig)
@@ -251,13 +403,19 @@ export default function VectorForestScene({
           const isDead = !state.alive
           const fallDeg = meta && isDead ? meta.fallDir * 70 : 0
 
+          const visualClass = params.visualClass === 'tree-burning'
+            ? 'drop-shadow-[0_0_12px_rgba(255,120,0,0.8)]'
+            : params.visualClass === 'tree-charred'
+              ? 'grayscale brightness-[0.55]'
+              : ''
+
           return (
             <button
               key={tree.id}
               type="button"
               data-tree-click="true"
               aria-label={`Inspect tree ${tree.id}`}
-              className={`absolute transition-all duration-300 ease-out cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 hover:brightness-110 touch-none ${
+              className={`absolute transition-all duration-300 ease-out cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 hover:brightness-110 touch-none ${visualClass} ${
                 isSelected
                   ? 'ring-2 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--bg)] brightness-110 z-[200]'
                   : ''

@@ -1,6 +1,7 @@
 'use client'
 
-import type { ScenarioConfig, InvasiveOutbreakConfig } from '@/lib/vectorForest/scenarios'
+import { useState } from 'react'
+import type { EmeraldAshBorerConfig } from '@/lib/vectorForest/scenarios'
 
 const CO2E_FACTOR = 3.667
 const SEVERITY_OPTIONS = [
@@ -11,8 +12,6 @@ const SEVERITY_OPTIONS = [
 
 export default function VectorForestScenarioOverlay({
   year,
-  scenarioId,
-  onScenarioIdChange,
   invasiveConfig,
   onInvasiveConfigChange,
   onResetScenario,
@@ -20,10 +19,8 @@ export default function VectorForestScenarioOverlay({
   stats,
 }: {
   year: number
-  scenarioId: 'baseline' | 'invasive_outbreak'
-  onScenarioIdChange: (id: 'baseline' | 'invasive_outbreak') => void
-  invasiveConfig: InvasiveOutbreakConfig
-  onInvasiveConfigChange: (c: InvasiveOutbreakConfig) => void
+  invasiveConfig: EmeraldAshBorerConfig
+  onInvasiveConfigChange: (c: EmeraldAshBorerConfig) => void
   onResetScenario: () => void
   onNewOutbreakLocation: () => void
   stats: {
@@ -33,96 +30,98 @@ export default function VectorForestScenarioOverlay({
     scenarioAlive: number
   }
 }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
   const deadCount = stats.baselineAlive - stats.scenarioAlive
   const carbonDelta = stats.scenarioCarbon - stats.baselineCarbon
   const co2eDelta = carbonDelta * CO2E_FACTOR
   const totalTrees = stats.baselineAlive + deadCount
   const alivePct = totalTrees > 0 ? Math.round((stats.scenarioAlive / totalTrees) * 100) : 100
 
+  if (!isExpanded) {
+    return (
+      <button
+        type="button"
+        data-ui-overlay="true"
+        onClick={() => setIsExpanded(true)}
+        aria-label="Open scenario controls"
+        className="absolute left-0 top-0 m-3 z-[250] px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--bg)]/90 hover:bg-[var(--bg)] border border-[var(--border)] text-[var(--text)] shadow-sm pointer-events-auto transition-colors"
+      >
+        Scenario
+      </button>
+    )
+  }
+
   return (
-    <div className="absolute left-0 top-0 m-3 w-72 max-w-[calc(100%-24px)] rounded-xl border border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-sm shadow-lg z-20 p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-[var(--text)]">Scenario</h3>
-      <div className="flex rounded-lg bg-[var(--bg-alt)] p-0.5 border border-[var(--border)]">
+    <div className="absolute left-0 top-0 m-3 w-72 max-w-[calc(100%-24px)] rounded-xl border border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-sm shadow-lg z-20 p-4 space-y-4 pointer-events-auto">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-[var(--text)]">Invasive Outbreak</h3>
         <button
           type="button"
-          onClick={() => onScenarioIdChange('baseline')}
-          className={`flex-1 py-2 px-3 text-sm rounded-md transition-colors ${
-            scenarioId === 'baseline'
-              ? 'bg-[var(--primary)] text-white'
-              : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-          }`}
+          onClick={() => setIsExpanded(false)}
+          aria-label="Close scenario"
+          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-alt)] transition-colors"
         >
-          Baseline
-        </button>
-        <button
-          type="button"
-          onClick={() => onScenarioIdChange('invasive_outbreak')}
-          className={`flex-1 py-2 px-3 text-sm rounded-md transition-colors ${
-            scenarioId === 'invasive_outbreak'
-              ? 'bg-[var(--primary)] text-white'
-              : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-          }`}
-        >
-          Invasive Outbreak
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
         </button>
       </div>
 
-      {scenarioId === 'invasive_outbreak' && (
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs text-[var(--text-muted)]">Start year</label>
-            <div className="flex items-center gap-2 mt-0.5">
-              <input
-                type="range"
-                min={0}
-                max={25}
-                value={invasiveConfig.startYear}
-                onChange={(e) =>
-                  onInvasiveConfigChange({ ...invasiveConfig, startYear: Number(e.target.value) })
-                }
-                className="flex-1"
-                style={{ accentColor: 'var(--primary)' }}
-              />
-              <span className="text-sm font-medium w-8">{invasiveConfig.startYear}</span>
-            </div>
-          </div>
-          <div>
-            <label className="text-xs text-[var(--text-muted)]">Severity</label>
-            <div className="flex gap-1 mt-1">
-              {SEVERITY_OPTIONS.map((opt) => (
-                <button
-                  key={opt.label}
-                  type="button"
-                  onClick={() => onInvasiveConfigChange({ ...invasiveConfig, severity: opt.value })}
-                  className={`flex-1 py-1.5 px-2 text-xs rounded border transition-colors ${
-                    invasiveConfig.severity === opt.value
-                      ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]'
-                      : 'border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-alt)]'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onNewOutbreakLocation}
-              className="flex-1 py-2 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] hover:bg-[var(--border)] transition-colors"
-            >
-              New outbreak location
-            </button>
-            <button
-              type="button"
-              onClick={onResetScenario}
-              className="py-2 px-3 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
-            >
-              Reset scenario
-            </button>
+      <div className="space-y-3">
+        <div>
+          <label className="text-xs text-[var(--text-muted)]">Start year</label>
+          <div className="flex items-center gap-2 mt-0.5">
+            <input
+              type="range"
+              min={0}
+              max={25}
+              value={invasiveConfig.startYear}
+              onChange={(e) =>
+                onInvasiveConfigChange({ ...invasiveConfig, startYear: Number(e.target.value) })
+              }
+              className="flex-1"
+              style={{ accentColor: 'var(--primary)' }}
+            />
+            <span className="text-sm font-medium w-8">{invasiveConfig.startYear}</span>
           </div>
         </div>
-      )}
+        <div>
+          <label className="text-xs text-[var(--text-muted)]">Severity</label>
+          <div className="flex gap-1 mt-1">
+            {SEVERITY_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                type="button"
+                onClick={() => onInvasiveConfigChange({ ...invasiveConfig, severity: opt.value })}
+                className={`flex-1 py-1.5 px-2 text-xs rounded border transition-colors ${
+                  invasiveConfig.severity === opt.value
+                    ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]'
+                    : 'border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-alt)]'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onNewOutbreakLocation}
+            className="flex-1 py-2 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] hover:bg-[var(--border)] transition-colors"
+          >
+            New outbreak location
+          </button>
+          <button
+            type="button"
+            onClick={onResetScenario}
+            className="py-2 px-3 text-xs font-medium rounded-lg border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+          >
+            Reset scenario
+          </button>
+        </div>
+      </div>
 
       <div className="pt-2 border-t border-[var(--border)]">
         <h3 className="text-xs font-medium text-[var(--text-muted)] mb-2">Impact at year {year}</h3>
