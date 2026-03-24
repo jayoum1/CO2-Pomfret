@@ -33,11 +33,11 @@ export default function TreeSVG({
     <svg
       viewBox="0 0 120 160"
       xmlns="http://www.w3.org/2000/svg"
-      role="img"
-      aria-label="Tree"
+      aria-hidden
       className={className}
       style={
         {
+          pointerEvents: 'none',
           '--trunkW': `${trunkWidthPx}px`,
           '--trunkH': `${trunkHeightPx}px`,
           '--canopyScale': canopyScale,

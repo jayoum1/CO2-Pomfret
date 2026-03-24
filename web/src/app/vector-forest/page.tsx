@@ -115,7 +115,7 @@ export default function VectorForestPage() {
       >
         <div
           ref={containerRef}
-          className="w-full relative z-10 flex-1 min-h-0 min-h-[500px]"
+          className="w-full relative z-10 flex-1 min-h-[500px]"
           style={{ touchAction: 'none' }}
         >
           <VectorForestScene
@@ -176,7 +176,7 @@ export default function VectorForestPage() {
         {selection && (
           <div
             data-ui-overlay="true"
-            className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full min-h-[500px] rounded-l-lg shadow-lg z-10 flex flex-col bg-white border-l border-gray-200 pointer-events-auto"
+            className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full min-h-[500px] rounded-l-lg shadow-lg z-[250] flex flex-col bg-white border-l border-gray-200 pointer-events-auto"
           >
             <TreeInspectorPanel
               tree={selection.tree}

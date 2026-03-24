@@ -232,6 +232,8 @@ export default function VectorForestScene({
     panStartRef.current = null
     isPanningRef.current = false
     if (!wasPanning) {
+      const el = e.target as HTMLElement | null
+      if (el?.closest('[data-tree-click="true"]') || el?.closest('[data-ui-overlay="true"]')) return
       onSelectionChangeRef.current?.(null)
     }
   }, [])
@@ -377,6 +379,7 @@ export default function VectorForestScene({
             left: '-150%',
             top: '-150%',
             background: 'linear-gradient(180deg, #e0f2e9 0%, #c8e6d4 40%, #a8d4b8 100%)',
+            pointerEvents: 'none',
           }}
         />
         {/* Scenario overlay behind tree layer so tree clicks always register */}
@@ -431,6 +434,8 @@ export default function VectorForestScene({
                 transform: isDead ? `rotateZ(${fallDeg}deg) translateY(${treeHeightPx * 0.08}px)` : undefined,
                 transition: 'transform 900ms ease-in-out, opacity 900ms ease',
               }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation()
                 handleTreeClick(e, tree.id)
