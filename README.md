@@ -1,151 +1,102 @@
-# CO2 Pomfret Analysis Project
+# CO2 Pomfret Project
 
-Data analysis project exploring carbon sequestration and tree growth in the Pomfret School forest.
+Integrated forest carbon and school emissions project for Pomfret School.
 
 ## Overview
 
-This project analyzes DBH (diameter at breast height) data for ~450 trees across 3 forest plots (upper, middle, lower) to:
-- Predict DBH growth (year → year)
-- Model carbon storage
-- Forecast future forest structure over time
+This project combines two connected tracks:
 
-## Project Structure
+- **Forest track**: estimate tree growth and carbon absorption over time from DBH-based baseline growth logic.
+- **School operations track**: estimate annual school CO2 emissions from energy and fuel usage data.
+
+The goal is to compare **estimated school emissions** against **estimated forest carbon absorption capacity** in one workflow.
+
+## Current Model Approach
+
+The current forest model is a **baseline growth-curve simulation**, not a neural network system.
+
+- Tree state is updated from DBH-oriented growth assumptions.
+- Carbon estimates are derived from forestry/allometric logic.
+- Disturbance scenarios (for visualization and experimentation) can be layered onto baseline states.
+- The interactive web app focuses on clear, inspectable behavior rather than opaque model complexity.
+
+## Spring Term Implementation Plan (School Side)
+
+For the spring term, this repository will integrate a school emissions pipeline using already collected school-side data:
+
+- Fossil methane
+- Propane
+- Fuel oil
+- Diesel
+- Gasoline
+- On-site PV solar electricity generation
+- General electricity use
+- Renewable Energy Certificate (REC) purchases
+
+Planned outputs:
+
+- Standardized emissions estimates by source and time period
+- Aggregated school-side emissions totals
+- Comparative view of school emissions versus forest absorption capacity
+
+## Key Features in the Current Project
+
+- Vector Forest interactive page with year slider and tree inspection
+- Baseline tree growth and carbon state progression
+- Disturbance scenario framework for comparative visualization
+- Modular data/analysis structure in Python for reproducible processing
+- Next.js web interface for exploration and communication
+
+## Repository Structure (High Level)
 
 ```
-CO2 Pomfret/
-├── src/                          # Source code
-│   ├── config.py                # Centralized paths & constants
-│   ├── preprocessing/            # Data cleaning & transformation
-│   │   ├── transform.py         # DBH transformation (wide → long)
-│   │   ├── carbon_calc.py       # Carbon calculations
-│   │   ├── species.py           # Species standardization
-│   │   ├── growth.py            # Growth calculations
-│   │   ├── outliers.py          # Outlier handling
-│   │   └── encoding.py          # One-hot encoding
-│   ├── forestry/                # Domain-specific modules
-│   │   ├── species_classifier.py # Hardwood/softwood classification
-│   │   ├── allometry.py         # DBH → biomass/carbon equations
-│   │   └── valuation.py         # Timber value calculations (future)
-│   ├── analysis/                 # Statistical analysis
-│   │   └── modeling.py          # Linear regression modeling
-│   ├── visualization/           # Plotting & visualization
-│   │   ├── eda.py              # EDA plots
-│   │   └── modeling.py         # Model diagnostic plots
-│   └── crawling/                # External data (future)
-│       └── timber_prices_crawler.py
-├── Data/
-│   ├── Raw Data/                # Original CSV files
-│   └── Processed Data/          # Cleaned & transformed data
-├── Graphs/                       # Generated visualizations
-├── Models/                       # Saved model files
-├── requirements.txt              # Python dependencies
-└── README.md                     # This file
+CO2-Pomfret/
+├── Data/            # Raw and processed datasets
+├── src/             # Python processing and analysis code
+├── web/             # Next.js frontend (Vector Forest and pages)
+├── docs/            # Project documentation
+├── Models/          # Saved model artifacts (as needed)
+└── README.md
 ```
 
-## Installation
+## Getting Started
 
-1. Clone the repository:
+### 1) Clone
+
 ```bash
 git clone https://github.com/jayoum1/CO2-Pomfret.git
 cd CO2-Pomfret
 ```
 
-2. Install dependencies:
+### 2) Python environment (data pipeline work)
+
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
-
-### Preprocessing Pipeline
-
-Run preprocessing scripts in order:
+### 3) Web app
 
 ```bash
-# 1. Transform raw data to long format
-python3 src/preprocessing/transform.py
-
-# 2. Add carbon calculations
-python3 src/preprocessing/carbon_calc.py
-
-# 3. Standardize species names
-python3 src/preprocessing/species.py
-
-# 4. Add CarbonGrowth column
-python3 src/preprocessing/growth.py
-
-# 5. Handle outliers (optional)
-python3 src/preprocessing/outliers.py
-
-# 6. One-hot encode for modeling
-python3 src/preprocessing/encoding.py
+cd web
+npm install
+npm run dev
 ```
 
-### Analysis
+Then open `http://localhost:3000`.
 
-```bash
-# Run linear regression modeling
-python3 src/analysis/modeling.py
+## Data Scope
 
-# Generate EDA visualizations
-python3 src/visualization/eda.py
+- Forest inventory and growth-related data (DBH-centered)
+- School operational energy/fuel data for emissions accounting
+- Scenario metadata and visualization assets
 
-# Generate modeling diagnostic plots
-python3 src/visualization/modeling.py
-```
+## Near-Term Roadmap
 
-### Data Quality Check
-
-```bash
-python3 check_data_quality.py
-```
-
-## Data
-
-- **Raw Data**: 3 CSV files (Upper, Middle, Lower plots)
-- **Processed Data**: Long-format datasets with growth rates and carbon calculations
-- **Years**: 2015-2025
-- **Trees**: ~450 trees across 3 plots
-
-## Key Features
-
-- **Modular Architecture**: Clean separation of preprocessing, analysis, and visualization
-- **Forestry Domain Logic**: Reusable allometric equations and species classification
-- **Centralized Configuration**: All paths and constants in `src/config.py`
-- **Data Quality Checks**: Automated validation scripts
-- **Species Standardization**: Handles naming inconsistencies automatically
-
-## Dependencies
-
-- pandas >= 1.5.0
-- numpy >= 1.23.0
-- scikit-learn >= 1.2.0
-- scipy >= 1.10.0
-- statsmodels >= 0.14.0
-- matplotlib >= 3.6.0
-
-## Results
-
-Current model performance:
-- **CarbonGrowthRate**: R² = 0.111, RMSE = 2.67
-- **CarbonGrowth**: R² = 0.214, RMSE = 93.02
-
-Key findings:
-- Plot location significantly affects CarbonGrowthRate (p < 0.05)
-- DBH is a strong predictor for absolute carbon growth
-- Species effects are not statistically significant
-
-## Future Work
-
-- [ ] Advanced ML models (Random Forest, Gradient Boosting)
-- [ ] Timber price crawler integration
-- [ ] Web app/API for interactive analysis
-- [ ] 3D visualization of forest structure
-- [ ] Real-time external data integration
-
-## License
-
-MIT License - see LICENSE file for details
+- [ ] Implement school emissions ingestion and normalization pipeline
+- [ ] Add source-specific CO2 conversion and aggregation modules
+- [ ] Build school emissions vs forest absorption comparison outputs
+- [ ] Surface comparison metrics in the web interface
+- [ ] Improve documentation for assumptions and boundaries
 
 ## Author
 
