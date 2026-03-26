@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import VectorForestScene from '@/components/vector-forest/VectorForestScene'
 import TreeInspectorPanel from '@/components/vector-forest/TreeInspectorPanel'
 import type { TreeSelection, TreeMeta } from '@/components/vector-forest/VectorForestScene'
-import { getScenarioConfig, getScenarioTiming } from '@/lib/vectorForest/scenarios'
+import { getScenarioConfig, getScenarioTiming, applyScenario } from '@/lib/vectorForest/scenarios'
+import { getTreeState } from '@/lib/vectorForest/treeModel'
 import {
   getScenarioCard,
   getPrevScenarioId,
@@ -32,7 +33,10 @@ export default function VectorForestPage() {
   const fullscreenRef = useRef<HTMLDivElement>(null)
 
   const scenarioCard = getScenarioCard(scenarioId)
-  const scenarioConfig = getScenarioConfig(scenarioId, SCENARIO_SEED, scenarioStartYear)
+  const scenarioConfig = useMemo(
+    () => getScenarioConfig(scenarioId, SCENARIO_SEED, scenarioStartYear),
+    [scenarioId, scenarioStartYear]
+  )
 
   useEffect(() => {
     setScenarioStartYear(getScenarioTiming(scenarioId).startYear)
@@ -71,6 +75,21 @@ export default function VectorForestPage() {
     setSelection(null)
   }, [])
 
+  const handleScenarioPrev = useCallback(
+    () => setScenarioId((cur) => getPrevScenarioId(cur)),
+    []
+  )
+  const handleScenarioNext = useCallback(
+    () => setScenarioId((cur) => getNextScenarioId(cur)),
+    []
+  )
+
+  const inspectorState = useMemo(() => {
+    if (!selection) return null
+    const base = getTreeState(selection.tree, year)
+    return applyScenario(base, selection.tree, year, scenarioConfig)
+  }, [selection, year, scenarioConfig])
+
   const handleFullscreenChange = useCallback(() => {
     setIsFullscreen(document.fullscreenElement === fullscreenRef.current)
   }, [])
@@ -82,8 +101,12 @@ export default function VectorForestPage() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && document.fullscreenElement) {
-        document.exitFullscreen()
+      if (e.key === 'Escape') {
+        if (document.fullscreenElement) {
+          document.exitFullscreen()
+        } else {
+          setSelection(null)
+        }
       }
     }
     document.addEventListener('keydown', onKeyDown)
@@ -115,8 +138,7 @@ export default function VectorForestPage() {
       >
         <div
           ref={containerRef}
-          className="w-full relative z-10 flex-1 min-h-[500px]"
-          style={{ touchAction: 'none' }}
+          className="w-full relative z-10 flex-1 min-h-0 min-h-[500px]"
         >
           <VectorForestScene
             year={year}
@@ -129,8 +151,8 @@ export default function VectorForestPage() {
             scenarioCard={scenarioCard}
             scenarioStartYear={scenarioStartYear}
             onScenarioStartYearChange={setScenarioStartYear}
-            onScenarioPrev={() => setScenarioId(getPrevScenarioId(scenarioId))}
-            onScenarioNext={() => setScenarioId(getNextScenarioId(scenarioId))}
+            onScenarioPrev={handleScenarioPrev}
+            onScenarioNext={handleScenarioNext}
             onResetScenario={handleResetScenario}
             metaById={metaById}
             onRecordDeath={handleRecordDeath}
@@ -173,14 +195,14 @@ export default function VectorForestPage() {
           <span className="text-xs text-[var(--text-muted)] shrink-0">0 → 30 years</span>
         </div>
 
-        {selection && (
+        {selection && inspectorState && (
           <div
             data-ui-overlay="true"
             className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full min-h-[500px] rounded-l-lg shadow-lg z-[250] flex flex-col bg-white border-l border-gray-200 pointer-events-auto"
           >
             <TreeInspectorPanel
               tree={selection.tree}
-              state={selection.state}
+              state={inspectorState}
               year={year}
               onClose={handleClosePanel}
               scenarioId={scenarioId}

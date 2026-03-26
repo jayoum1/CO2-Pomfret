@@ -139,14 +139,10 @@ export default function VectorForestScene({
     : null
 
   useEffect(() => {
-    if (!selectedTreeId || !selectedTree) {
+    if (selectedTreeId && !selectedTree) {
       onSelectionChangeRef.current?.(null)
-      return
     }
-    const base = getTreeState(selectedTree, year)
-    const state = applyScenario(base, selectedTree, year, scenarioConfig)
-    onSelectionChangeRef.current?.({ treeId: selectedTreeId, tree: selectedTree, state })
-  }, [selectedTreeId, selectedTree, year, scenarioConfig])
+  }, [selectedTreeId, selectedTree])
 
   useEffect(() => {
     if (!onRecordDeath || scenarioConfig.id === 'baseline') return
@@ -270,9 +266,8 @@ export default function VectorForestScene({
     }
   }, [clearPanState])
 
-  const handleTreeClick = useCallback(
-    (e: React.MouseEvent, id: string) => {
-      e.stopPropagation()
+  const selectTree = useCallback(
+    (id: string) => {
       const tree = trees.find((t) => t.id === id)
       if (tree) {
         const state = applyScenario(getTreeState(tree, year), tree, year, scenarioConfig)
@@ -280,21 +275,6 @@ export default function VectorForestScene({
       }
     },
     [trees, year, scenarioConfig]
-  )
-
-  const handleTreeKeyDown = useCallback(
-    (e: React.KeyboardEvent, id: string) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        e.stopPropagation()
-        const tree = trees.find((t) => t.id === id)
-        if (tree) {
-          const state = applyScenario(getTreeState(tree, year), tree, year, scenarioConfig)
-          onSelectionChange?.({ treeId: id, tree, state })
-        }
-      }
-    },
-    [trees, year, scenarioConfig, onSelectionChange]
   )
 
   const handleResetView = useCallback(() => {
@@ -435,12 +415,18 @@ export default function VectorForestScene({
                 transition: 'transform 900ms ease-in-out, opacity 900ms ease',
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              onPointerUp={(e) => e.stopPropagation()}
-              onClick={(e) => {
+              onPointerUp={(e) => {
                 e.stopPropagation()
-                handleTreeClick(e, tree.id)
+                selectTree(tree.id)
               }}
-              onKeyDown={(e) => handleTreeKeyDown(e, tree.id)}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  selectTree(tree.id)
+                }
+              }}
             >
               <TreeSVG
                 trunkWidthPx={params.trunkWidthPx}
