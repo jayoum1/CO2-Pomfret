@@ -37,14 +37,6 @@ function seededRandom(seed: number): () => number {
   }
 }
 
-function getScenarioProgress(year: number, scenarioConfig: ScenarioConfig): number {
-  if (scenarioConfig.id === 'baseline') return 0
-  const startYear = 'startYear' in scenarioConfig ? scenarioConfig.startYear : 0
-  const durationYears = 'durationYears' in scenarioConfig ? scenarioConfig.durationYears : 30
-  if (year < startYear) return 0
-  return Math.min(1, (year - startYear) / Math.max(1, durationYears))
-}
-
 export default function VectorForestScene({
   year,
   containerWidth,
@@ -120,7 +112,6 @@ export default function VectorForestScene({
   const paddingPx = 24
   const groundY = containerHeight * 0.88
   const sceneHeight = containerHeight || 400
-  const progress = getScenarioProgress(year, scenarioConfig)
 
   useEffect(() => {
     const w = containerWidth || 800
@@ -281,34 +272,33 @@ export default function VectorForestScene({
     setPan({ x: 0, y: 0 })
   }, [])
 
-  // Full-scene overlays (below trees so tree clicks work); pointer-events-none; z-10
-  const waterlineFraction = scenarioId === 'flood' ? lerp(1.05, 0.55, progress) : 0
-
+  // ——— Scenario overlays (pointer-events-none, z-10, behind tree layer) ———
   const scenarioOverlay =
-    scenarioId === 'tornado' && progress > 0 ? (
+    scenarioId === 'tornado' && year === scenarioStartYear ? (
       <div
-        className="absolute inset-0 bg-[rgba(60,60,60,0.25)] pointer-events-none z-10"
+        className="absolute inset-0 pointer-events-none z-10"
         style={{
-          backgroundImage: 'repeating-linear-gradient(105deg, transparent, transparent 40px, rgba(255,255,255,0.06) 40px, rgba(255,255,255,0.06) 42px)',
+          backgroundColor: 'rgba(60,60,60,0.35)',
+          backgroundImage: 'repeating-linear-gradient(105deg, transparent, transparent 40px, rgba(255,255,255,0.08) 40px, rgba(255,255,255,0.08) 42px)',
           backgroundSize: '200% 100%',
-          animation: 'windStreak 8s linear infinite',
+          animation: 'windStreak 6s linear infinite',
         }}
       />
-    ) : scenarioId === 'flood' && progress > 0 ? (
+    ) : scenarioId === 'fire' && year === scenarioStartYear ? (
       <div
-        className="absolute bottom-0 left-0 right-0 transition-all duration-700 pointer-events-none z-10"
+        className="absolute inset-0 pointer-events-none z-10"
         style={{
-          height: `${Math.min(1, Math.max(0, 1 - waterlineFraction)) * 100}%`,
+          background: 'linear-gradient(135deg, rgba(220,90,40,0.55) 0%, rgba(180,50,20,0.5) 40%, rgba(255,120,50,0.45) 100%)',
+        }}
+      />
+    ) : scenarioId === 'flood' ? (
+      <div
+        className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
+        style={{
+          height: year > scenarioStartYear ? '65%' : '0%',
           background: 'linear-gradient(180deg, rgba(30,80,140,0.35) 0%, rgba(20,60,120,0.5) 100%)',
           clipPath: 'polygon(0 10%, 5% 5%, 10% 8%, 15% 4%, 20% 7%, 25% 3%, 30% 6%, 35% 2%, 40% 5%, 45% 4%, 50% 6%, 55% 3%, 60% 5%, 65% 4%, 70% 6%, 75% 3%, 80% 5%, 85% 4%, 90% 6%, 95% 5%, 100% 4%, 100% 100%, 0 100%)',
-        }}
-      />
-    ) : scenarioId === 'fire' && progress > 0 ? (
-      <div
-        className="absolute inset-0 transition-all duration-700 pointer-events-none z-10"
-        style={{
-          background: 'linear-gradient(135deg, rgba(220,90,40,0.5) 0%, rgba(180,50,20,0.45) 40%, rgba(255,120,50,0.4) 100%)',
-          animation: 'fireFlash 3s ease-out forwards',
+          transition: 'height 800ms ease-in-out',
         }}
       />
     ) : null
