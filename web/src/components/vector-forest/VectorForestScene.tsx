@@ -9,6 +9,7 @@ import { applyScenario, getFallDirection } from '@/lib/vectorForest/scenarios'
 import type { ScenarioConfig } from '@/lib/vectorForest/scenarios'
 import type { ScenarioId, ScenarioCard } from '@/lib/vectorForest/scenarioCatalog'
 import ScenarioCarousel from './ScenarioCarousel'
+import AftermathLayer from './aftermath/AftermathLayer'
 import { TREE_SPECIES_WITH_IMAGES, type TreeSpeciesKey } from '@/lib/vectorForest/treeSpeciesImages'
 
 const PAN_THRESHOLD_PX = 6
@@ -356,6 +357,15 @@ export default function VectorForestScene({
         <div className="absolute inset-0 pointer-events-none z-10" aria-hidden>
           {scenarioOverlay}
         </div>
+        {/* Aftermath/recovery props layer */}
+        <AftermathLayer
+          scenarioId={scenarioId}
+          year={year}
+          startYear={scenarioStartYear}
+          containerWidth={containerWidth}
+          containerHeight={containerHeight}
+          groundY={groundY}
+        />
         {trees.map((tree) => {
           const baseState = getTreeState(tree, year)
           const state = applyScenario(baseState, tree, year, scenarioConfig)
@@ -370,11 +380,19 @@ export default function VectorForestScene({
           const topPx = yBottomPx - treeHeightPx
           const treeWidthPx = VIEWBOX_WIDTH * scale
           const xPx = paddingPx + tree.x * (containerWidth - 2 * paddingPx)
-          const opacity = 0.75 + 0.25 * tree.depth
+          const baseOpacity = 0.75 + 0.25 * tree.depth
           const isSelected = selectedTreeId === tree.id
           const meta = metaById[tree.id]
           const isDead = !state.alive
           const fallDeg = meta && isDead ? meta.fallDir * 70 : 0
+
+          // Fallen trees fade out over ~10 years after the event
+          let opacity = baseOpacity
+          if (isDead && meta && scenarioId !== 'baseline' && scenarioId !== 'emerald_ash_borer') {
+            const yearsDown = year - meta.deathYear
+            const fadeProgress = Math.min(1, Math.max(0, yearsDown / 10))
+            opacity = baseOpacity * (1 - fadeProgress * 0.85)
+          }
 
           const visualClass = params.visualClass === 'tree-burning'
             ? 'drop-shadow-[0_0_12px_rgba(255,120,0,0.8)]'
