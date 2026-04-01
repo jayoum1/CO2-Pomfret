@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import VectorForestScene from '@/components/vector-forest/VectorForestScene'
 import TreeInspectorPanel from '@/components/vector-forest/TreeInspectorPanel'
+import RegrowthInspectorPanel from '@/components/vector-forest/RegrowthInspectorPanel'
 import type { TreeSelection, TreeMeta } from '@/components/vector-forest/VectorForestScene'
 import { getScenarioConfig, getScenarioTiming, applyScenario } from '@/lib/vectorForest/scenarios'
 import { getTreeState } from '@/lib/vectorForest/treeModel'
@@ -85,7 +86,7 @@ export default function VectorForestPage() {
   )
 
   const inspectorState = useMemo(() => {
-    if (!selection) return null
+    if (!selection || selection.kind !== 'tree') return null
     const base = getTreeState(selection.tree, year)
     return applyScenario(base, selection.tree, year, scenarioConfig)
   }, [selection, year, scenarioConfig])
@@ -144,7 +145,7 @@ export default function VectorForestPage() {
             year={year}
             containerWidth={dimensions.width}
             containerHeight={dimensions.height}
-            selectedTreeId={selection?.treeId ?? null}
+            selectedTreeId={selection ? (selection.kind === 'tree' ? selection.treeId : selection.item.id) : null}
             onSelectionChange={setSelection}
             scenarioConfig={scenarioConfig}
             scenarioId={scenarioId}
@@ -195,7 +196,7 @@ export default function VectorForestPage() {
           <span className="text-xs text-[var(--text-muted)] shrink-0">0 → 30 years</span>
         </div>
 
-        {selection && inspectorState && (
+        {selection && selection.kind === 'tree' && inspectorState && (
           <div
             data-ui-overlay="true"
             className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full min-h-[500px] rounded-l-lg shadow-lg z-[250] flex flex-col bg-white border-l border-gray-200 pointer-events-auto"
@@ -206,6 +207,18 @@ export default function VectorForestPage() {
               year={year}
               onClose={handleClosePanel}
               scenarioId={scenarioId}
+            />
+          </div>
+        )}
+        {selection && selection.kind === 'regrowth' && (
+          <div
+            data-ui-overlay="true"
+            className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full min-h-[500px] rounded-l-lg shadow-lg z-[250] flex flex-col bg-white border-l border-gray-200 pointer-events-auto"
+          >
+            <RegrowthInspectorPanel
+              item={selection.item}
+              age={year - selection.item.spawnYear}
+              onClose={handleClosePanel}
             />
           </div>
         )}

@@ -16,7 +16,19 @@ const PAN_THRESHOLD_PX = 6
 const PAN_EXTENT = 1.5
 const CAPTURE_THRESHOLD_PX = 6
 
-export type TreeSelection = { treeId: string; tree: TreeInstance; state: TreeState } | null
+export interface RegrowthItem {
+  id: string
+  type: 'sapling'
+  x: number
+  depth: number
+  spawnYear: number
+  scenarioId: ScenarioId
+}
+
+export type TreeSelection =
+  | { kind: 'tree'; treeId: string; tree: TreeInstance; state: TreeState }
+  | { kind: 'regrowth'; item: RegrowthItem; age: number }
+  | null
 
 export interface TreeMeta {
   deathYear: number
@@ -126,12 +138,9 @@ export default function VectorForestScene({
   }, [containerWidth, containerHeight])
 
   const selectedTree = selectedTreeId ? trees.find((t) => t.id === selectedTreeId) ?? null : null
-  const selectedState = selectedTree
-    ? applyScenario(getTreeState(selectedTree, year), selectedTree, year, scenarioConfig)
-    : null
 
   useEffect(() => {
-    if (selectedTreeId && !selectedTree) {
+    if (selectedTreeId && !selectedTreeId.startsWith('regrowth-') && !selectedTree) {
       onSelectionChangeRef.current?.(null)
     }
   }, [selectedTreeId, selectedTree])
@@ -263,10 +272,18 @@ export default function VectorForestScene({
       const tree = trees.find((t) => t.id === id)
       if (tree) {
         const state = applyScenario(getTreeState(tree, year), tree, year, scenarioConfig)
-        onSelectionChangeRef.current?.({ treeId: id, tree, state })
+        onSelectionChangeRef.current?.({ kind: 'tree', treeId: id, tree, state })
       }
     },
     [trees, year, scenarioConfig]
+  )
+
+  const selectRegrowth = useCallback(
+    (item: RegrowthItem) => {
+      const age = year - item.spawnYear
+      onSelectionChangeRef.current?.({ kind: 'regrowth', item, age })
+    },
+    [year]
   )
 
   const handleResetView = useCallback(() => {
@@ -365,6 +382,8 @@ export default function VectorForestScene({
           containerWidth={containerWidth}
           containerHeight={containerHeight}
           groundY={groundY}
+          selectedRegrowthId={selectedTreeId}
+          onRegrowthSelect={selectRegrowth}
         />
         {trees.map((tree) => {
           const baseState = getTreeState(tree, year)
@@ -386,10 +405,12 @@ export default function VectorForestScene({
           const isDead = !state.alive
           const fallDeg = meta && isDead ? meta.fallDir * 70 : 0
 
-          // Fallen trees fade out over ~10 years after the event
+          // Fallen trees fade out then get removed completely
           let opacity = baseOpacity
-          if (isDead && meta && scenarioId !== 'baseline' && scenarioId !== 'emerald_ash_borer') {
+          const isDisturbanceScenario = scenarioId !== 'baseline' && scenarioId !== 'emerald_ash_borer'
+          if (isDead && meta && isDisturbanceScenario) {
             const yearsDown = year - meta.deathYear
+            if (yearsDown >= 15) return null
             const fadeProgress = Math.min(1, Math.max(0, yearsDown / 10))
             opacity = baseOpacity * (1 - fadeProgress * 0.85)
           }
