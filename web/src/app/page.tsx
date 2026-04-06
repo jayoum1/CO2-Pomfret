@@ -77,9 +77,28 @@ export default function Dashboard() {
   const carbonTimeSeriesDomain = calculateCarbonTimeSeriesDomain()
 
   if (error) {
+    const isBackendDown = error.includes('Cannot reach the backend')
     return (
-      <div className="card">
-        <div className="text-red-600">Error: {error}</div>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold mb-2">Dashboard</h1>
+          <p className="text-[var(--text-muted)]">Carbon sequestration metrics from the simulation backend.</p>
+        </div>
+        <div className="card border-l-4 border-l-amber-400">
+          <div className="flex items-start gap-3">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-amber-500 mt-0.5 shrink-0" aria-hidden><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">{isBackendDown ? 'Backend Server Not Running' : 'Error Loading Data'}</h3>
+              <p className="text-sm text-gray-600 mb-3">{error}</p>
+              {isBackendDown && (
+                <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                  <p className="font-medium mb-1">To start the backend:</p>
+                  <code className="text-xs bg-gray-100 px-2 py-1 rounded block mt-1">cd src && uvicorn api.app:app --reload</code>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }

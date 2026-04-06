@@ -25,7 +25,7 @@ export default function AreaGeneralizer() {
       .then(setPlotAreas)
       .catch((err) => {
         console.error('Error loading plot areas:', err)
-        setError('Failed to load plot areas configuration')
+        setError(err.message || 'Failed to load plot areas configuration')
       })
   }, [])
 
@@ -123,6 +123,34 @@ export default function AreaGeneralizer() {
       }
     }).filter(Boolean)
     : []
+
+  const isBackendDown = error?.includes('Cannot reach the backend')
+
+  if (isBackendDown) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Generalize to Any Area</h1>
+          <p className="text-[var(--text-muted)] mt-1">
+            Scale carbon sequestration results from measured plots to any target area
+          </p>
+        </div>
+        <div className="card border-l-4 border-l-amber-400">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-1">Backend Server Not Running</h3>
+              <p className="text-sm text-gray-600 mb-3">{error}</p>
+              <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                <p className="font-medium mb-1">To start the backend:</p>
+                <code className="text-xs bg-gray-100 px-2 py-1 rounded block mt-1">cd src && uvicorn api.app:app --reload</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

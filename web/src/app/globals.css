@@ -413,4 +413,13 @@
       opacity: 0.2;
     }
   }
+  /* Flood rain streaks */
+  @keyframes rainfall {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: -18px 36px;
+    }
+  }
 }

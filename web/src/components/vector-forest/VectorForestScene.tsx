@@ -290,35 +290,99 @@ export default function VectorForestScene({
     setPan({ x: 0, y: 0 })
   }, [])
 
-  // ——— Scenario overlays (pointer-events-none, z-10, behind tree layer) ———
+  // ——— Scenario overlays — fixed to scene viewport (outside panned div) ———
+  // Placed outside the panned container so they cover the full visible area
+  // including the extended green background when panning.
+  const floodWaterPct = (() => {
+    if (scenarioId !== 'flood') return 0
+    const PEAK_HEIGHT = 65
+    const HOLD_YEARS = 1
+    const RECEDE_YEARS = 2
+    const ya = year - scenarioStartYear
+    if (ya <= 0) return 0
+    if (ya <= HOLD_YEARS) return PEAK_HEIGHT
+    return PEAK_HEIGHT * Math.max(0, 1 - (ya - HOLD_YEARS) / RECEDE_YEARS)
+  })()
+
   const scenarioOverlay =
     scenarioId === 'tornado' && year === scenarioStartYear ? (
-      <div
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{
-          backgroundColor: 'rgba(60,60,60,0.35)',
-          backgroundImage: 'repeating-linear-gradient(105deg, transparent, transparent 40px, rgba(255,255,255,0.08) 40px, rgba(255,255,255,0.08) 42px)',
-          backgroundSize: '200% 100%',
-          animation: 'windStreak 6s linear infinite',
-        }}
-      />
+      <div className="absolute inset-0 pointer-events-none z-[15]" aria-hidden>
+        {/* Full-scene grey storm atmosphere with animated wind streaks */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundColor: 'rgba(52,55,65,0.40)',
+          backgroundImage: [
+            'repeating-linear-gradient(108deg, transparent, transparent 34px, rgba(255,255,255,0.07) 34px, rgba(255,255,255,0.07) 36px)',
+            'repeating-linear-gradient(94deg, transparent, transparent 70px, rgba(210,210,225,0.04) 70px, rgba(210,210,225,0.04) 72px)',
+          ].join(', '),
+          backgroundSize: '200% 100%, 300% 100%',
+          animation: 'windStreak 5s linear infinite',
+        }} />
+        {/* Swirling vortex gradient at bottom-centre — breaks the rectangle */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse 60% 55% at 50% 120%, rgba(65,55,45,0.55) 0%, transparent 100%)',
+        }} />
+        {/* Sky darkening at the top */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+          background: 'linear-gradient(180deg, rgba(38,38,52,0.32) 0%, transparent 100%)',
+        }} />
+      </div>
     ) : scenarioId === 'fire' && year === scenarioStartYear ? (
-      <div
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{
-          background: 'linear-gradient(135deg, rgba(220,90,40,0.55) 0%, rgba(180,50,20,0.5) 40%, rgba(255,120,50,0.45) 100%)',
-        }}
-      />
+      <div className="absolute inset-0 pointer-events-none z-[15]" aria-hidden>
+        {/* Fire glow rising from the ground, covers full height */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(0deg, rgba(235,82,12,0.68) 0%, rgba(210,52,8,0.42) 28%, rgba(168,32,4,0.18) 58%, rgba(90,18,4,0.06) 100%)',
+          animation: 'fireFlicker 1.8s ease-in-out infinite',
+        }} />
+        {/* Smoke haze filling the upper sky — decorative extension into green bg */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '55%',
+          background: 'linear-gradient(180deg, rgba(32,20,10,0.30) 0%, rgba(38,22,8,0.12) 60%, transparent 100%)',
+        }} />
+        {/* Ember glow patches scattered across the scene */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: [
+            'radial-gradient(ellipse 32% 22% at 18% 82%, rgba(255,95,8,0.28) 0%, transparent 100%)',
+            'radial-gradient(ellipse 26% 18% at 76% 72%, rgba(255,75,4,0.22) 0%, transparent 100%)',
+            'radial-gradient(ellipse 22% 16% at 50% 92%, rgba(255,115,18,0.32) 0%, transparent 100%)',
+            'radial-gradient(ellipse 18% 12% at 88% 55%, rgba(220,60,0,0.18) 0%, transparent 100%)',
+          ].join(', '),
+          animation: 'fireFlicker 2.6s ease-in-out infinite',
+          animationDelay: '0.4s',
+        }} />
+      </div>
     ) : scenarioId === 'flood' ? (
-      <div
-        className="absolute bottom-0 left-0 right-0 pointer-events-none z-10"
-        style={{
-          height: year > scenarioStartYear ? '65%' : '0%',
-          background: 'linear-gradient(180deg, rgba(30,80,140,0.35) 0%, rgba(20,60,120,0.5) 100%)',
+      <div className="absolute inset-0 pointer-events-none z-[15]" aria-hidden>
+        {/* Overcast stormy sky tint — covers the green background too */}
+        {floodWaterPct > 0 && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(180deg, rgba(12,35,85,0.24) 0%, rgba(18,50,110,0.10) 55%, transparent 100%)',
+            transition: 'opacity 800ms ease',
+          }} />
+        )}
+        {/* Rain streaks across full scene */}
+        {floodWaterPct > 0 && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: 'repeating-linear-gradient(170deg, transparent, transparent 8px, rgba(135,170,215,0.13) 8px, rgba(135,170,215,0.13) 9px)',
+            backgroundSize: '18px 18px',
+            animation: 'rainfall 0.7s linear infinite',
+          }} />
+        )}
+        {/* Water body rising from the bottom */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          height: `${floodWaterPct.toFixed(1)}%`,
+          background: 'linear-gradient(180deg, rgba(30,82,145,0.40) 0%, rgba(14,54,122,0.58) 100%)',
           clipPath: 'polygon(0 10%, 5% 5%, 10% 8%, 15% 4%, 20% 7%, 25% 3%, 30% 6%, 35% 2%, 40% 5%, 45% 4%, 50% 6%, 55% 3%, 60% 5%, 65% 4%, 70% 6%, 75% 3%, 80% 5%, 85% 4%, 90% 6%, 95% 5%, 100% 4%, 100% 100%, 0 100%)',
           transition: 'height 800ms ease-in-out',
-        }}
-      />
+        }} />
+      </div>
     ) : null
 
   return (
@@ -370,10 +434,6 @@ export default function VectorForestScene({
             pointerEvents: 'none',
           }}
         />
-        {/* Scenario overlay behind tree layer so tree clicks always register */}
-        <div className="absolute inset-0 pointer-events-none z-10" aria-hidden>
-          {scenarioOverlay}
-        </div>
         {/* Aftermath/recovery props layer */}
         <AftermathLayer
           scenarioId={scenarioId}
@@ -471,6 +531,9 @@ export default function VectorForestScene({
           )
         })}
       </div>
+      {/* Scenario overlay — fixed to viewport, outside panned div so it covers the
+          full visible scene including extended green background when panning */}
+      {scenarioOverlay}
     </div>
   )
 }
