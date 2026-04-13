@@ -1124,6 +1124,49 @@ async def root():
     }
 
 
+@app.get("/vector-forest/snapshot")
+async def vector_forest_snapshot(
+    years_ahead: int = Query(0, ge=0, le=20),
+    plot: str = Query("all"),
+):
+    """Return tree-level snapshot rows for the Vector Forest visualisation."""
+    try:
+        df = load_snapshot(years_ahead, mode="hybrid")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Snapshot for {years_ahead} years not found")
+
+    if plot.lower() != "all":
+        df = df[df["Plot"].str.lower() == plot.lower()]
+
+    records = []
+    for _, row in df.iterrows():
+        raw_id = str(row["TreeID"]).strip()
+        # Some IDs have notes like "416 (was 683)" — extract the leading number
+        numeric_id = raw_id.split()[0] if raw_id else raw_id
+        try:
+            tree_id = int(float(numeric_id))
+        except (ValueError, TypeError):
+            tree_id = hash(raw_id) & 0x7FFFFFFF
+        records.append({
+            "tree_id": tree_id,
+            "plot": row["Plot"],
+            "species": row["Species"],
+            "dbh_cm": float(row["DBH_cm"]),
+            "carbon_kgC": float(row["carbon_at_time"]),
+        })
+
+    plots_available = sorted(load_snapshot(0, mode="hybrid")["Plot"].unique().tolist())
+
+    return {
+        "success": True,
+        "years_ahead": years_ahead,
+        "plot_filter": plot,
+        "count": len(records),
+        "plots": plots_available,
+        "trees": records,
+    }
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

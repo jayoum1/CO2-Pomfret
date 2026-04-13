@@ -15,6 +15,10 @@ function treeStatusLabel(state: TreeState): string {
   return 'Healthy'
 }
 
+function capitalize(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export default function TreeInspectorPanel({
   tree,
   state,
@@ -37,7 +41,7 @@ export default function TreeInspectorPanel({
       <div className="p-4 border-b border-gray-200 flex items-start justify-between gap-2 shrink-0">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Tree Inspector</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Demo forest (illustrative)</p>
+          <p className="text-xs text-gray-500 mt-0.5">Pomfret forest real data</p>
         </div>
         {onClose && (
           <button
@@ -62,9 +66,21 @@ export default function TreeInspectorPanel({
         )}
         <div className="space-y-2 text-sm">
           <div className="flex justify-between gap-2">
-            <span className="text-gray-500">Tree</span>
+            <span className="text-gray-500">Tree ID</span>
             <span className="text-gray-900 font-mono">{tree.id}</span>
           </div>
+          {tree.plot && (
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-500">Plot</span>
+              <span className="text-gray-900">{tree.plot}</span>
+            </div>
+          )}
+          {tree.speciesName && (
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-500">Species</span>
+              <span className="text-gray-900">{capitalize(tree.speciesName)}</span>
+            </div>
+          )}
           <div className="flex justify-between gap-2">
             <span className="text-gray-500">Year</span>
             <span className="text-gray-900 font-medium">{year}</span>
@@ -82,20 +98,12 @@ export default function TreeInspectorPanel({
             <span className="text-gray-900">{co2eKg} kg CO₂e</span>
           </div>
           <div className="flex justify-between gap-2">
-            <span className="text-gray-500">Growth rate</span>
-            <span className="text-gray-900">{tree.growthRate.toFixed(2)} cm/year</span>
-          </div>
-          <div className="flex justify-between gap-2">
             <span className="text-gray-500">Health</span>
             <span className="text-gray-900">{Math.round(state.health * 100)}%</span>
           </div>
           <div className="flex justify-between gap-2">
             <span className="text-gray-500">Status</span>
             <span className="text-gray-900">{statusLabel}</span>
-          </div>
-          <div className="flex justify-between gap-2">
-            <span className="text-gray-500">Alive</span>
-            <span className="text-gray-900">{state.alive ? 'Yes' : 'No'}</span>
           </div>
         </div>
 

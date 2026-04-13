@@ -10,9 +10,7 @@ import type { ScenarioConfig } from '@/lib/vectorForest/scenarios'
 import type { ScenarioId, ScenarioCard } from '@/lib/vectorForest/scenarioCatalog'
 import ScenarioCarousel from './ScenarioCarousel'
 import AftermathLayer from './aftermath/AftermathLayer'
-import { TREE_SPECIES_WITH_IMAGES, type TreeSpeciesKey } from '@/lib/vectorForest/treeSpeciesImages'
 
-const PAN_THRESHOLD_PX = 6
 const PAN_EXTENT = 1.5
 const CAPTURE_THRESHOLD_PX = 6
 
@@ -42,15 +40,8 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t
 }
 
-function seededRandom(seed: number): () => number {
-  let s = seed
-  return () => {
-    s = (s * 1664525 + 1013904223) >>> 0
-    return s / 4294967296
-  }
-}
-
 export default function VectorForestScene({
+  trees,
   year,
   containerWidth,
   containerHeight,
@@ -68,6 +59,7 @@ export default function VectorForestScene({
   onRecordDeath,
   onStatsChange,
 }: {
+  trees: TreeInstance[]
   year: number
   containerWidth: number
   containerHeight: number
@@ -96,31 +88,10 @@ export default function VectorForestScene({
   const onSelectionChangeRef = useRef(onSelectionChange)
   onSelectionChangeRef.current = onSelectionChange
 
-  const rng = useMemo(() => seededRandom(42), [])
-
-  const trees = useMemo((): TreeInstance[] => {
-    const count = Math.min(80, Math.max(30, Math.floor((containerWidth * containerHeight) / 12000)))
-    const speciesKeys = TREE_SPECIES_WITH_IMAGES as readonly string[]
-    const list: TreeInstance[] = []
-    for (let i = 0; i < count; i++) {
-      const depth = rng()
-      const speciesKey = speciesKeys[Math.floor(rng() * speciesKeys.length)] as TreeSpeciesKey
-      list.push({
-        id: `tree-${i}`,
-        species: 'generic',
-        x: rng(),
-        depth,
-        dbh0: 8 + rng() * 27,
-        growthRate: 0.2 + rng() * 0.6,
-        jitter: rng(),
-        hueBase: 100 + Math.floor(rng() * 50),
-        lightnessBase: 28 + Math.floor(rng() * 12),
-        speciesKey,
-      })
-    }
-    list.sort((a, b) => a.depth - b.depth)
-    return list
-  }, [containerWidth, containerHeight, rng])
+  const sortedTrees = useMemo(
+    () => [...trees].sort((a, b) => a.depth - b.depth),
+    [trees],
+  )
 
   const paddingPx = 24
   const groundY = containerHeight * 0.88
@@ -137,7 +108,7 @@ export default function VectorForestScene({
     }))
   }, [containerWidth, containerHeight])
 
-  const selectedTree = selectedTreeId ? trees.find((t) => t.id === selectedTreeId) ?? null : null
+  const selectedTree = selectedTreeId ? sortedTrees.find((t) => t.id === selectedTreeId) ?? null : null
 
   useEffect(() => {
     if (selectedTreeId && !selectedTreeId.startsWith('regrowth-') && !selectedTree) {
@@ -148,14 +119,14 @@ export default function VectorForestScene({
   useEffect(() => {
     if (!onRecordDeath || scenarioConfig.id === 'baseline') return
     const seed = 'seed' in scenarioConfig ? scenarioConfig.seed : 42
-    trees.forEach((tree) => {
+    sortedTrees.forEach((tree) => {
       const base = getTreeState(tree, year)
       const state = applyScenario(base, tree, year, scenarioConfig)
       if (!state.alive && !metaById[tree.id]) {
         onRecordDeath(tree.id, year, getFallDirection(tree.id, seed, scenarioId))
       }
     })
-  }, [trees, year, scenarioConfig, scenarioId, metaById, onRecordDeath])
+  }, [sortedTrees, year, scenarioConfig, scenarioId, metaById, onRecordDeath])
 
   useEffect(() => {
     if (!onStatsChange) return
@@ -163,7 +134,7 @@ export default function VectorForestScene({
     let baselineAlive = 0
     let scenarioCarbon = 0
     let scenarioAlive = 0
-    trees.forEach((tree) => {
+    sortedTrees.forEach((tree) => {
       const base = getTreeState(tree, year)
       const scenario = applyScenario(base, tree, year, scenarioConfig)
       baselineCarbon += base.carbonKgC
@@ -172,17 +143,13 @@ export default function VectorForestScene({
       if (scenario.alive) scenarioAlive += 1
     })
     onStatsChange({ baselineCarbon, baselineAlive, scenarioCarbon, scenarioAlive })
-  }, [trees, year, scenarioConfig, onStatsChange])
+  }, [sortedTrees, year, scenarioConfig, onStatsChange])
 
   const clearPanState = useCallback(() => {
     panStartRef.current = null
     isPanningRef.current = false
   }, [])
 
-  /**
-   * Pan handlers on scene root. We only setPointerCapture AFTER movement exceeds threshold,
-   * so simple clicks and slider drags never capture. UI and trees are ignored via target check.
-   */
   const handleScenePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return
     const target = e.target as HTMLElement
@@ -216,7 +183,7 @@ export default function VectorForestScene({
         panStartRef.current = { x: e.clientX, y: e.clientY }
       }
     },
-    [containerWidth, containerHeight]
+    [containerWidth, containerHeight],
   )
 
   const handleScenePointerUp = useCallback((e: React.PointerEvent) => {
@@ -243,7 +210,7 @@ export default function VectorForestScene({
     isPanningRef.current = false
   }, [])
 
-  const handleLostPointerCapture = useCallback((e: React.PointerEvent) => {
+  const handleLostPointerCapture = useCallback((_e: React.PointerEvent) => {
     panStartRef.current = null
     isPanningRef.current = false
   }, [])
@@ -269,13 +236,13 @@ export default function VectorForestScene({
 
   const selectTree = useCallback(
     (id: string) => {
-      const tree = trees.find((t) => t.id === id)
+      const tree = sortedTrees.find((t) => t.id === id)
       if (tree) {
         const state = applyScenario(getTreeState(tree, year), tree, year, scenarioConfig)
         onSelectionChangeRef.current?.({ kind: 'tree', treeId: id, tree, state })
       }
     },
-    [trees, year, scenarioConfig]
+    [sortedTrees, year, scenarioConfig],
   )
 
   const selectRegrowth = useCallback(
@@ -283,16 +250,14 @@ export default function VectorForestScene({
       const age = year - item.spawnYear
       onSelectionChangeRef.current?.({ kind: 'regrowth', item, age })
     },
-    [year]
+    [year],
   )
 
   const handleResetView = useCallback(() => {
     setPan({ x: 0, y: 0 })
   }, [])
 
-  // ——— Scenario overlays — fixed to scene viewport (outside panned div) ———
-  // Placed outside the panned container so they cover the full visible area
-  // including the extended green background when panning.
+  // ——— Scenario overlays — fixed to scene viewport ———
   const floodWaterPct = (() => {
     if (scenarioId !== 'flood') return 0
     const PEAK_HEIGHT = 65
@@ -307,81 +272,21 @@ export default function VectorForestScene({
   const scenarioOverlay =
     scenarioId === 'tornado' && year === scenarioStartYear ? (
       <div className="absolute inset-0 pointer-events-none z-[15]" aria-hidden>
-        {/* Full-scene grey storm atmosphere with animated wind streaks */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundColor: 'rgba(52,55,65,0.40)',
-          backgroundImage: [
-            'repeating-linear-gradient(108deg, transparent, transparent 34px, rgba(255,255,255,0.07) 34px, rgba(255,255,255,0.07) 36px)',
-            'repeating-linear-gradient(94deg, transparent, transparent 70px, rgba(210,210,225,0.04) 70px, rgba(210,210,225,0.04) 72px)',
-          ].join(', '),
-          backgroundSize: '200% 100%, 300% 100%',
-          animation: 'windStreak 5s linear infinite',
-        }} />
-        {/* Swirling vortex gradient at bottom-centre — breaks the rectangle */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse 60% 55% at 50% 120%, rgba(65,55,45,0.55) 0%, transparent 100%)',
-        }} />
-        {/* Sky darkening at the top */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
-          background: 'linear-gradient(180deg, rgba(38,38,52,0.32) 0%, transparent 100%)',
-        }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(52,55,65,0.40)', backgroundImage: ['repeating-linear-gradient(108deg, transparent, transparent 34px, rgba(255,255,255,0.07) 34px, rgba(255,255,255,0.07) 36px)', 'repeating-linear-gradient(94deg, transparent, transparent 70px, rgba(210,210,225,0.04) 70px, rgba(210,210,225,0.04) 72px)'].join(', '), backgroundSize: '200% 100%, 300% 100%', animation: 'windStreak 5s linear infinite' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 55% at 50% 120%, rgba(65,55,45,0.55) 0%, transparent 100%)' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(38,38,52,0.32) 0%, transparent 100%)' }} />
       </div>
     ) : scenarioId === 'fire' && year === scenarioStartYear ? (
       <div className="absolute inset-0 pointer-events-none z-[15]" aria-hidden>
-        {/* Fire glow rising from the ground, covers full height */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(0deg, rgba(235,82,12,0.68) 0%, rgba(210,52,8,0.42) 28%, rgba(168,32,4,0.18) 58%, rgba(90,18,4,0.06) 100%)',
-          animation: 'fireFlicker 1.8s ease-in-out infinite',
-        }} />
-        {/* Smoke haze filling the upper sky — decorative extension into green bg */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '55%',
-          background: 'linear-gradient(180deg, rgba(32,20,10,0.30) 0%, rgba(38,22,8,0.12) 60%, transparent 100%)',
-        }} />
-        {/* Ember glow patches scattered across the scene */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: [
-            'radial-gradient(ellipse 32% 22% at 18% 82%, rgba(255,95,8,0.28) 0%, transparent 100%)',
-            'radial-gradient(ellipse 26% 18% at 76% 72%, rgba(255,75,4,0.22) 0%, transparent 100%)',
-            'radial-gradient(ellipse 22% 16% at 50% 92%, rgba(255,115,18,0.32) 0%, transparent 100%)',
-            'radial-gradient(ellipse 18% 12% at 88% 55%, rgba(220,60,0,0.18) 0%, transparent 100%)',
-          ].join(', '),
-          animation: 'fireFlicker 2.6s ease-in-out infinite',
-          animationDelay: '0.4s',
-        }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(235,82,12,0.68) 0%, rgba(210,52,8,0.42) 28%, rgba(168,32,4,0.18) 58%, rgba(90,18,4,0.06) 100%)', animation: 'fireFlicker 1.8s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(180deg, rgba(32,20,10,0.30) 0%, rgba(38,22,8,0.12) 60%, transparent 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: ['radial-gradient(ellipse 32% 22% at 18% 82%, rgba(255,95,8,0.28) 0%, transparent 100%)', 'radial-gradient(ellipse 26% 18% at 76% 72%, rgba(255,75,4,0.22) 0%, transparent 100%)', 'radial-gradient(ellipse 22% 16% at 50% 92%, rgba(255,115,18,0.32) 0%, transparent 100%)', 'radial-gradient(ellipse 18% 12% at 88% 55%, rgba(220,60,0,0.18) 0%, transparent 100%)'].join(', '), animation: 'fireFlicker 2.6s ease-in-out infinite', animationDelay: '0.4s' }} />
       </div>
     ) : scenarioId === 'flood' ? (
       <div className="absolute inset-0 pointer-events-none z-[15]" aria-hidden>
-        {/* Overcast stormy sky tint — covers the green background too */}
-        {floodWaterPct > 0 && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(180deg, rgba(12,35,85,0.24) 0%, rgba(18,50,110,0.10) 55%, transparent 100%)',
-            transition: 'opacity 800ms ease',
-          }} />
-        )}
-        {/* Rain streaks across full scene */}
-        {floodWaterPct > 0 && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            backgroundImage: 'repeating-linear-gradient(170deg, transparent, transparent 8px, rgba(135,170,215,0.13) 8px, rgba(135,170,215,0.13) 9px)',
-            backgroundSize: '18px 18px',
-            animation: 'rainfall 0.7s linear infinite',
-          }} />
-        )}
-        {/* Water body rising from the bottom */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          height: `${floodWaterPct.toFixed(1)}%`,
-          background: 'linear-gradient(180deg, rgba(30,82,145,0.40) 0%, rgba(14,54,122,0.58) 100%)',
-          clipPath: 'polygon(0 10%, 5% 5%, 10% 8%, 15% 4%, 20% 7%, 25% 3%, 30% 6%, 35% 2%, 40% 5%, 45% 4%, 50% 6%, 55% 3%, 60% 5%, 65% 4%, 70% 6%, 75% 3%, 80% 5%, 85% 4%, 90% 6%, 95% 5%, 100% 4%, 100% 100%, 0 100%)',
-          transition: 'height 800ms ease-in-out',
-        }} />
+        {floodWaterPct > 0 && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(12,35,85,0.24) 0%, rgba(18,50,110,0.10) 55%, transparent 100%)', transition: 'opacity 800ms ease' }} />}
+        {floodWaterPct > 0 && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(170deg, transparent, transparent 8px, rgba(135,170,215,0.13) 8px, rgba(135,170,215,0.13) 9px)', backgroundSize: '18px 18px', animation: 'rainfall 0.7s linear infinite' }} />}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${floodWaterPct.toFixed(1)}%`, background: 'linear-gradient(180deg, rgba(30,82,145,0.40) 0%, rgba(14,54,122,0.58) 100%)', clipPath: 'polygon(0 10%, 5% 5%, 10% 8%, 15% 4%, 20% 7%, 25% 3%, 30% 6%, 35% 2%, 40% 5%, 45% 4%, 50% 6%, 55% 3%, 60% 5%, 65% 4%, 70% 6%, 75% 3%, 80% 5%, 85% 4%, 90% 6%, 95% 5%, 100% 4%, 100% 100%, 0 100%)', transition: 'height 800ms ease-in-out' }} />
       </div>
     ) : null
 
@@ -416,25 +321,13 @@ export default function VectorForestScene({
       />
       <div
         className="absolute inset-0"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px)`,
-          width: '100%',
-          height: '100%',
-        }}
+        style={{ transform: `translate(${pan.x}px, ${pan.y}px)`, width: '100%', height: '100%' }}
       >
         <div
           aria-hidden
           className="absolute"
-          style={{
-            width: '400%',
-            height: '400%',
-            left: '-150%',
-            top: '-150%',
-            background: 'linear-gradient(180deg, #e0f2e9 0%, #c8e6d4 40%, #a8d4b8 100%)',
-            pointerEvents: 'none',
-          }}
+          style={{ width: '400%', height: '400%', left: '-150%', top: '-150%', background: 'linear-gradient(180deg, #e0f2e9 0%, #c8e6d4 40%, #a8d4b8 100%)', pointerEvents: 'none' }}
         />
-        {/* Aftermath/recovery props layer */}
         <AftermathLayer
           scenarioId={scenarioId}
           year={year}
@@ -445,7 +338,7 @@ export default function VectorForestScene({
           selectedRegrowthId={selectedTreeId}
           onRegrowthSelect={selectRegrowth}
         />
-        {trees.map((tree) => {
+        {sortedTrees.map((tree) => {
           const baseState = getTreeState(tree, year)
           const state = applyScenario(baseState, tree, year, scenarioConfig)
           const params = visualParamsFromTreeState(state, tree.depth, {
@@ -465,7 +358,6 @@ export default function VectorForestScene({
           const isDead = !state.alive
           const fallDeg = meta && isDead ? meta.fallDir * 70 : 0
 
-          // Fallen trees fade out then get removed completely
           let opacity = baseOpacity
           const isDisturbanceScenario = scenarioId !== 'baseline' && scenarioId !== 'emerald_ash_borer'
           if (isDead && meta && isDisturbanceScenario) {
@@ -504,10 +396,7 @@ export default function VectorForestScene({
                 transition: 'transform 900ms ease-in-out, opacity 900ms ease',
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              onPointerUp={(e) => {
-                e.stopPropagation()
-                selectTree(tree.id)
-              }}
+              onPointerUp={(e) => { e.stopPropagation(); selectTree(tree.id) }}
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -531,8 +420,6 @@ export default function VectorForestScene({
           )
         })}
       </div>
-      {/* Scenario overlay — fixed to viewport, outside panned div so it covers the
-          full visible scene including extended green background when panning */}
       {scenarioOverlay}
     </div>
   )
