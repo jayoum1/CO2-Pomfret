@@ -146,9 +146,10 @@ export default function VectorForestPage() {
 
   const inspectorState = useMemo(() => {
     if (!selection || selection.kind !== 'tree') return null
-    const base = getTreeState(selection.tree, year)
-    return applyScenario(base, selection.tree, year, scenarioConfig)
-  }, [selection, year, scenarioConfig])
+    const currentTree = trees.find(t => t.id === selection.treeId) ?? selection.tree
+    const base = getTreeState(currentTree, year)
+    return applyScenario(base, currentTree, year, scenarioConfig)
+  }, [selection, year, scenarioConfig, trees])
 
   const handleFullscreenChange = useCallback(() => {
     setIsFullscreen(document.fullscreenElement === fullscreenRef.current)
@@ -209,7 +210,7 @@ export default function VectorForestPage() {
         <div>
           <h1 className="text-2xl font-semibold mb-2">Vector Forest</h1>
           <p className="text-[var(--text-muted)]">
-            Real forest snapshot — {trees.length} trees{plotFilter !== 'all' ? ` (${plotFilter} plot)` : ''}.
+            Baseline forest projection — {trees.length} trees{plotFilter !== 'all' ? ` (${plotFilter} plot)` : ''}.
           </p>
         </div>
         {/* Plot selector */}
@@ -330,7 +331,7 @@ export default function VectorForestPage() {
       </div>
 
       <p className="text-sm text-[var(--text-muted)]">
-        Showing real tree data from the Pomfret forest hybrid snapshot model. {trees.length} trees across {plots.length} plots.
+        Showing real tree data from the Pomfret forest baseline model. {trees.length} trees across {plots.length} plots.
       </p>
     </div>
   )

@@ -11,7 +11,7 @@ import type { ScenarioId, ScenarioCard } from '@/lib/vectorForest/scenarioCatalo
 import ScenarioCarousel from './ScenarioCarousel'
 import AftermathLayer from './aftermath/AftermathLayer'
 
-const PAN_EXTENT = 1.5
+const PAN_EXTENT = 3
 const CAPTURE_THRESHOLD_PX = 6
 
 export interface RegrowthItem {
@@ -35,6 +35,7 @@ export interface TreeMeta {
 
 const VIEWBOX_HEIGHT = 160
 const VIEWBOX_WIDTH = 120
+const SCENE_SCALE = 5
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t
@@ -96,6 +97,8 @@ export default function VectorForestScene({
   const paddingPx = 24
   const groundY = containerHeight * 0.88
   const sceneHeight = containerHeight || 400
+  const sceneWidth = containerWidth * SCENE_SCALE
+  const sceneOffsetX = -(sceneWidth - containerWidth) / 2
 
   useEffect(() => {
     const w = containerWidth || 800
@@ -326,7 +329,7 @@ export default function VectorForestScene({
         <div
           aria-hidden
           className="absolute"
-          style={{ width: '400%', height: '400%', left: '-150%', top: '-150%', background: 'linear-gradient(180deg, #e0f2e9 0%, #c8e6d4 40%, #a8d4b8 100%)', pointerEvents: 'none' }}
+          style={{ width: '800%', height: '400%', left: '-350%', top: '-150%', background: 'linear-gradient(180deg, #e0f2e9 0%, #c8e6d4 40%, #a8d4b8 100%)', pointerEvents: 'none' }}
         />
         <AftermathLayer
           scenarioId={scenarioId}
@@ -351,7 +354,7 @@ export default function VectorForestScene({
           const treeHeightPx = VIEWBOX_HEIGHT * scale
           const topPx = yBottomPx - treeHeightPx
           const treeWidthPx = VIEWBOX_WIDTH * scale
-          const xPx = paddingPx + tree.x * (containerWidth - 2 * paddingPx)
+          const xPx = sceneOffsetX + paddingPx + tree.x * (sceneWidth - 2 * paddingPx)
           const baseOpacity = 0.75 + 0.25 * tree.depth
           const isSelected = selectedTreeId === tree.id
           const meta = metaById[tree.id]

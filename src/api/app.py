@@ -1124,6 +1124,32 @@ async def root():
     }
 
 
+_BASELINE_KEYFRAMES = [0, 5, 10, 20]
+_VF_MODE = "baseline_stochastic"
+
+
+def _interpolated_snapshot(years_ahead: int) -> pd.DataFrame:
+    """Load a snapshot for any year 0-20, interpolating between keyframes."""
+    if years_ahead in _BASELINE_KEYFRAMES:
+        return load_snapshot(years_ahead, mode=_VF_MODE)
+
+    lo = max(k for k in _BASELINE_KEYFRAMES if k <= years_ahead)
+    hi = min(k for k in _BASELINE_KEYFRAMES if k > years_ahead)
+    t = (years_ahead - lo) / (hi - lo)
+
+    df_lo = load_snapshot(lo, mode=_VF_MODE)
+    df_hi = load_snapshot(hi, mode=_VF_MODE)
+
+    merged = df_lo[["TreeID", "Plot", "Species", "DBH_cm", "carbon_at_time"]].merge(
+        df_hi[["TreeID", "Plot", "DBH_cm", "carbon_at_time"]],
+        on=["TreeID", "Plot"],
+        suffixes=("_lo", "_hi"),
+    )
+    merged["DBH_cm"] = merged["DBH_cm_lo"] + t * (merged["DBH_cm_hi"] - merged["DBH_cm_lo"])
+    merged["carbon_at_time"] = merged["carbon_at_time_lo"] + t * (merged["carbon_at_time_hi"] - merged["carbon_at_time_lo"])
+    return merged[["TreeID", "Plot", "Species", "DBH_cm", "carbon_at_time"]]
+
+
 @app.get("/vector-forest/snapshot")
 async def vector_forest_snapshot(
     years_ahead: int = Query(0, ge=0, le=20),
@@ -1131,7 +1157,7 @@ async def vector_forest_snapshot(
 ):
     """Return tree-level snapshot rows for the Vector Forest visualisation."""
     try:
-        df = load_snapshot(years_ahead, mode="hybrid")
+        df = _interpolated_snapshot(years_ahead)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Snapshot for {years_ahead} years not found")
 
@@ -1141,7 +1167,6 @@ async def vector_forest_snapshot(
     records = []
     for _, row in df.iterrows():
         raw_id = str(row["TreeID"]).strip()
-        # Some IDs have notes like "416 (was 683)" — extract the leading number
         numeric_id = raw_id.split()[0] if raw_id else raw_id
         try:
             tree_id = int(float(numeric_id))
@@ -1155,7 +1180,7 @@ async def vector_forest_snapshot(
             "carbon_kgC": float(row["carbon_at_time"]),
         })
 
-    plots_available = sorted(load_snapshot(0, mode="hybrid")["Plot"].unique().tolist())
+    plots_available = sorted(load_snapshot(0, mode=_VF_MODE)["Plot"].unique().tolist())
 
     return {
         "success": True,
