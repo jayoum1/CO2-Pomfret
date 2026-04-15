@@ -1,8 +1,6 @@
 'use client'
 
 import type { TreeInstance, TreeState } from '@/lib/vectorForest/treeModel'
-import type { ScenarioId } from '@/lib/vectorForest/scenarioCatalog'
-import { getScenarioCard } from '@/lib/vectorForest/scenarioCatalog'
 import TreeSpeciesImages from './TreeSpeciesImages'
 
 const CO2E_FACTOR = 3.667
@@ -24,24 +22,20 @@ export default function TreeInspectorPanel({
   state,
   year,
   onClose,
-  scenarioId,
 }: {
   tree: TreeInstance
   state: TreeState
   year: number
   onClose?: () => void
-  scenarioId?: ScenarioId
 }) {
   const co2eKg = Math.round(state.carbonKgC * CO2E_FACTOR)
-  const scenarioCard = scenarioId ? getScenarioCard(scenarioId) : null
   const statusLabel = treeStatusLabel(state)
 
   return (
-    <div className="flex flex-col h-full overflow-auto bg-white">
-      <div className="p-4 border-b border-gray-200 flex items-start justify-between gap-2 shrink-0">
+    <div className="flex flex-col h-full overflow-hidden bg-white">
+      <div className="p-3 border-b border-gray-200 flex items-start justify-between gap-2 shrink-0">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Tree Inspector</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Pomfret forest real data</p>
+          <h2 className="text-base font-semibold text-gray-900">Tree Inspector</h2>
         </div>
         {onClose && (
           <button
@@ -58,13 +52,8 @@ export default function TreeInspectorPanel({
         )}
       </div>
 
-      <div className="p-4 space-y-4 flex-1 min-h-0">
-        {scenarioCard && scenarioId !== 'baseline' && (
-          <p className="text-xs text-gray-500">
-            Scenario: {scenarioCard.title}
-          </p>
-        )}
-        <div className="space-y-2 text-sm">
+      <div className="px-3 pb-3 pt-2 flex-1 min-h-0 flex flex-col gap-1 overflow-y-auto">
+        <div className="space-y-1 text-sm shrink-0">
           <div className="flex justify-between gap-2">
             <span className="text-gray-500">Tree ID</span>
             <span className="text-gray-900 font-mono">{tree.id}</span>
@@ -109,7 +98,7 @@ export default function TreeInspectorPanel({
 
         <TreeSpeciesImages
           speciesKey={tree.speciesKey}
-          className="mt-4 pt-4 border-t border-gray-200"
+          className="mt-1 pt-1.5 border-t border-gray-100 flex-1 min-h-0 flex flex-col"
         />
       </div>
     </div>

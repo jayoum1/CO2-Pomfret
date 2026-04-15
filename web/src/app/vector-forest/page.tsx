@@ -19,13 +19,30 @@ import {
 const SCENARIO_SEED = 42
 const MAX_YEAR = 20
 
-/** Deterministic hash producing a number in [0, 1) from a string key. */
-function hashTo01(key: string): number {
-  let h = 0
-  for (let i = 0; i < key.length; i++) {
-    h = (Math.imul(31, h) + key.charCodeAt(i)) >>> 0
+/**
+ * Seed a 32-bit state from a string (xmur3).
+ * Returns a function that yields successive uint32 values with good avalanche.
+ */
+function splitmix32(seed: number) {
+  return () => {
+    seed |= 0
+    seed = (seed + 0x9e3779b9) | 0
+    let t = seed ^ (seed >>> 16)
+    t = Math.imul(t, 0x21f0aaad)
+    t = t ^ (t >>> 15)
+    t = Math.imul(t, 0x735a2d97)
+    t = t ^ (t >>> 15)
+    return (t >>> 0) / 0x100000000
   }
-  return (h % 1_000_000) / 1_000_000
+}
+
+function strToSeed(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) {
+    h = Math.imul(h ^ s.charCodeAt(i), 0x5bd1e995)
+    h = (h ^ (h >>> 15)) >>> 0
+  }
+  return h
 }
 
 const SPECIES_IMAGE_MAP: Record<string, TreeSpeciesKey> = {
@@ -43,25 +60,30 @@ function matchSpeciesKey(speciesName: string): TreeSpeciesKey | undefined {
   return SPECIES_IMAGE_MAP[speciesName.toLowerCase()]
 }
 
-function backendTreeToInstance(t: VectorForestTree): TreeInstance {
+function backendTreeToInstance(t: VectorForestTree, index: number, total: number): TreeInstance {
   const idStr = String(t.tree_id)
-  const x = hashTo01(`x:${idStr}:${t.plot}`)
-  const depth = hashTo01(`d:${idStr}:${t.plot}`)
-  const hueBase = 100 + Math.floor(hashTo01(`hue:${idStr}`) * 50)
-  const lightnessBase = 28 + Math.floor(hashTo01(`lit:${idStr}`) * 12)
+  const rng = splitmix32(strToSeed(`${idStr}:${t.plot}`))
+  const r1 = rng(), r2 = rng(), r3 = rng(), r4 = rng(), r5 = rng()
+
+  const cols = Math.ceil(Math.sqrt(total * 1.5))
+  const rows = Math.ceil(total / cols)
+  const col = index % cols
+  const row = Math.floor(index / cols)
+  const cellX = (col + 0.15 + r1 * 0.7) / cols
+  const cellY = (row + 0.15 + r2 * 0.7) / rows
 
   return {
     id: idStr,
     species: 'generic',
     speciesName: t.species,
     plot: t.plot,
-    x,
-    depth,
+    x: cellX,
+    depth: cellY,
     dbh0: t.dbh_cm,
     growthRate: 0,
-    jitter: hashTo01(`j:${idStr}`),
-    hueBase,
-    lightnessBase,
+    jitter: r3,
+    hueBase: 100 + Math.floor(r4 * 50),
+    lightnessBase: 28 + Math.floor(r5 * 12),
     speciesKey: matchSpeciesKey(t.species),
   }
 }
@@ -105,9 +127,14 @@ export default function VectorForestPage() {
     return () => { cancelled = true }
   }, [year, plotFilter])
 
-  // Map backend rows to TreeInstance objects (stable positions derived from ID)
+  // Map backend rows to TreeInstance objects with stratified grid placement
   const trees: TreeInstance[] = useMemo(
-    () => backendTrees.map(backendTreeToInstance),
+    () => {
+      const shuffled = [...backendTrees].sort(
+        (a, b) => strToSeed(`${a.tree_id}:${a.plot}`) - strToSeed(`${b.tree_id}:${b.plot}`),
+      )
+      return shuffled.map((t, i) => backendTreeToInstance(t, i, shuffled.length))
+    },
     [backendTrees],
   )
 
@@ -312,7 +339,6 @@ export default function VectorForestPage() {
               state={inspectorState}
               year={year}
               onClose={handleClosePanel}
-              scenarioId={scenarioId}
             />
           </div>
         )}

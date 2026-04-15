@@ -35,7 +35,8 @@ export interface TreeMeta {
 
 const VIEWBOX_HEIGHT = 160
 const VIEWBOX_WIDTH = 120
-const SCENE_SCALE = 5
+const SCENE_SCALE_X = 4
+const SCENE_SCALE_Y = 3
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t
@@ -95,10 +96,11 @@ export default function VectorForestScene({
   )
 
   const paddingPx = 24
-  const groundY = containerHeight * 0.88
-  const sceneHeight = containerHeight || 400
-  const sceneWidth = containerWidth * SCENE_SCALE
+  const sceneWidth = containerWidth * SCENE_SCALE_X
+  const sceneHeight = (containerHeight || 400) * SCENE_SCALE_Y
   const sceneOffsetX = -(sceneWidth - containerWidth) / 2
+  const sceneOffsetY = -(sceneHeight - (containerHeight || 400)) / 2
+  const groundY = sceneHeight * 0.92
 
   useEffect(() => {
     const w = containerWidth || 800
@@ -298,7 +300,7 @@ export default function VectorForestScene({
       ref={sceneRootRef}
       role="presentation"
       className="relative w-full h-full rounded-lg overflow-hidden touch-none cursor-grab active:cursor-grabbing"
-      style={{ height: sceneHeight }}
+      style={{ height: containerHeight || 400 }}
       onPointerDown={handleScenePointerDown}
       onPointerMove={handleScenePointerMove}
       onPointerUp={handleScenePointerUp}
@@ -329,7 +331,7 @@ export default function VectorForestScene({
         <div
           aria-hidden
           className="absolute"
-          style={{ width: '800%', height: '400%', left: '-350%', top: '-150%', background: 'linear-gradient(180deg, #e0f2e9 0%, #c8e6d4 40%, #a8d4b8 100%)', pointerEvents: 'none' }}
+          style={{ width: '1200%', height: '800%', left: '-550%', top: '-350%', background: 'linear-gradient(180deg, #e0f2e9 0%, #c8e6d4 40%, #a8d4b8 100%)', pointerEvents: 'none' }}
         />
         <AftermathLayer
           scenarioId={scenarioId}
@@ -350,7 +352,7 @@ export default function VectorForestScene({
           })
 
           const scale = lerp(0.45, 1.15, tree.depth)
-          const yBottomPx = lerp(containerHeight * 0.25, groundY, tree.depth)
+          const yBottomPx = sceneOffsetY + lerp(sceneHeight * 0.08, groundY, tree.depth)
           const treeHeightPx = VIEWBOX_HEIGHT * scale
           const topPx = yBottomPx - treeHeightPx
           const treeWidthPx = VIEWBOX_WIDTH * scale

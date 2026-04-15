@@ -19,8 +19,8 @@ export default function TreeSpeciesImages({
 
   return (
     <div className={className}>
-      <p className="text-xs font-medium text-[var(--text-muted)] mb-2">{speciesKey}</p>
-      <div className="flex gap-2 items-start flex-wrap">
+      <p className="text-xs font-medium text-[var(--text-muted)] mb-1">{speciesKey}</p>
+      <div className="flex gap-1.5 items-start flex-wrap">
         {paths.length === 1 ? (
           <div className="rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--bg-alt)] flex-1 min-w-0">
             <img
