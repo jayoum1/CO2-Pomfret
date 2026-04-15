@@ -23,10 +23,13 @@
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "lucide-react": "^0.562.0",
+    "motion": "^12.38.0",
     "next": "^14.0.0",
+    "plotly.js-basic-dist-min": "^3.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^5.0.0",
+    "react-plotly.js": "^2.6.0",
     "recharts": "^2.10.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7"

@@ -12,7 +12,7 @@ const navItems = [
   { href: '/area', label: 'Generalize Area' },
   { href: '/visualize', label: 'Visualize' },
   { href: '/vector-forest', label: 'Vector Forest' },
-  { href: '/visualizations', label: 'R Visualizations' },
+  { href: '/visualizations', label: 'Visualizations' },
   { href: '/about', label: 'About' },
 ]
 
