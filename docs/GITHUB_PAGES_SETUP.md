@@ -7,7 +7,7 @@ The repository now deploys GitHub Pages from a Next.js static export built in CI
 - Workflow: `.github/workflows/deploy-pages.yml`
 - Trigger: push to `main` when files under `web/**` (or the workflow) change
 - Published URL: `https://jayoum1.github.io/CO2-Pomfret/`
-- Published page root: Next.js `/` (dashboard — same as `http://localhost:3000/`). The full static export includes other routes (e.g. `/midterm/`, `/vector-forest/`) under the repo base path.
+- Published site root (`index.html`): Next.js **`/midterm`** page (new showcase). The workflow copies `out/midterm/index.html` → `out/index.html` after build. Other routes (e.g. `/vector-forest/`) remain in the export if linked.
 
 ## One-time repository setting
 
