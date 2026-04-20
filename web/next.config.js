@@ -13,6 +13,8 @@ const nextConfig = {
   assetPrefix: isGithubActions ? `/${repoName}/` : '',
   env: {
     NEXT_PUBLIC_BASE_PATH: isGithubActions ? `/${repoName}` : '',
+    // GitHub Pages static export: midterm demo uses JSON only, never localhost:8000
+    NEXT_PUBLIC_MIDTERM_STATIC_FIRST: isGithubActions ? 'true' : '',
   },
 }
 

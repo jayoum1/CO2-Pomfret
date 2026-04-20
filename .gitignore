@@ -10,7 +10,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python setuptools / build (repo root only — do not use plain `lib/` or it ignores web/src/lib/)
+/lib/
 lib64/
 parts/
 sdist/

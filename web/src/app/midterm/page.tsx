@@ -3,14 +3,18 @@
 /**
  * Midterm showcase page — single-page scrollable project demo site.
  *
+ * ── GitHub Pages (CI static export, NEXT_PUBLIC_MIDTERM_STATIC_FIRST=true) ──
+ *   - Charts and aggregates load from `/midterm-data/*.json` only (no FastAPI).
+ *   - VectorForestDemo uses the same static snapshots (see `midtermStaticData.ts`).
+ *   - Footer links to other app routes still work as static exports; those pages may
+ *     require a backend unless they implement their own fallbacks.
+ *
+ * ── Local development ──
+ *   - Charts try `fetchVisualizationData` → FastAPI `/summary` + `/vector-forest/snapshot`.
+ *   - If the backend is offline, falls back to the same static JSON as Pages.
+ *
  * Sections:
- *  1. Hero            – title, framing, CTAs
- *  2. Project Overview – what CO₂ Pomfret is, three feature cards
- *  3. Forest Demo      – embedded VectorForestDemo (interactive)
- *  4. Data Insights    – CarbonTrendChart + CarbonByPlotChart with year selector
- *  5. Screenshot Gallery – placeholder frames for screenshots
- *  6. Progress         – what's working vs. what's coming next
- *  7. Footer           – closing statement
+ *  1. Hero · 2. Overview · 3. Forest Demo · 4. Data Insights · 5. Gallery · 6. Progress · 7. Footer
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -25,6 +29,7 @@ import {
   type VisualizationData,
 } from '@/lib/visualizationData'
 import { loadStaticVisualizationData } from '@/lib/midtermStaticData'
+import { isMidtermStaticDemoBuild } from '@/lib/midtermMode'
 
 // Load the forest demo client-only to avoid SSR issues with ResizeObserver
 const VectorForestDemo = dynamic(
@@ -241,25 +246,48 @@ export default function MidtermPage() {
   const [chartLoading, setChartLoading] = useState(true)
   const [chartError, setChartError] = useState(false)
 
-  // Fetch chart data on mount
+  // Charts: static JSON on GitHub Pages; live API in dev with static fallback if backend is down
   useEffect(() => {
-    fetchVisualizationData('baseline')
-      .then((data) => {
-        setVizData(data)
-        setChartLoading(false)
-      })
-      .catch(async () => {
-        // GitHub Pages fallback: use precomputed static keyframe data.
-        try {
-          const fallback = await loadStaticVisualizationData()
-          setVizData(fallback)
+    let cancelled = false
+
+    async function loadCharts() {
+      try {
+        if (isMidtermStaticDemoBuild()) {
+          const data = await loadStaticVisualizationData()
+          if (!cancelled) {
+            setVizData(data)
+            setChartError(false)
+            setChartLoading(false)
+          }
+          return
+        }
+        const data = await fetchVisualizationData('baseline')
+        if (!cancelled) {
+          setVizData(data)
           setChartError(false)
           setChartLoading(false)
-        } catch {
-          setChartError(true)
-          setChartLoading(false)
         }
-      })
+      } catch {
+        try {
+          const fallback = await loadStaticVisualizationData()
+          if (!cancelled) {
+            setVizData(fallback)
+            setChartError(false)
+            setChartLoading(false)
+          }
+        } catch {
+          if (!cancelled) {
+            setChartError(true)
+            setChartLoading(false)
+          }
+        }
+      }
+    }
+
+    void loadCharts()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Scroll listener: nav fade + active section tracking
@@ -585,9 +613,17 @@ export default function MidtermPage() {
               className="text-xs mt-5 text-center"
               style={{ color: 'rgba(255,255,255,0.25)' }}
             >
-              Real data from Pomfret School&rsquo;s forest baseline model ·{' '}
-              442 trees across Upper, Middle, and Lower plots ·{' '}
-              Uses live backend data when available, with static fallback on GitHub Pages
+              {isMidtermStaticDemoBuild() ? (
+                <>
+                  Bundled baseline snapshot (keyframes 0–20) — same forest plots as the live model · 442
+                  trees · no API on this site
+                </>
+              ) : (
+                <>
+                  Real data from Pomfret School&rsquo;s forest baseline model · 442 trees across plots ·
+                  uses FastAPI when running locally; falls back to bundled JSON if the backend is offline
+                </>
+              )}
             </p>
           </FadeUp>
         </div>
@@ -676,14 +712,18 @@ export default function MidtermPage() {
                   Unable to load chart data
                 </p>
                 <p className="text-xs" style={{ color: '#92400e' }}>
-                  Run the backend locally, or verify the static midterm data files are present.
+                  {isMidtermStaticDemoBuild()
+                    ? 'Missing or invalid `/midterm-data/summaries.json` in the static export.'
+                    : 'Run the backend locally, or verify `/public/midterm-data/` JSON files are present.'}
                 </p>
-                <code
-                  className="text-xs px-3 py-1.5 rounded-lg"
-                  style={{ background: '#fef3c7', color: '#78350f' }}
-                >
-                  uvicorn src.api.app:app --reload
-                </code>
+                {!isMidtermStaticDemoBuild() && (
+                  <code
+                    className="text-xs px-3 py-1.5 rounded-lg"
+                    style={{ background: '#fef3c7', color: '#78350f' }}
+                  >
+                    uvicorn src.api.app:app --reload
+                  </code>
+                )}
               </div>
             </FadeUp>
           ) : vizData ? (

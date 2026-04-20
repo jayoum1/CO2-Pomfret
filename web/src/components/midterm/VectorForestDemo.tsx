@@ -2,13 +2,15 @@
 
 /**
  * Simplified vector forest embed for the midterm showcase page.
- * Strips away scenario carousel start-year controls, regrowth inspector,
- * and fullscreen toggle — leaving a clean interactive forest demo with:
- *   - live backend snapshot data
- *   - year slider (0–20)
- *   - plot filter dropdown
- *   - click-to-inspect tree panel
- *   - scenario carousel (embedded inside VectorForestScene, still usable)
+ *
+ * ── GitHub Pages / static demo (NEXT_PUBLIC_MIDTERM_STATIC_FIRST=true at CI build) ──
+ *   - Tree positions and DBH come from `/midterm-data/snapshots.json` only (no network to FastAPI).
+ *   - Scenario UI (VectorForestScene) is client-side; no backend required.
+ *   - Tree inspector species photos use `publicAssetUrl()` so paths work with `basePath`.
+ *
+ * ── Local development (static flag off) ──
+ *   - Tries GET /vector-forest/snapshot on FastAPI first (localhost:8000 by default).
+ *   - If the backend is down, falls back to the same static JSON as above.
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
@@ -23,6 +25,7 @@ import {
 import { getTreeState, type TreeInstance } from '@/lib/vectorForest/treeModel'
 import { getVectorForestSnapshot, type VectorForestTree } from '@/lib/api'
 import { getStaticVectorForestSnapshot } from '@/lib/midtermStaticData'
+import { isMidtermStaticDemoBuild } from '@/lib/midtermMode'
 import type { TreeSpeciesKey } from '@/lib/vectorForest/treeSpeciesImages'
 import {
   getScenarioCard,
@@ -129,17 +132,29 @@ export default function VectorForestDemo() {
   // Fetch snapshot whenever year or plot changes
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError(null)
-    getVectorForestSnapshot(year, plotFilter)
-      .then((snap) => {
+
+    async function load() {
+      setLoading(true)
+      setError(null)
+      const staticOnly = isMidtermStaticDemoBuild()
+
+      try {
+        if (staticOnly) {
+          const snap = await getStaticVectorForestSnapshot(year, plotFilter)
+          if (cancelled) return
+          setBackendTrees(snap.trees)
+          if (snap.plots.length > 0) setPlots(snap.plots)
+          setLoading(false)
+          return
+        }
+
+        const snap = await getVectorForestSnapshot(year, plotFilter)
         if (cancelled) return
         setBackendTrees(snap.trees)
         if (snap.plots.length > 0) setPlots(snap.plots)
         setLoading(false)
-      })
-      .catch(async (err) => {
-        // GitHub Pages fallback: load static snapshots if backend is unavailable.
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to load snapshot'
         try {
           const fallback = await getStaticVectorForestSnapshot(year, plotFilter)
           if (cancelled) return
@@ -149,10 +164,13 @@ export default function VectorForestDemo() {
           setLoading(false)
         } catch {
           if (cancelled) return
-          setError(err.message ?? 'Failed to load snapshot')
+          setError(message)
           setLoading(false)
         }
-      })
+      }
+    }
+
+    void load()
     return () => {
       cancelled = true
     }
@@ -244,8 +262,13 @@ export default function VectorForestDemo() {
           <span
             className="text-xs font-semibold tracking-widest uppercase"
             style={{ color: '#4ade80' }}
+            title={
+              isMidtermStaticDemoBuild()
+                ? 'Static snapshot data (GitHub Pages demo — no API)'
+                : 'Loads from FastAPI when available; falls back to static JSON'
+            }
           >
-            Live Forest
+            {isMidtermStaticDemoBuild() ? 'Offline snapshot' : 'Live API'}
           </span>
           <span
             className="text-xs"
@@ -292,17 +315,23 @@ export default function VectorForestDemo() {
             style={{ height: 480 }}
           >
             <div className="text-sm font-medium" style={{ color: '#fbbf24' }}>
-              Backend server not running
+              {isMidtermStaticDemoBuild()
+                ? 'Could not load demo snapshot data'
+                : 'Backend server not running'}
             </div>
             <p className="text-xs max-w-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Start the FastAPI backend to load the forest visualization.
+              {isMidtermStaticDemoBuild()
+                ? 'Ensure `/midterm-data/snapshots.json` is included in the static export.'
+                : 'Start the FastAPI backend, or rely on static JSON fallback if configured.'}
             </p>
-            <code
-              className="text-xs px-4 py-2 rounded-lg mt-1"
-              style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
-            >
-              uvicorn src.api.app:app --reload
-            </code>
+            {!isMidtermStaticDemoBuild() && (
+              <code
+                className="text-xs px-4 py-2 rounded-lg mt-1"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
+              >
+                uvicorn src.api.app:app --reload
+              </code>
+            )}
           </div>
         ) : (
           <VectorForestScene

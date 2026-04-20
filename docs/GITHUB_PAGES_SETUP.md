@@ -29,4 +29,9 @@ After changing the source, open the **Actions** tab, confirm the **Deploy Web Ap
 ## Notes
 
 - The old static `midterm_site/` files are kept as archived/reference material.
-- Midterm charts and vector forest have static JSON fallback data in `web/public/midterm-data/`, so they continue to render on Pages even without a live local backend.
+- **CI builds** set `GITHUB_ACTIONS=true`, which enables `NEXT_PUBLIC_MIDTERM_STATIC_FIRST` so the midterm route never calls FastAPI; it only loads `web/public/midterm-data/*.json`.
+- **Species images** in the tree inspector use `publicAssetUrl()` so `/tree-species/...` paths resolve under the repo `basePath` on Pages.
+
+## Local development
+
+- `next dev` does **not** set the static-only flag; the midterm page tries the API first and falls back to the JSON files if the backend is offline.

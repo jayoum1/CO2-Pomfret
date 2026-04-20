@@ -1,5 +1,9 @@
 'use client'
 
+/**
+ * Presentation-only chart: all series come from parent props (no fetch).
+ * Midterm page supplies data from FastAPI in dev or `/midterm-data/` JSON on GitHub Pages.
+ */
 import {
   AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ReferenceLine, ResponsiveContainer,

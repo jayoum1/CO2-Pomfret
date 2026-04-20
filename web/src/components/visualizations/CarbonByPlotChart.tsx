@@ -1,5 +1,9 @@
 'use client'
 
+/**
+ * Presentation-only chart: all series come from parent props (no fetch).
+ * Midterm page supplies snapshot-derived aggregates (live API or static JSON).
+ */
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from 'recharts'
 import {
   ChartContainer,
