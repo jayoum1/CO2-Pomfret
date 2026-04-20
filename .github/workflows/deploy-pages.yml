@@ -44,18 +44,19 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Build static export
+      - name: Build midterm-only static export
         env:
           GITHUB_ACTIONS: 'true'
-        run: npm run build
+          MIDTERM_EXPORT_ONLY: 'true'
+        run: bash scripts/build-midterm-github-pages.sh
 
       - name: Prepare GitHub Pages export
         run: |
-          # https://jayoum1.github.io/CO2-Pomfret/ serves `index.html` at the artifact root.
-          # Use the Next.js `/midterm` page as the site home (new midterm demo), not the dashboard `/`.
+          # Site root shows the midterm showcase (not the dashboard).
           cp out/midterm/index.html out/index.html
-          # Prevent GitHub Pages / Jekyll from ignoring `_next/` and other assets
           touch out/.nojekyll
+          # Trim unused static assets copied from public/ (midterm only needs midterm-data + tree-species)
+          rm -rf out/Graphs out/disturbances out/figures 2>/dev/null || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

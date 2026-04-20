@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:github-pages": "bash scripts/build-midterm-github-pages.sh",
     "start": "next start",
     "lint": "next lint"
   },

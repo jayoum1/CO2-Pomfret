@@ -7,7 +7,9 @@ The repository now deploys GitHub Pages from a Next.js static export built in CI
 - Workflow: `.github/workflows/deploy-pages.yml`
 - Trigger: push to `main` when files under `web/**` (or the workflow) change
 - Published URL: `https://jayoum1.github.io/CO2-Pomfret/`
-- Published site root (`index.html`): Next.js **`/midterm`** page (new showcase). The workflow copies `out/midterm/index.html` → `out/index.html` after build. Other routes (e.g. `/vector-forest/`) remain in the export if linked.
+- **Build:** `web/scripts/build-midterm-github-pages.sh` — temporarily keeps only `app/midterm` (+ root layout + globals), runs `next build`, then restores the full `src/app/` tree. The exported bundle contains **only the midterm page** (smaller `_next`, no dashboard or other routes).
+- **Data:** Charts and vector forest use bundled JSON under `public/midterm-data/` (`NEXT_PUBLIC_MIDTERM_STATIC_FIRST` + `NEXT_PUBLIC_EXPORT_MIDTERM_SITE` during that build). No FastAPI.
+- **Root URL:** the workflow copies `out/midterm/index.html` → `out/index.html` and prunes unused `out/Graphs`, `out/disturbances`, `out/figures` copies.
 
 ## One-time repository setting
 

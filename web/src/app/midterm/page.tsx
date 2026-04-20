@@ -29,7 +29,7 @@ import {
   type VisualizationData,
 } from '@/lib/visualizationData'
 import { loadStaticVisualizationData } from '@/lib/midtermStaticData'
-import { isMidtermStaticDemoBuild } from '@/lib/midtermMode'
+import { isMidtermGithubPagesExport, isMidtermStaticDemoBuild } from '@/lib/midtermMode'
 
 // Load the forest demo client-only to avoid SSR issues with ResizeObserver
 const VectorForestDemo = dynamic(
@@ -354,17 +354,26 @@ export default function MidtermPage() {
               </button>
             ))}
           </div>
-          <Link
-            href="/"
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium no-underline transition-colors"
-            style={{
-              background: 'rgba(74,222,128,0.15)',
-              color: '#4ade80',
-              border: '1px solid rgba(74,222,128,0.25)',
-            }}
-          >
-            Full App →
-          </Link>
+          {isMidtermGithubPagesExport() ? (
+            <span
+              className="hidden sm:inline text-xs px-2 max-w-[11rem] text-right leading-snug"
+              style={{ color: 'rgba(255,255,255,0.35)' }}
+            >
+              This site is the showcase only — full app runs locally
+            </span>
+          ) : (
+            <Link
+              href="/"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium no-underline transition-colors"
+              style={{
+                background: 'rgba(74,222,128,0.15)',
+                color: '#4ade80',
+                border: '1px solid rgba(74,222,128,0.25)',
+              }}
+            >
+              Full App →
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -984,42 +993,56 @@ export default function MidtermPage() {
             </p>
 
             <div
-              className="flex flex-wrap items-center justify-center gap-6 mb-10 pt-8"
+              className="mb-10 pt-8"
               style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all"
-                style={{
-                  background: 'rgba(74,222,128,0.15)',
-                  color: '#4ade80',
-                  border: '1px solid rgba(74,222,128,0.25)',
-                }}
-              >
-                Launch Full App →
-              </Link>
-              <Link
-                href="/vector-forest"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium no-underline transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  color: 'rgba(255,255,255,0.6)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
-              >
-                Vector Forest →
-              </Link>
-              <Link
-                href="/visualizations"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium no-underline transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  color: 'rgba(255,255,255,0.6)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
-              >
-                Visualizations →
-              </Link>
+              {isMidtermGithubPagesExport() ? (
+                <p
+                  className="text-sm max-w-lg mx-auto leading-relaxed"
+                  style={{ color: 'rgba(255,255,255,0.45)' }}
+                >
+                  The full CO₂ Pomfret application (dashboard, forest tools, visualization suite) is
+                  not deployed here — clone the repository and run it locally with the Python API if
+                  you need those screens. This page is a self-contained demo with bundled forest and
+                  chart data.
+                </p>
+              ) : (
+                <div className="flex flex-wrap items-center justify-center gap-6">
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all"
+                    style={{
+                      background: 'rgba(74,222,128,0.15)',
+                      color: '#4ade80',
+                      border: '1px solid rgba(74,222,128,0.25)',
+                    }}
+                  >
+                    Launch Full App →
+                  </Link>
+                  <Link
+                    href="/vector-forest"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium no-underline transition-all"
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      color: 'rgba(255,255,255,0.6)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    Vector Forest →
+                  </Link>
+                  <Link
+                    href="/visualizations"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium no-underline transition-all"
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      color: 'rgba(255,255,255,0.6)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    Visualizations →
+                  </Link>
+                </div>
+              )}
             </div>
 
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
