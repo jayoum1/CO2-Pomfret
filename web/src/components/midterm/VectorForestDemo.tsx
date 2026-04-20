@@ -22,6 +22,7 @@ import {
 } from '@/lib/vectorForest/scenarios'
 import { getTreeState, type TreeInstance } from '@/lib/vectorForest/treeModel'
 import { getVectorForestSnapshot, type VectorForestTree } from '@/lib/api'
+import { getStaticVectorForestSnapshot } from '@/lib/midtermStaticData'
 import type { TreeSpeciesKey } from '@/lib/vectorForest/treeSpeciesImages'
 import {
   getScenarioCard,
@@ -137,10 +138,20 @@ export default function VectorForestDemo() {
         if (snap.plots.length > 0) setPlots(snap.plots)
         setLoading(false)
       })
-      .catch((err) => {
-        if (cancelled) return
-        setError(err.message ?? 'Failed to load snapshot')
-        setLoading(false)
+      .catch(async (err) => {
+        // GitHub Pages fallback: load static snapshots if backend is unavailable.
+        try {
+          const fallback = await getStaticVectorForestSnapshot(year, plotFilter)
+          if (cancelled) return
+          setBackendTrees(fallback.trees)
+          if (fallback.plots.length > 0) setPlots(fallback.plots)
+          setError(null)
+          setLoading(false)
+        } catch {
+          if (cancelled) return
+          setError(err.message ?? 'Failed to load snapshot')
+          setLoading(false)
+        }
       })
     return () => {
       cancelled = true

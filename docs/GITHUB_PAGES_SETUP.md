@@ -1,48 +1,28 @@
 # GitHub Pages Setup Instructions
 
-Your midterm site has been pushed to GitHub. To make it accessible via GitHub Pages:
+The repository now deploys GitHub Pages from a Next.js static export built in CI.
 
-## Option 1: Enable GitHub Pages via Repository Settings (Recommended)
+## Current deployment source
 
-1. Go to your repository: https://github.com/jayoum1/CO2-Pomfret
-2. Click on **Settings** (top right)
-3. Scroll down to **Pages** in the left sidebar
-4. Under **Source**, select:
-   - **Deploy from a branch**: `main`
-   - **Folder**: `/midterm_site`
-5. Click **Save**
+- Workflow: `.github/workflows/deploy-pages.yml`
+- Trigger: push to `main` when files under `web/**` (or the workflow) change
+- Published URL: `https://jayoum1.github.io/CO2-Pomfret/`
+- Published page root: Next.js `/midterm` page (copied to exported `/index.html` in CI)
 
-Your site will be available at:
-**https://jayoum1.github.io/CO2-Pomfret/**
+## One-time repository setting
 
-(Note: It may take a few minutes for GitHub to build and deploy)
+In GitHub repository settings:
 
-## Option 2: Use GitHub Actions Workflow
+1. Go to **Settings** → **Pages**
+2. Set **Source** to **GitHub Actions**
 
-If you want automatic deployment on every push:
+## How updates work
 
-1. Go to repository **Settings** → **Actions** → **General**
-2. Under **Workflow permissions**, select:
-   - ✅ **Read and write permissions**
-   - ✅ **Allow GitHub Actions to create and approve pull requests**
-3. Save the settings
-4. Then add the workflow file `.github/workflows/deploy-pages.yml` back to the repo
+1. Make changes under `web/src/app/midterm/` or related midterm components.
+2. Commit and push to `main`.
+3. The `Deploy Midterm Site to GitHub Pages` workflow builds and redeploys automatically.
 
-## Verify Deployment
+## Notes
 
-After enabling Pages:
-- Check the **Actions** tab to see the deployment status
-- Visit your Pages URL (usually `https://[username].github.io/[repo-name]/`)
-- The site should be live within 1-5 minutes
-
-## Troubleshooting
-
-**Site not loading?**
-- Check the **Actions** tab for deployment errors
-- Ensure the folder path is correct (`/midterm_site`)
-- Verify all files are committed and pushed
-
-**Need to update the site?**
-- Make changes to files in `midterm_site/`
-- Commit and push to `main` branch
-- GitHub Pages will automatically rebuild
+- The old static `midterm_site/` files are kept as archived/reference material.
+- Midterm charts and vector forest have static JSON fallback data in `web/public/midterm-data/`, so they continue to render on Pages even without a live local backend.

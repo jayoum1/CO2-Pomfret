@@ -1,48 +1,16 @@
-# GitHub Pages Setup Instructions
+# GitHub Pages Setup Instructions (Archived)
 
-Your midterm site has been pushed to GitHub. To make it accessible via GitHub Pages:
+This file describes the old static deployment approach and is now archived.
 
-## Option 1: Enable GitHub Pages via Repository Settings (Recommended)
+## Current live deployment
 
-1. Go to your repository: https://github.com/jayoum1/CO2-Pomfret
-2. Click on **Settings** (top right)
-3. Scroll down to **Pages** in the left sidebar
-4. Under **Source**, select:
-   - **Deploy from a branch**: `main`
-   - **Folder**: `/midterm_site`
-5. Click **Save**
+GitHub Pages is now deployed from:
 
-Your site will be available at:
-**https://jayoum1.github.io/CO2-Pomfret/**
+- `.github/workflows/deploy-pages.yml`
+- Next.js static export from the `web/` app
+- Published root page = `/midterm` showcase
 
-(Note: It may take a few minutes for GitHub to build and deploy)
+## What this means
 
-## Option 2: Use GitHub Actions Workflow
-
-If you want automatic deployment on every push:
-
-1. Go to repository **Settings** → **Actions** → **General**
-2. Under **Workflow permissions**, select:
-   - ✅ **Read and write permissions**
-   - ✅ **Allow GitHub Actions to create and approve pull requests**
-3. Save the settings
-4. Then add the workflow file `.github/workflows/deploy-pages.yml` back to the repo
-
-## Verify Deployment
-
-After enabling Pages:
-- Check the **Actions** tab to see the deployment status
-- Visit your Pages URL (usually `https://[username].github.io/[repo-name]/`)
-- The site should be live within 1-5 minutes
-
-## Troubleshooting
-
-**Site not loading?**
-- Check the **Actions** tab for deployment errors
-- Ensure the folder path is correct (`/midterm_site`)
-- Verify all files are committed and pushed
-
-**Need to update the site?**
-- Make changes to files in `midterm_site/`
-- Commit and push to `main` branch
-- GitHub Pages will automatically rebuild
+- Changes inside `midterm_site/` no longer control the live Pages site.
+- To update the published midterm site, edit files under `web/src/app/midterm/` and push to `main`.

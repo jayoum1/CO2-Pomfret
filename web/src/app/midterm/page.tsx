@@ -24,6 +24,7 @@ import {
   KEYFRAME_YEARS,
   type VisualizationData,
 } from '@/lib/visualizationData'
+import { loadStaticVisualizationData } from '@/lib/midtermStaticData'
 
 // Load the forest demo client-only to avoid SSR issues with ResizeObserver
 const VectorForestDemo = dynamic(
@@ -247,9 +248,17 @@ export default function MidtermPage() {
         setVizData(data)
         setChartLoading(false)
       })
-      .catch(() => {
-        setChartError(true)
-        setChartLoading(false)
+      .catch(async () => {
+        // GitHub Pages fallback: use precomputed static keyframe data.
+        try {
+          const fallback = await loadStaticVisualizationData()
+          setVizData(fallback)
+          setChartError(false)
+          setChartLoading(false)
+        } catch {
+          setChartError(true)
+          setChartLoading(false)
+        }
       })
   }, [])
 
@@ -578,7 +587,7 @@ export default function MidtermPage() {
             >
               Real data from Pomfret School&rsquo;s forest baseline model ·{' '}
               442 trees across Upper, Middle, and Lower plots ·{' '}
-              Requires the FastAPI backend running locally
+              Uses live backend data when available, with static fallback on GitHub Pages
             </p>
           </FadeUp>
         </div>
@@ -664,10 +673,10 @@ export default function MidtermPage() {
                 }}
               >
                 <p className="text-sm font-medium" style={{ color: '#d97706' }}>
-                  Charts require the backend
+                  Unable to load chart data
                 </p>
                 <p className="text-xs" style={{ color: '#92400e' }}>
-                  Start the FastAPI server to load live carbon data.
+                  Run the backend locally, or verify the static midterm data files are present.
                 </p>
                 <code
                   className="text-xs px-3 py-1.5 rounded-lg"
