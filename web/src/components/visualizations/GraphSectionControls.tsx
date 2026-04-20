@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/select'
 import { KEYFRAME_YEARS } from '@/lib/visualizationData'
 
-interface VisualizationControlsProps {
+interface GraphSectionControlsProps {
   selectedYear: number
   onYearChange: (year: number) => void
   selectedPlot: string
@@ -17,40 +17,44 @@ interface VisualizationControlsProps {
   plots: string[]
 }
 
-export default function VisualizationControls({
+export default function GraphSectionControls({
   selectedYear,
   onYearChange,
   selectedPlot,
   onPlotChange,
   plots,
-}: VisualizationControlsProps) {
+}: GraphSectionControlsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      {/* Year selector as pill buttons */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-[var(--text-muted)]">Year</span>
-        <div className="inline-flex rounded-lg bg-[var(--panel2)] p-1 gap-0.5">
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      {/* Year pill selector */}
+      <div className="flex items-center gap-2.5">
+        <span className="text-sm text-slate-500 font-medium">Year</span>
+        <div className="flex rounded-lg bg-slate-100 p-0.5 gap-0.5">
           {KEYFRAME_YEARS.map(y => (
             <button
               key={y}
               onClick={() => onYearChange(y)}
-              className={`px-3.5 py-1.5 rounded-md text-sm font-medium transition-all ${
-                selectedYear === y
-                  ? 'bg-[var(--primary)] text-white shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/60'
-              }`}
+              className={`
+                px-3.5 py-1.5 rounded-md text-sm font-medium transition-all duration-150
+                ${selectedYear === y
+                  ? 'bg-white text-slate-800 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'}
+              `}
             >
-              {y}
+              {y === 0 ? 'Now' : `+${y}`}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Separator */}
+      <div className="hidden sm:block h-5 w-px bg-slate-200" />
+
       {/* Plot selector */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-[var(--text-muted)]">Plot</span>
+      <div className="flex items-center gap-2.5">
+        <span className="text-sm text-slate-500 font-medium">Plot</span>
         <Select value={selectedPlot} onValueChange={onPlotChange}>
-          <SelectTrigger className="w-[140px] h-9 bg-white">
+          <SelectTrigger className="h-8 w-[140px] bg-white text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

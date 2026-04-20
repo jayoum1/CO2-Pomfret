@@ -1,21 +1,16 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import type { VectorForestTree } from '@/lib/api'
-import { computeDbhHistogram } from '@/lib/visualizationData'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from 'recharts'
 import {
-  PLOT_COLORS,
-  AGGREGATE_COLOR,
-  BASE_LAYOUT,
-  PLOTLY_CONFIG,
-} from './chartTheme'
-
-const Plot = dynamic(() => import('./PlotlyChart'), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[320px] animate-pulse rounded-lg bg-gray-100" />
-  ),
-})
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
+import type { VectorForestTree } from '@/lib/api'
+import { computeDbhHistogram, PLOT_COLORS, TOTAL_COLOR } from '@/lib/visualizationData'
 
 interface DBHDistributionChartProps {
   trees: VectorForestTree[]
@@ -30,68 +25,79 @@ export default function DBHDistributionChart({
   plots,
   selectedYear,
 }: DBHDistributionChartProps) {
-  const bins = computeDbhHistogram(trees, selectedPlot, 5)
-  const traces: Record<string, any>[] = []
+  const bins = computeDbhHistogram(trees, selectedPlot, 10)
 
-  if (selectedPlot === 'all') {
-    for (const plot of plots) {
-      traces.push({
-        x: bins.map(b => b.label),
-        y: bins.map(b => b.plotCounts[plot] ?? 0),
-        type: 'bar',
-        name: plot,
-        marker: { color: PLOT_COLORS[plot] ?? '#94a3b8', opacity: 0.85 },
-        hovertemplate: `%{x} cm<br>%{y} trees<extra>${plot}</extra>`,
+  const showAll = selectedPlot === 'all'
+
+  // Config: either per-plot colors or a single total color
+  const config: ChartConfig = showAll
+    ? Object.fromEntries(plots.map(p => [p, { label: p, color: PLOT_COLORS[p] ?? '#94a3b8' }]))
+    : { count: { label: `${selectedPlot} trees`, color: PLOT_COLORS[selectedPlot] ?? TOTAL_COLOR } }
+
+  // Recharts wants a flat data array for stacked bars: { label, Upper, Middle, Lower }
+  const data = showAll
+    ? bins.map(b => {
+        const row: Record<string, string | number> = { label: b.label }
+        for (const p of plots) row[p] = b.plotCounts[p] ?? 0
+        return row
       })
-    }
-  } else {
-    traces.push({
-      x: bins.map(b => b.label),
-      y: bins.map(b => b.count),
-      type: 'bar',
-      name: selectedPlot,
-      marker: {
-        color: PLOT_COLORS[selectedPlot] ?? AGGREGATE_COLOR,
-        opacity: 0.85,
-      },
-      hovertemplate: `%{x} cm<br>%{y} trees<extra>${selectedPlot}</extra>`,
-    })
-  }
-
-  const layout: Record<string, any> = {
-    ...BASE_LAYOUT,
-    barmode: 'stack',
-    xaxis: {
-      ...BASE_LAYOUT.xaxis,
-      title: { text: 'DBH Range (cm)', standoff: 8 },
-      type: 'category',
-    },
-    yaxis: {
-      ...BASE_LAYOUT.yaxis,
-      title: { text: 'Number of Trees', standoff: 12 },
-    },
-    annotations: [
-      {
-        x: 1,
-        y: 1,
-        xref: 'paper',
-        yref: 'paper',
-        text: `Year ${selectedYear}`,
-        showarrow: false,
-        font: { size: 10, color: '#94a3b8' },
-        xanchor: 'right',
-      },
-    ],
-  }
+    : bins.map(b => ({ label: b.label, count: b.count }))
 
   return (
-    <Plot
-      data={traces}
-      layout={layout}
-      config={PLOTLY_CONFIG}
-      useResizeHandler
-      className="w-full"
-      style={{ height: 320 }}
-    />
+    <ChartContainer config={config} className="h-[280px] w-full">
+      <BarChart data={data} margin={{ top: 12, right: 16, bottom: 8, left: 8 }} barCategoryGap="18%">
+        <CartesianGrid vertical={false} strokeDasharray="3 0" stroke="#f1f5f9" />
+
+        <XAxis
+          dataKey="label"
+          tickLine={false}
+          axisLine={false}
+          tick={{ fontSize: 10, fill: '#94a3b8' }}
+          interval={0}
+          angle={-35}
+          textAnchor="end"
+          height={40}
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tick={{ fontSize: 11, fill: '#94a3b8' }}
+          width={32}
+        />
+
+        <ChartTooltip
+          cursor={{ fill: '#f8fafc' }}
+          content={
+            <ChartTooltipContent
+              labelFormatter={v => `DBH ${v} cm`}
+              formatter={(val, name) => [`${val} trees`, name]}
+            />
+          }
+        />
+
+        {showAll ? (
+          <>
+            {plots.map((p, i) => (
+              <Bar
+                key={p}
+                dataKey={p}
+                stackId="dist"
+                fill={PLOT_COLORS[p] ?? '#94a3b8'}
+                fillOpacity={0.88}
+                radius={i === plots.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+              />
+            ))}
+            <ChartLegend content={<ChartLegendContent />} />
+          </>
+        ) : (
+          <Bar
+            dataKey="count"
+            radius={[3, 3, 0, 0]}
+            fill={PLOT_COLORS[selectedPlot] ?? TOTAL_COLOR}
+            fillOpacity={0.85}
+          />
+        )}
+      </BarChart>
+    </ChartContainer>
   )
 }

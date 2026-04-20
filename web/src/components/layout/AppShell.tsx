@@ -20,6 +20,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // Standalone routes render without the app shell
+  if (pathname.startsWith('/midterm')) {
+    return <>{children}</>
+  }
+
   return (
     <div className="min-h-screen bg-[var(--bg)] relative">
       {/* Animated Clouds */}
