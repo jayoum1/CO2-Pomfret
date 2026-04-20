@@ -1,4 +1,4 @@
-name: Deploy Midterm Site to GitHub Pages
+name: Deploy Web App to GitHub Pages
 
 on:
   push:
@@ -49,9 +49,10 @@ jobs:
           GITHUB_ACTIONS: 'true'
         run: npm run build
 
-      - name: Make /midterm the published root
+      - name: Prepare GitHub Pages export
         run: |
-          cp out/midterm/index.html out/index.html
+          # Next.js `out/index.html` is already the app home (`/`) — same as localhost:3000 root.
+          # Do not overwrite it with `/midterm`; keep full static site (all routes under basePath).
           # Prevent GitHub Pages / Jekyll from ignoring `_next/` and other assets
           touch out/.nojekyll
 
