@@ -14,7 +14,11 @@ The repository now deploys GitHub Pages from a Next.js static export built in CI
 In GitHub repository settings:
 
 1. Go to **Settings** → **Pages**
-2. Set **Source** to **GitHub Actions**
+2. Under **Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch”).
+
+If **Source** is still **Deploy from a branch** and the folder is **`/midterm_site`** (or `/docs`), GitHub will keep serving that **old static site**. You must switch the source to **GitHub Actions** so the workflow in `.github/workflows/deploy-pages.yml` controls what is published.
+
+After changing the source, open the **Actions** tab, confirm the **Deploy Midterm Site to GitHub Pages** workflow ran successfully on your latest push, then refresh `https://jayoum1.github.io/CO2-Pomfret/` (hard refresh or wait a minute for cache).
 
 ## How updates work
 

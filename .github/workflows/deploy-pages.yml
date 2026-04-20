@@ -52,10 +52,13 @@ jobs:
       - name: Make /midterm the published root
         run: |
           cp out/midterm/index.html out/index.html
+          # Prevent GitHub Pages / Jekyll from ignoring `_next/` and other assets
+          touch out/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # Path is relative to repository root (not `defaults.run.working-directory`)
           path: web/out
 
       - name: Deploy to GitHub Pages
