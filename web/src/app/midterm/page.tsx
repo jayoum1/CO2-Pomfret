@@ -624,8 +624,8 @@ export default function MidtermPage() {
             >
               {isMidtermStaticDemoBuild() ? (
                 <>
-                  Bundled baseline snapshot (keyframes 0–20) — same forest plots as the live model · 442
-                  trees · no API on this site
+                  Bundled baseline snapshots at 0, 5, 10, and 20 years — the year slider uses the nearest
+                  horizon for tree data · 442 trees · no API on this site
                 </>
               ) : (
                 <>

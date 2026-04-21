@@ -3,12 +3,13 @@
 /**
  * Offline data for the midterm showcase when FastAPI is unavailable (e.g. GitHub Pages).
  *
- * Source JSON is generated from `Data/Processed Data/forest_snapshots/forest_{0,5,10,20}_years.csv`
- * at build time and shipped as static files under `web/public/midterm-data/`.
+ * Data is **bundled at build time** by importing `public/midterm-data/*.json` (same source CSVs
+ * as before). No runtime `fetch()` — avoids wrong `basePath` on GitHub Pages and works offline.
  *
- * This is GitHub Pages–safe and does not call `NEXT_PUBLIC_API_BASE_URL`.
+ * Snapshots exist only for keyframe years **0, 5, 10, 20**. The forest year slider is 0–20,
+ * so we map any slider year to the **nearest** keyframe for tree rows (same forest, interpolated UX).
  *
- * Live app (local): set `NEXT_PUBLIC_MIDTERM_STATIC_FIRST` unset/false and use FastAPI for fresh data.
+ * Live app: `NEXT_PUBLIC_MIDTERM_STATIC_FIRST` off — try FastAPI first, then fall back to this bundle.
  */
 
 import type {
@@ -22,6 +23,9 @@ import type {
   VisualizationData,
 } from '@/lib/visualizationData'
 
+import snapshotsJson from '../../public/midterm-data/snapshots.json'
+import summariesJson from '../../public/midterm-data/summaries.json'
+
 interface SnapshotFile {
   snapshots: VectorForestSnapshot[]
 }
@@ -30,8 +34,28 @@ interface SummaryFile {
   summaries: Summary[]
 }
 
-const KEYFRAME_YEARS = [0, 5, 10, 20]
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+const BUNDLED_SNAPSHOTS = (snapshotsJson as SnapshotFile).snapshots
+const BUNDLED_SUMMARIES = (summariesJson as SummaryFile).summaries
+
+const KEYFRAME_YEARS = [0, 5, 10, 20] as const
+export type MidtermKeyframeYear = (typeof KEYFRAME_YEARS)[number]
+
+/**
+ * Map slider year (0–20) to the nearest stored snapshot keyframe.
+ * Static data only has four horizons; forest DBH “steps” at those years for the demo.
+ */
+export function nearestKeyframeYear(sliderYear: number): MidtermKeyframeYear {
+  let best: MidtermKeyframeYear = KEYFRAME_YEARS[0]
+  let bestDist = Math.abs(sliderYear - best)
+  for (const k of KEYFRAME_YEARS) {
+    const d = Math.abs(sliderYear - k)
+    if (d < bestDist) {
+      best = k
+      bestDist = d
+    }
+  }
+  return best
+}
 
 function meanDbhByPlot(trees: VectorForestTree[]): Record<string, number> {
   const byPlot: Record<string, number[]> = {}
@@ -46,24 +70,40 @@ function meanDbhByPlot(trees: VectorForestTree[]): Record<string, number> {
   return out
 }
 
-export async function loadStaticSnapshots(): Promise<VectorForestSnapshot[]> {
-  const response = await fetch(`${BASE_PATH}/midterm-data/snapshots.json`)
-  if (!response.ok) throw new Error('Failed to load static snapshots')
-  const data = (await response.json()) as SnapshotFile
-  return data.snapshots
+function getBundledSnapshots(): VectorForestSnapshot[] {
+  return BUNDLED_SNAPSHOTS
 }
 
+/** @deprecated Prefer sync bundle; kept for any external await callers */
+export async function loadStaticSnapshots(): Promise<VectorForestSnapshot[]> {
+  return getBundledSnapshots()
+}
+
+/**
+ * Snapshot rows for the requested slider year: uses nearest keyframe data, preserves
+ * `years_ahead` as the **slider** value so the scene/inspector match the UI year.
+ */
 export async function getStaticVectorForestSnapshot(
   yearsAhead: number,
   plot: string = 'all',
 ): Promise<VectorForestSnapshot> {
-  const snapshots = await loadStaticSnapshots()
-  const hit = snapshots.find((s) => s.years_ahead === yearsAhead)
-  if (!hit) throw new Error(`Static snapshot missing for year ${yearsAhead}`)
-  if (plot === 'all') return hit
+  const keyYear = nearestKeyframeYear(Math.max(0, Math.min(20, yearsAhead)))
+  const snapshots = getBundledSnapshots()
+  const hit = snapshots.find((s) => s.years_ahead === keyYear)
+  if (!hit) {
+    throw new Error(`Bundled snapshot missing for keyframe year ${keyYear}`)
+  }
+
+  const base: VectorForestSnapshot = {
+    ...hit,
+    years_ahead: yearsAhead,
+  }
+
+  if (plot === 'all') return base
+
   const trees = hit.trees.filter((t) => t.plot === plot)
   return {
-    ...hit,
+    ...base,
     plot_filter: plot,
     count: trees.length,
     trees,
@@ -71,19 +111,8 @@ export async function getStaticVectorForestSnapshot(
 }
 
 export async function loadStaticVisualizationData(): Promise<VisualizationData> {
-  const [summariesRes, snapshotsRes] = await Promise.all([
-    fetch(`${BASE_PATH}/midterm-data/summaries.json`),
-    fetch(`${BASE_PATH}/midterm-data/snapshots.json`),
-  ])
-  if (!summariesRes.ok || !snapshotsRes.ok) {
-    throw new Error('Failed to load static midterm data')
-  }
-
-  const summaryFile = (await summariesRes.json()) as SummaryFile
-  const snapshotFile = (await snapshotsRes.json()) as SnapshotFile
-
-  const summaries = summaryFile.summaries
-  const snapshots = snapshotFile.snapshots
+  const summaries = BUNDLED_SUMMARIES
+  const snapshots = getBundledSnapshots()
 
   const timeSeries: TimeSeriesPoint[] = KEYFRAME_YEARS.map((year) => {
     const summary = summaries.find((s) => s.years_ahead === year)

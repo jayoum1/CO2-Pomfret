@@ -321,7 +321,7 @@ export default function VectorForestDemo() {
             </div>
             <p className="text-xs max-w-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
               {isMidtermStaticDemoBuild()
-                ? 'Ensure `/midterm-data/snapshots.json` is included in the static export.'
+                ? 'Bundled snapshot data failed to load. Try rebuilding the site or report a bug.'
                 : 'Start the FastAPI backend, or rely on static JSON fallback if configured.'}
             </p>
             {!isMidtermStaticDemoBuild() && (
