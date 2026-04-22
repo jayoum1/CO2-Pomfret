@@ -247,12 +247,9 @@ export default function Visualize() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold mb-2">Invasive Spread Simulator</h1>
-        <p className="text-[var(--text-muted)]">
-          Click the map to place an outbreak. Pick an invasive type. Press Start.
-        </p>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
-          Narrative simulation for classroom exploration (not a precise prediction).
+        <h1 className="text-page-title">Invasive Spread Simulator</h1>
+        <p className="text-meta text-[var(--text-muted)] mt-1">
+          Click the map to place an outbreak, pick an invasive type, and press Start. Narrative simulation for classroom exploration.
         </p>
       </div>
 

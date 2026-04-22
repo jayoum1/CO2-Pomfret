@@ -33,8 +33,12 @@ const config: Config = {
   				foreground: 'var(--text-muted)'
   			},
   			accent: {
-  				DEFAULT: 'var(--accent)',
-  				foreground: 'var(--primary)'
+  				DEFAULT:    'var(--accent)',
+  				hover:      'var(--accent-hover)',
+  				text:       'var(--accent-text)',
+  				light:      'var(--accent-light)',
+  				glow:       'var(--accent-glow)',
+  				foreground: '#ffffff',
   			},
   			destructive: {
   				DEFAULT: 'var(--error)',

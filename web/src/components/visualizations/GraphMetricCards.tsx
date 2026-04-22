@@ -50,7 +50,9 @@ export default function GraphMetricCards({
       value: `${(totalCarbon / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k`,
       unit: 'kg C',
       icon: Leaf,
-      accent: '#0d9488',
+      iconColor: 'var(--primary)',
+      iconBg: 'var(--primary-light)',
+      valueColor: 'var(--primary)',
       change:
         selectedYear > 0
           ? `${carbonChange >= 0 ? '+' : ''}${carbonChange.toFixed(1)}% since year 0`
@@ -62,7 +64,9 @@ export default function GraphMetricCards({
       value: meanDbh.toFixed(1),
       unit: 'cm',
       icon: Ruler,
-      accent: '#059669',
+      iconColor: 'var(--secondary)',
+      iconBg: 'var(--secondary-light)',
+      valueColor: 'var(--secondary)',
       change: null,
     },
     {
@@ -70,7 +74,9 @@ export default function GraphMetricCards({
       value: trees.length.toLocaleString(),
       unit: selectedPlot === 'all' ? 'across all plots' : selectedPlot + ' plot',
       icon: Trees,
-      accent: '#2563eb',
+      iconColor: 'var(--chart-3)',
+      iconBg: 'rgba(37,99,235,0.10)',
+      valueColor: 'var(--text)',
       change: null,
     },
     {
@@ -78,7 +84,9 @@ export default function GraphMetricCards({
       value: `${(co2e / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k`,
       unit: 'kg CO₂e',
       icon: Wind,
-      accent: '#7c3aed',
+      iconColor: 'var(--chart-4)',
+      iconBg: 'rgba(124,58,237,0.10)',
+      valueColor: 'var(--chart-4)',
       change: null,
     },
   ]
@@ -91,15 +99,15 @@ export default function GraphMetricCards({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: i * 0.05 }}
-          className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm"
+          className="rounded-card border border-[var(--border)] bg-white p-4 shadow-sm"
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-500">{c.label}</span>
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-label text-[var(--text-muted)] uppercase tracking-wider">{c.label}</span>
             <div
-              className="rounded-md p-1.5"
-              style={{ backgroundColor: c.accent + '18' }}
+              className="rounded-control p-1.5"
+              style={{ backgroundColor: c.iconBg }}
             >
-              <c.icon className="w-3.5 h-3.5" style={{ color: c.accent }} />
+              <c.icon className="w-3.5 h-3.5" style={{ color: c.iconColor }} />
             </div>
           </div>
 
@@ -108,15 +116,21 @@ export default function GraphMetricCards({
             initial={{ opacity: 0.5 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.25 }}
+            className="flex items-baseline gap-1.5"
           >
-            <span className="text-xl font-bold text-slate-800">{c.value}</span>
-            <span className="ml-1.5 text-xs text-slate-400">{c.unit}</span>
+            <span
+              className="text-2xl font-bold tabular-nums leading-none"
+              style={{ color: c.valueColor }}
+            >
+              {c.value}
+            </span>
+            <span className="text-xs text-[var(--text-faint)]">{c.unit}</span>
           </motion.div>
 
           {c.change && (
             <div
               className={`mt-1.5 text-xs font-medium ${
-                c.changePositive ? 'text-emerald-600' : 'text-rose-500'
+                c.changePositive ? 'text-[var(--eco-healthy)]' : 'text-[var(--error)]'
               }`}
             >
               {c.change}

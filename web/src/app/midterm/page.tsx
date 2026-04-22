@@ -14,7 +14,7 @@
  *   - If the backend is offline, falls back to the same static JSON as Pages.
  *
  * Sections:
- *  1. Hero · 2. Overview · 3. Forest Demo · 4. Data Insights · 5. Gallery · 6. Progress · 7. Footer
+ *  1. Hero · 2. Overview · 3. Forest Demo · 4. Data Insights · 5. Progress · 6. Footer
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -67,70 +67,8 @@ const NAV_ITEMS = [
   { id: 'overview', label: 'Overview' },
   { id: 'forest-demo', label: 'Forest' },
   { id: 'insights', label: 'Data' },
-  { id: 'gallery', label: 'Visuals' },
   { id: 'progress', label: 'Progress' },
 ]
-
-// ── Screenshot placeholder card ───────────────────────────────────────────────
-
-function ScreenshotSlot({
-  label,
-  caption,
-  index,
-}: {
-  label: string
-  caption: string
-  index: number
-}) {
-  return (
-    <FadeUp delay={index * 0.08}>
-      <div
-        className="group rounded-2xl overflow-hidden"
-        style={{ border: '1.5px dashed #d1ddd4', background: '#f9fdfb' }}
-      >
-        {/* Placeholder image area */}
-        <div
-          className="aspect-video flex flex-col items-center justify-center gap-3"
-          style={{ background: 'linear-gradient(135deg, #f0f7f2 0%, #e8f5ec 100%)' }}
-        >
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: '#e0f0e6' }}
-          >
-            {/* Camera / image icon */}
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#6bba8a"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-          </div>
-          <span className="text-xs font-medium" style={{ color: '#7aab8a' }}>
-            Screenshot coming soon
-          </span>
-        </div>
-
-        {/* Caption bar */}
-        <div className="px-4 py-3" style={{ background: '#f4faf6' }}>
-          <p className="text-sm font-semibold" style={{ color: '#1e293b' }}>
-            {label}
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>
-            {caption}
-          </p>
-        </div>
-      </div>
-    </FadeUp>
-  )
-}
 
 // ── Stat chip used in hero ────────────────────────────────────────────────────
 
@@ -794,58 +732,7 @@ export default function MidtermPage() {
         </div>
       </section>
 
-      {/* ── 5. SCREENSHOT GALLERY ────────────────────────────────────────── */}
-      <section
-        id="gallery"
-        className="py-24 px-6"
-        style={{ background: '#f4faf6' }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <FadeUp>
-            <p
-              className="text-xs font-semibold tracking-widest uppercase mb-3"
-              style={{ color: '#10b981' }}
-            >
-              Project Visuals
-            </p>
-            <h2
-              className="text-3xl sm:text-4xl font-bold mb-3"
-              style={{ color: '#0f2d1a' }}
-            >
-              Screenshots &amp; Demos
-            </h2>
-            <p className="text-sm mb-12 max-w-xl" style={{ color: '#4a6b56' }}>
-              Visual documentation of the full application — screenshots to be
-              added once the final design iteration is complete.
-            </p>
-          </FadeUp>
-
-          <div className="grid sm:grid-cols-2 gap-5">
-            <ScreenshotSlot
-              index={0}
-              label="Dashboard Overview"
-              caption="Main dashboard with summary stats, carbon timeline, and year slider"
-            />
-            <ScreenshotSlot
-              index={1}
-              label="Vector Forest (Full App)"
-              caption="Interactive 442-tree visualization with scenario simulation controls"
-            />
-            <ScreenshotSlot
-              index={2}
-              label="Visualization Suite"
-              caption="Recharts-based dashboard: carbon trends, DBH distribution, radar chart"
-            />
-            <ScreenshotSlot
-              index={3}
-              label="Area Generalizer"
-              caption="Tool for scaling forest carbon projections to non-Pomfret sites"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── 6. PROGRESS ──────────────────────────────────────────────────── */}
+      {/* ── 5. PROGRESS ──────────────────────────────────────────────────── */}
       <section
         id="progress"
         className="py-24 px-6"
@@ -939,14 +826,8 @@ export default function MidtermPage() {
                 </div>
                 <ul className="space-y-0.5">
                   {[
-                    'Species imagery for all 7 tree types in inspector',
-                    'Neural network growth model (PyTorch, in progress)',
-                    'Full app visual redesign (unified design system)',
-                    'Export / sharing features for results',
-                    'Additional disturbance scenario types',
-                    'Comparison view between baseline and stochastic',
-                    'Pomfret School emissions data integration',
-                    'Print / presentation export mode',
+                    'Use Google Apps Script to connect Google Sheets with Google Forms so new data from each year can be added and integrated into the app',
+                    'Finishing retouches on general UI and design',
                   ].map((text) => (
                     <ProgressItem key={text} text={text} done={false} />
                   ))}
@@ -957,7 +838,7 @@ export default function MidtermPage() {
         </div>
       </section>
 
-      {/* ── 7. FOOTER ────────────────────────────────────────────────────── */}
+      {/* ── 6. FOOTER ────────────────────────────────────────────────────── */}
       <footer
         className="py-20 px-6"
         style={{

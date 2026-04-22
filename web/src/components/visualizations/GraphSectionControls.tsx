@@ -38,7 +38,7 @@ export default function GraphSectionControls({
               className={`
                 px-3.5 py-1.5 rounded-pill text-sm font-medium transition-all duration-150
                 ${selectedYear === y
-                  ? 'bg-white text-slate-800 shadow-sm'
+                  ? 'bg-[var(--accent)] text-white shadow-sm'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'}
               `}
             >

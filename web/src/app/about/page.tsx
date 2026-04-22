@@ -22,8 +22,8 @@ export default function About() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">About / Assumptions</h1>
-      <p className="text-[var(--text-muted)]">Project details and simulation assumptions</p>
+      <h1 className="text-page-title">About &amp; Assumptions</h1>
+      <p className="text-meta text-[var(--text-muted)] mt-1">Project details and simulation assumptions</p>
 
       <div className="card">
         <h2 className="font-semibold mb-4">Project Overview</h2>
@@ -153,45 +153,45 @@ export default function About() {
         ) : uncertainty ? (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-[var(--bg-alt)] rounded-2xl border border-[var(--border)]">
-                <div className="text-sm text-[var(--text-muted)] mb-1">Per-Tree Uncertainty</div>
-                <div className="text-xl font-semibold mb-1" style={{ color: 'var(--teal-600)' }}>
+              <div className="p-4 bg-[var(--surface-2)] rounded-card border border-[var(--border)]">
+                <div className="text-meta text-[var(--text-muted)] mb-1">Per-Tree Uncertainty</div>
+                <div className="text-xl font-semibold mb-1 text-[var(--primary)]">
                   {uncertainty.per_tree_stats.median_co2e_sigma_kg_per_year.toFixed(1)} kg CO₂e/year
                 </div>
-                <div className="text-sm text-[var(--text-muted)]">
+                <div className="text-meta text-[var(--text-muted)]">
                   ≈ {uncertainty.per_tree_stats.median_equivalent_miles_per_year.toFixed(1)} miles driven/year
                 </div>
-                <div className="text-xs text-[var(--text-muted)] mt-2">
-                  (median typical deviation)
+                <div className="text-label text-[var(--text-faint)] mt-2">
+                  median typical deviation
                 </div>
               </div>
               
-              <div className="p-4 bg-[var(--bg-alt)] rounded-2xl border border-[var(--border)]">
-                <div className="text-sm text-[var(--text-muted)] mb-1">75th Percentile</div>
-                <div className="text-xl font-semibold mb-1" style={{ color: 'var(--accent)' }}>
+              <div className="p-4 bg-[var(--surface-2)] rounded-card border border-[var(--border)]">
+                <div className="text-meta text-[var(--text-muted)] mb-1">75th Percentile</div>
+                <div className="text-xl font-semibold mb-1 text-[var(--chart-3)]">
                   {uncertainty.per_tree_stats.p75_co2e_sigma_kg_per_year.toFixed(1)} kg CO₂e/year
                 </div>
-                <div className="text-sm text-[var(--text-muted)]">
+                <div className="text-meta text-[var(--text-muted)]">
                   ≈ {uncertainty.per_tree_stats.p75_equivalent_miles_per_year.toFixed(1)} miles driven/year
                 </div>
               </div>
             </div>
             
-            <div className="p-4 bg-[var(--primary-light)] rounded-2xl border border-[var(--primary)]/20">
-              <div className="text-sm text-[var(--text-muted)] mb-1">Forest-Wide Uncertainty Band</div>
-              <div className="text-lg font-semibold mb-1" style={{ color: 'var(--teal-600)' }}>
+            <div className="p-4 bg-[var(--primary-light)] rounded-card border border-[var(--primary)]/20">
+              <div className="text-meta text-[var(--text-muted)] mb-1">Forest-Wide Uncertainty Band</div>
+              <div className="text-lg font-semibold mb-1 text-[var(--primary)]">
                 ±{uncertainty.forest_wide.total_co2e_sigma_rss_kg_per_year.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg CO₂e/year
               </div>
-              <div className="text-sm text-[var(--text-muted)]">
+              <div className="text-meta text-[var(--text-muted)]">
                 ≈ ±{uncertainty.forest_wide.total_equivalent_miles_rss_per_year.toLocaleString(undefined, { maximumFractionDigits: 0 })} miles driven/year
               </div>
-              <div className="text-xs text-[var(--text-muted)] mt-2">
-                (statistical combination across {uncertainty.n_trees} trees)
+              <div className="text-label text-[var(--text-faint)] mt-2">
+                statistical combination across {uncertainty.n_trees} trees
               </div>
             </div>
             
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-900">
+            <div className="mt-4 p-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-card">
+              <p className="text-sm text-[var(--text-body)]">
                 <strong>Note:</strong> The stochastic simulation mode samples noise using these uncertainty estimates 
                 to make visualizations more realistic. This represents typical natural variation, not model error.
               </p>

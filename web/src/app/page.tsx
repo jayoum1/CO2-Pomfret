@@ -124,7 +124,7 @@ function PillToggle<T extends string>({ value, options, onChange }: PillTogglePr
           className={`
             px-3 py-1 rounded-pill text-xs font-medium transition-all duration-150 whitespace-nowrap
             ${value === opt.value
-              ? 'bg-white text-slate-800 shadow-sm'
+              ? 'bg-[var(--accent)] text-white shadow-sm'
               : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'}
           `}
         >

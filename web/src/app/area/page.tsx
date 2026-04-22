@@ -130,8 +130,8 @@ export default function AreaGeneralizer() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">Generalize to Any Area</h1>
-          <p className="text-[var(--text-muted)] mt-1">
+          <h1 className="text-page-title">Generalize to Any Area</h1>
+          <p className="text-meta text-[var(--text-muted)] mt-1">
             Scale carbon sequestration results from measured plots to any target area
           </p>
         </div>
@@ -155,8 +155,8 @@ export default function AreaGeneralizer() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Generalize to Any Area</h1>
-        <p className="text-[var(--text-muted)] mt-1">
+        <h1 className="text-page-title">Generalize to Any Area</h1>
+        <p className="text-meta text-[var(--text-muted)] mt-1">
           Scale carbon sequestration results from measured plots to any target area
         </p>
       </div>

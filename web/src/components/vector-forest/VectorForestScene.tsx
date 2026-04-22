@@ -59,6 +59,7 @@ export default function VectorForestScene({
   onResetScenario,
   metaById,
   onRecordDeath,
+  hideCarousel = false,
   onStatsChange,
 }: {
   trees: TreeInstance[]
@@ -77,6 +78,8 @@ export default function VectorForestScene({
   onResetScenario?: () => void
   metaById: Record<string, TreeMeta>
   onRecordDeath?: (treeId: string, deathYear: number, fallDir: number) => void
+  /** When true, the ScenarioCarousel overlay is not rendered (controls live in the parent). */
+  hideCarousel?: boolean
   onStatsChange?: (stats: {
     baselineCarbon: number
     baselineAlive: number
@@ -316,14 +319,16 @@ export default function VectorForestScene({
       >
         Reset view
       </button>
-      <ScenarioCarousel
-        card={scenarioCard}
-        startYear={scenarioStartYear}
-        onStartYearChange={onScenarioStartYearChange}
-        onPrev={onScenarioPrev}
-        onNext={onScenarioNext}
-        onReset={onResetScenario}
-      />
+      {!hideCarousel && (
+        <ScenarioCarousel
+          card={scenarioCard}
+          startYear={scenarioStartYear}
+          onStartYearChange={onScenarioStartYearChange}
+          onPrev={onScenarioPrev}
+          onNext={onScenarioNext}
+          onReset={onResetScenario}
+        />
+      )}
       <div
         className="absolute inset-0"
         style={{ transform: `translate(${pan.x}px, ${pan.y}px)`, width: '100%', height: '100%' }}

@@ -651,8 +651,8 @@ export default function Scenarios() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Forest Modification</h1>
-        <p className="text-[var(--text-muted)]">Simulate tree planting and removal scenarios to understand their impact on carbon storage</p>
+        <h1 className="text-page-title">Forest Modification</h1>
+        <p className="text-meta text-[var(--text-muted)] mt-1">Simulate tree planting and removal scenarios to understand their impact on carbon storage</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

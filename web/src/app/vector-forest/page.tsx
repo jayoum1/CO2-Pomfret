@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Maximize2, Minimize2, RotateCcw, AlertTriangle } from 'lucide-react'
 import VectorForestScene from '@/components/vector-forest/VectorForestScene'
 import TreeInspectorPanel from '@/components/vector-forest/TreeInspectorPanel'
 import RegrowthInspectorPanel from '@/components/vector-forest/RegrowthInspectorPanel'
@@ -8,21 +9,28 @@ import type { TreeSelection, TreeMeta } from '@/components/vector-forest/VectorF
 import { getScenarioConfig, getScenarioTiming, applyScenario } from '@/lib/vectorForest/scenarios'
 import { getTreeState, type TreeInstance } from '@/lib/vectorForest/treeModel'
 import { getVectorForestSnapshot, type VectorForestTree } from '@/lib/api'
-import { TREE_SPECIES_WITH_IMAGES, type TreeSpeciesKey } from '@/lib/vectorForest/treeSpeciesImages'
+import type { TreeSpeciesKey } from '@/lib/vectorForest/treeSpeciesImages'
 import {
+  SCENARIOS,
   getScenarioCard,
   getPrevScenarioId,
   getNextScenarioId,
   type ScenarioId,
 } from '@/lib/vectorForest/scenarioCatalog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
 
 const SCENARIO_SEED = 42
 const MAX_YEAR = 20
 
-/**
- * Seed a 32-bit state from a string (xmur3).
- * Returns a function that yields successive uint32 values with good avalanche.
- */
+// ── PRNG (unchanged) ──────────────────────────────────────────────────────────
+
 function splitmix32(seed: number) {
   return () => {
     seed |= 0
@@ -64,21 +72,17 @@ function backendTreeToInstance(t: VectorForestTree, index: number, total: number
   const idStr = String(t.tree_id)
   const rng = splitmix32(strToSeed(`${idStr}:${t.plot}`))
   const r1 = rng(), r2 = rng(), r3 = rng(), r4 = rng(), r5 = rng()
-
   const cols = Math.ceil(Math.sqrt(total * 1.5))
   const rows = Math.ceil(total / cols)
   const col = index % cols
   const row = Math.floor(index / cols)
-  const cellX = (col + 0.15 + r1 * 0.7) / cols
-  const cellY = (row + 0.15 + r2 * 0.7) / rows
-
   return {
     id: idStr,
     species: 'generic',
     speciesName: t.species,
     plot: t.plot,
-    x: cellX,
-    depth: cellY,
+    x: (col + 0.15 + r1 * 0.7) / cols,
+    depth: (row + 0.15 + r2 * 0.7) / rows,
     dbh0: t.dbh_cm,
     growthRate: 0,
     jitter: r3,
@@ -88,26 +92,58 @@ function backendTreeToInstance(t: VectorForestTree, index: number, total: number
   }
 }
 
+// ── Error banner ──────────────────────────────────────────────────────────────
+
+function ErrorBanner({ message }: { message: string }) {
+  const isBackendDown = message.includes('Cannot reach the backend')
+  return (
+    <div className="rounded-card border border-amber-200 bg-amber-50/60 p-5 border-l-4 border-l-amber-400">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">
+            {isBackendDown ? 'Backend Not Running' : 'Error Loading Data'}
+          </h3>
+          <p className="text-meta text-[var(--text-muted)] mb-3">{message}</p>
+          {isBackendDown && (
+            <div className="rounded-control bg-white border border-amber-200 px-3 py-2.5">
+              <p className="text-xs font-medium text-slate-600 mb-1.5">Start the backend:</p>
+              <code className="text-xs bg-slate-50 border border-slate-200 px-2 py-1 rounded block">
+                cd src && uvicorn api.app:app --reload
+              </code>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function VectorForestPage() {
-  const [year, setYear] = useState(0)
-  const [dimensions, setDimensions] = useState({ width: 800, height: 500 })
-  const [selection, setSelection] = useState<TreeSelection>(null)
-  const [scenarioId, setScenarioId] = useState<ScenarioId>('emerald_ash_borer')
-  const [scenarioStartYear, setScenarioStartYear] = useState(() => getScenarioTiming('emerald_ash_borer').startYear)
-  const [metaById, setMetaById] = useState<Record<string, TreeMeta>>({})
-  const [stats, setStats] = useState({ baselineCarbon: 0, baselineAlive: 0, scenarioCarbon: 0, scenarioAlive: 0 })
+  const [year, setYear]               = useState(0)
+  const [dimensions, setDimensions]   = useState({ width: 800, height: 500 })
+  const [selection, setSelection]     = useState<TreeSelection>(null)
+  const [scenarioId, setScenarioId]   = useState<ScenarioId>('emerald_ash_borer')
+  const [scenarioStartYear, setScenarioStartYear] = useState(
+    () => getScenarioTiming('emerald_ash_borer').startYear,
+  )
+  const [metaById, setMetaById]       = useState<Record<string, TreeMeta>>({})
+  const [stats, setStats]             = useState({
+    baselineCarbon: 0, baselineAlive: 0, scenarioCarbon: 0, scenarioAlive: 0,
+  })
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef  = useRef<HTMLDivElement>(null)
   const fullscreenRef = useRef<HTMLDivElement>(null)
 
-  // --- Real data state ---
-  const [plotFilter, setPlotFilter] = useState('all')
-  const [plots, setPlots] = useState<string[]>([])
+  const [plotFilter, setPlotFilter]   = useState('all')
+  const [plots, setPlots]             = useState<string[]>([])
   const [backendTrees, setBackendTrees] = useState<VectorForestTree[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState<string | null>(null)
 
-  // Fetch snapshot whenever year or plot filter changes
+  // Fetch snapshot whenever year or plot changes
   useEffect(() => {
     let cancelled = false
     setLoading(true)
@@ -127,49 +163,52 @@ export default function VectorForestPage() {
     return () => { cancelled = true }
   }, [year, plotFilter])
 
-  // Map backend rows to TreeInstance objects with stratified grid placement
-  const trees: TreeInstance[] = useMemo(
-    () => {
-      const shuffled = [...backendTrees].sort(
-        (a, b) => strToSeed(`${a.tree_id}:${a.plot}`) - strToSeed(`${b.tree_id}:${b.plot}`),
-      )
-      return shuffled.map((t, i) => backendTreeToInstance(t, i, shuffled.length))
-    },
-    [backendTrees],
-  )
+  // Map backend rows → TreeInstance
+  const trees: TreeInstance[] = useMemo(() => {
+    const shuffled = [...backendTrees].sort(
+      (a, b) => strToSeed(`${a.tree_id}:${a.plot}`) - strToSeed(`${b.tree_id}:${b.plot}`),
+    )
+    return shuffled.map((t, i) => backendTreeToInstance(t, i, shuffled.length))
+  }, [backendTrees])
 
-  const scenarioCard = getScenarioCard(scenarioId)
+  const scenarioCard   = getScenarioCard(scenarioId)
   const scenarioConfig = useMemo(
     () => getScenarioConfig(scenarioId, SCENARIO_SEED, scenarioStartYear),
     [scenarioId, scenarioStartYear],
   )
 
+  // Reset start year when scenario changes
   useEffect(() => {
     setScenarioStartYear(getScenarioTiming(scenarioId).startYear)
   }, [scenarioId])
 
+  // Measure forest area for SVG sizing
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    const updateSize = () => {
+    const update = () => {
       setDimensions({
         width: el.clientWidth || 800,
         height: Math.min(600, Math.max(400, el.clientHeight || 500)),
       })
     }
-    updateSize()
-    const ro = new ResizeObserver(updateSize)
+    update()
+    const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
 
-  const handleClosePanel = useCallback(() => setSelection(null), [])
-  const handleRecordDeath = useCallback((treeId: string, deathYear: number, fallDir: number) => {
-    setMetaById((prev) => ({ ...prev, [treeId]: { deathYear, fallDir } }))
+  const handleClosePanel    = useCallback(() => setSelection(null), [])
+  const handleRecordDeath   = useCallback((id: string, yr: number, dir: number) => {
+    setMetaById(prev => ({ ...prev, [id]: { deathYear: yr, fallDir: dir } }))
   }, [])
-  const handleResetScenario = useCallback(() => { setYear(0); setMetaById({}); setSelection(null) }, [])
-  const handleScenarioPrev = useCallback(() => setScenarioId((cur) => getPrevScenarioId(cur)), [])
-  const handleScenarioNext = useCallback(() => setScenarioId((cur) => getNextScenarioId(cur)), [])
+  const handleResetScenario = useCallback(() => {
+    setYear(0)
+    setMetaById({})
+    setSelection(null)
+  }, [])
+  const handleScenarioPrev  = useCallback(() => setScenarioId(getPrevScenarioId), [])
+  const handleScenarioNext  = useCallback(() => setScenarioId(getNextScenarioId), [])
 
   const inspectorState = useMemo(() => {
     if (!selection || selection.kind !== 'tree') return null
@@ -181,21 +220,20 @@ export default function VectorForestPage() {
   const handleFullscreenChange = useCallback(() => {
     setIsFullscreen(document.fullscreenElement === fullscreenRef.current)
   }, [])
-
   useEffect(() => {
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [handleFullscreenChange])
 
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (document.fullscreenElement) document.exitFullscreen()
         else setSelection(null)
       }
     }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
   }, [])
 
   const toggleFullscreen = useCallback(async () => {
@@ -205,68 +243,121 @@ export default function VectorForestPage() {
     else await el.requestFullscreen()
   }, [])
 
-  // Backend-down error page
-  const isBackendDown = error?.includes('Cannot reach the backend')
-  if (error && isBackendDown) {
+  // Derived values for the data overlay
+  const isDisturbance  = scenarioId !== 'baseline'
+  const carbonDisplay  = stats.scenarioCarbon > 0
+    ? `${(stats.scenarioCarbon / 1000).toFixed(1)}k kg C`
+    : null
+
+  // ── Error ──────────────────────────────────────────────────────────────────
+
+  if (error?.includes('Cannot reach the backend')) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">Vector Forest</h1>
-          <p className="text-[var(--text-muted)]">Real forest growth visualization from snapshot data.</p>
-        </div>
-        <div className="card border-l-4 border-l-amber-400">
-          <div className="flex items-start gap-3">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-amber-500 mt-0.5 shrink-0" aria-hidden><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-1">Backend Server Not Running</h3>
-              <p className="text-sm text-gray-600 mb-3">{error}</p>
-              <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
-                <p className="font-medium mb-1">To start the backend:</p>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded block mt-1">cd src && uvicorn api.app:app --reload</code>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PageHeader />
+        <ErrorBanner message={error} />
       </div>
     )
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">Vector Forest</h1>
-          <p className="text-[var(--text-muted)]">
-            Baseline forest projection — {trees.length} trees{plotFilter !== 'all' ? ` (${plotFilter} plot)` : ''}.
-          </p>
-        </div>
-        {/* Plot selector */}
-        <div data-ui-overlay="true" className="flex items-center gap-2">
-          <label className="text-sm font-medium text-[var(--text)]">View:</label>
-          <select
-            value={plotFilter}
-            onChange={(e) => { setPlotFilter(e.target.value); setSelection(null) }}
-            className="input w-40 py-1.5 text-sm"
-          >
-            <option value="all">All Trees</option>
-            {plots.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+  // ── Loaded ─────────────────────────────────────────────────────────────────
 
+  return (
+    <div className="space-y-5">
+      <PageHeader />
+
+      {/* ── Visualization panel ─────────────────────────────────────────────── */}
       <div
         ref={fullscreenRef}
-        className={`relative card p-0 overflow-hidden flex flex-col ${isFullscreen ? 'h-screen min-h-0' : ''}`}
+        className="rounded-card border border-[var(--border)] bg-white shadow-sm overflow-hidden flex flex-col"
       >
-        <div ref={containerRef} className="w-full relative z-10 flex-1 min-h-0 min-h-[500px]">
+
+        {/* ── Top control bar ──────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+          <div className="flex items-center gap-5 flex-wrap">
+
+            {/* Scenario selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-label text-[var(--text-muted)]">Scenario</span>
+              <Select
+                value={scenarioId}
+                onValueChange={(v) => setScenarioId(v as ScenarioId)}
+              >
+                <SelectTrigger className="h-7 w-[170px] bg-white text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SCENARIOS.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="h-4 w-px bg-[var(--border)] hidden sm:block" />
+
+            {/* View / plot filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-label text-[var(--text-muted)]">View</span>
+              <Select
+                value={plotFilter}
+                onValueChange={(v) => { setPlotFilter(v); setSelection(null) }}
+              >
+                <SelectTrigger className="h-7 w-[130px] bg-white text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Trees</SelectItem>
+                  {plots.map(p => (
+                    <SelectItem key={p} value={p}>{p} Plot</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+          </div>
+
+          {/* Fullscreen toggle */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            className="p-1.5 rounded-control text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--border)] transition-colors shrink-0"
+          >
+            {isFullscreen
+              ? <Minimize2 className="w-4 h-4" />
+              : <Maximize2 className="w-4 h-4" />
+            }
+          </button>
+        </div>
+
+        {/* ── Forest area ───────────────────────────────────────────────────── */}
+        <div ref={containerRef} className="relative flex-1 min-h-[480px]">
+
+          {/* Data overlay — top left, low-opacity, non-interactive */}
+          {trees.length > 0 && (
+            <div className="absolute top-3 left-3 z-[200] pointer-events-none select-none">
+              <div className="rounded-control bg-black/22 backdrop-blur-[3px] px-3 py-2 space-y-0.5">
+                <p className="text-xs font-semibold text-white/95 tabular-nums leading-none">
+                  Year {year}
+                </p>
+                <p className="text-xs text-white/72 leading-none">
+                  {trees.length.toLocaleString()} trees
+                </p>
+                {carbonDisplay && (
+                  <p className="text-xs text-white/72 leading-none">{carbonDisplay}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Forest scene or loading / error */}
           {loading && trees.length === 0 ? (
-            <div className="flex items-center justify-center h-full min-h-[500px] text-[var(--text-muted)]">
-              Loading forest data...
+            <div className="flex items-center justify-center h-full min-h-[480px] text-[var(--text-muted)] text-sm">
+              Loading forest data…
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center h-full min-h-[500px] text-red-600 p-8 text-center">
+            <div className="flex items-center justify-center h-full min-h-[480px] text-sm text-rose-600 p-8 text-center">
               {error}
             </div>
           ) : (
@@ -275,7 +366,11 @@ export default function VectorForestPage() {
               year={year}
               containerWidth={dimensions.width}
               containerHeight={dimensions.height}
-              selectedTreeId={selection ? (selection.kind === 'tree' ? selection.treeId : selection.item.id) : null}
+              selectedTreeId={
+                selection
+                  ? selection.kind === 'tree' ? selection.treeId : selection.item.id
+                  : null
+              }
               onSelectionChange={setSelection}
               scenarioConfig={scenarioConfig}
               scenarioId={scenarioId}
@@ -288,76 +383,107 @@ export default function VectorForestPage() {
               metaById={metaById}
               onRecordDeath={handleRecordDeath}
               onStatsChange={setStats}
+              hideCarousel
             />
+          )}
+
+          {/* Tree inspector panel */}
+          {selection?.kind === 'tree' && inspectorState && (
+            <div
+              data-ui-overlay="true"
+              className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full rounded-l-xl shadow-lg z-[250] flex flex-col bg-white border-l border-[var(--border)] pointer-events-auto"
+            >
+              <TreeInspectorPanel
+                tree={selection.tree}
+                state={inspectorState}
+                year={year}
+                onClose={handleClosePanel}
+              />
+            </div>
+          )}
+
+          {/* Regrowth inspector panel */}
+          {selection?.kind === 'regrowth' && (
+            <div
+              data-ui-overlay="true"
+              className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full rounded-l-xl shadow-lg z-[250] flex flex-col bg-white border-l border-[var(--border)] pointer-events-auto"
+            >
+              <RegrowthInspectorPanel
+                item={selection.item}
+                age={year - selection.item.spawnYear}
+                onClose={handleClosePanel}
+              />
+            </div>
           )}
         </div>
 
-        <button
-          type="button"
-          data-ui-overlay="true"
-          onClick={toggleFullscreen}
-          aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
-          className="absolute right-3 bottom-[4.25rem] z-[250] p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)]/90 border border-[var(--border)] bg-[var(--bg)]/90 shadow-sm pointer-events-auto transition-colors"
-        >
-          {isFullscreen ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-              <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-            </svg>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-            </svg>
-          )}
-        </button>
+        {/* ── Bottom control bar ───────────────────────────────────────────── */}
+        <div className="px-4 py-3 border-t border-[var(--border)] bg-[var(--surface-2)] shrink-0">
 
-        <div
-          data-ui-overlay="true"
-          className="flex items-center gap-4 p-4 bg-[var(--bg-alt)] border-t border-[var(--border)] rounded-b-lg pointer-events-auto shrink-0"
-        >
-          <label className="text-sm font-medium text-[var(--text)] shrink-0">
-            Year: <span className="text-[var(--primary)] font-semibold">{year}</span>
-          </label>
-          <input
-            type="range"
-            min={0}
-            max={MAX_YEAR}
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="flex-1 min-w-0 max-w-md"
-            style={{ accentColor: 'var(--primary)' }}
-          />
-          <span className="text-xs text-[var(--text-muted)] shrink-0">0 → {MAX_YEAR} years</span>
+          {/* Primary row: year slider */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-[var(--primary)] shrink-0 w-[4.5rem] tabular-nums">
+              Year {year}
+            </span>
+            <Slider
+              min={0}
+              max={MAX_YEAR}
+              step={1}
+              value={[year]}
+              onValueChange={([v]) => setYear(v)}
+              className="flex-1 min-w-0"
+            />
+            <span className="text-meta text-[var(--text-faint)] shrink-0">20 yr</span>
+            <button
+              type="button"
+              onClick={handleResetScenario}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-control border border-[var(--border)] bg-white text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset
+            </button>
+          </div>
+
+          {/* Disturbance start year — only shown for non-baseline scenarios */}
+          {isDisturbance && (
+            <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-[var(--border)]/50">
+              <span className="text-xs font-medium text-[var(--text-muted)] shrink-0 w-[4.5rem] leading-tight tabular-nums">
+                Starts yr {scenarioStartYear}
+              </span>
+              <Slider
+                min={0}
+                max={15}
+                step={1}
+                value={[scenarioStartYear]}
+                onValueChange={([v]) => setScenarioStartYear(v)}
+                className="flex-1 min-w-0"
+              />
+              <span className="text-meta text-[var(--text-faint)] shrink-0">15 yr max</span>
+              <span className="text-xs text-[var(--text-faint)] shrink-0 hidden sm:block">
+                Disturbance onset
+              </span>
+            </div>
+          )}
+
+          {/* Helper text */}
+          <p className="text-meta text-[var(--text-faint)] mt-2">
+            Drag the slider to simulate forest growth. Click any tree to inspect it.
+          </p>
         </div>
 
-        {selection && selection.kind === 'tree' && inspectorState && (
-          <div
-            data-ui-overlay="true"
-            className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full min-h-[500px] rounded-l-lg shadow-lg z-[250] flex flex-col bg-white border-l border-gray-200 pointer-events-auto"
-          >
-            <TreeInspectorPanel
-              tree={selection.tree}
-              state={inspectorState}
-              year={year}
-              onClose={handleClosePanel}
-            />
-          </div>
-        )}
-        {selection && selection.kind === 'regrowth' && (
-          <div
-            data-ui-overlay="true"
-            className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full min-h-[500px] rounded-l-lg shadow-lg z-[250] flex flex-col bg-white border-l border-gray-200 pointer-events-auto"
-          >
-            <RegrowthInspectorPanel
-              item={selection.item}
-              age={year - selection.item.spawnYear}
-              onClose={handleClosePanel}
-            />
-          </div>
-        )}
       </div>
+    </div>
+  )
+}
 
-      <p className="text-sm text-[var(--text-muted)]">
-        Showing real tree data from the Pomfret forest baseline model. {trees.length} trees across {plots.length} plots.
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function PageHeader() {
+  return (
+    <div>
+      <h1 className="text-page-title">Forest Simulation</h1>
+      <p className="text-meta text-[var(--text-muted)] mt-1">
+        Explore how the Pomfret campus forest evolves over a 20-year simulation horizon
       </p>
     </div>
   )
