@@ -1,229 +1,368 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { getAvailableYears, getSummary, Summary } from '@/lib/api'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+/**
+ * Forest Insights — unified data page.
+ *
+ * Merges the old Dashboard + Visualizations pages into a single,
+ * narrative-driven hierarchy:
+ *
+ *   1. Controls  — year pill selector + plot filter
+ *   2. Summary   — 4 live metric cards
+ *   3. Trends    — full-width Carbon OR DBH over time (toggle)
+ *   4. Analysis  — Carbon by Plot (breakdown) + Tree Size Distribution
+ *
+ * Data source: fetchVisualizationData() — one parallel fetch for all charts.
+ * No mock values; all numbers come from the FastAPI backend.
+ */
 
-export default function Dashboard() {
-  const [availableYears, setAvailableYears] = useState<number[]>([])
-  const [selectedYear, setSelectedYear] = useState<number>(0)
-  const [summary, setSummary] = useState<Summary | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [timeSeriesData, setTimeSeriesData] = useState<any[]>([])
+import { useState, useEffect, useMemo } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { AlertTriangle } from 'lucide-react'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card'
+import GraphSectionControls from '@/components/visualizations/GraphSectionControls'
+import GraphMetricCards from '@/components/visualizations/GraphMetricCards'
+import CarbonTrendChart from '@/components/visualizations/CarbonTrendChart'
+import DBHTrendChart from '@/components/visualizations/DBHTrendChart'
+import CarbonByPlotChart from '@/components/visualizations/CarbonByPlotChart'
+import DBHDistributionChart from '@/components/visualizations/DBHDistributionChart'
+import {
+  fetchVisualizationData,
+  type VisualizationData,
+} from '@/lib/visualizationData'
+
+type TrendMetric = 'carbon' | 'dbh'
+
+// ── Skeletons ─────────────────────────────────────────────────────────────────
+
+function MetricRowSkeleton() {
+  return (
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      {[0, 1, 2, 3].map(i => (
+        <div key={i} className="rounded-card border border-slate-200 bg-white p-4 animate-pulse">
+          <div className="h-3 w-20 rounded bg-slate-100 mb-4" />
+          <div className="h-7 w-24 rounded bg-slate-100 mb-2" />
+          <div className="h-2.5 w-12 rounded bg-slate-50" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CardSkeleton({ height = 'h-[340px]' }: { height?: string }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="h-4 w-36 rounded bg-slate-100 animate-pulse" />
+        <div className="h-3 w-52 rounded bg-slate-100 animate-pulse mt-1" />
+      </CardHeader>
+      <CardContent>
+        <div className={`${height} rounded-control bg-slate-50 animate-pulse`} />
+      </CardContent>
+    </Card>
+  )
+}
+
+// ── Error state ───────────────────────────────────────────────────────────────
+
+function ErrorBanner({ message }: { message: string }) {
+  const isBackendDown = message.includes('Cannot reach the backend')
+  return (
+    <div className="rounded-card border border-amber-200 bg-amber-50/60 p-5 border-l-4 border-l-amber-400">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800 mb-1">
+            {isBackendDown ? 'Backend Not Running' : 'Error Loading Data'}
+          </h3>
+          <p className="text-meta text-[var(--text-muted)] mb-3">{message}</p>
+          {isBackendDown && (
+            <div className="rounded-control bg-white border border-amber-200 px-3 py-2.5">
+              <p className="text-xs font-medium text-slate-600 mb-1.5">Start the backend:</p>
+              <code className="text-xs bg-slate-50 border border-slate-200 px-2 py-1 rounded block">
+                cd src && uvicorn api.app:app --reload
+              </code>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Section divider ───────────────────────────────────────────────────────────
+
+function SectionDivider({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="border-t border-[var(--border)] pt-2">
+      <h2 className="text-section-title mt-4">{title}</h2>
+      {subtitle && <p className="text-meta text-[var(--text-muted)] mt-0.5">{subtitle}</p>}
+    </div>
+  )
+}
+
+// ── Pill toggle ───────────────────────────────────────────────────────────────
+
+interface PillToggleProps<T extends string> {
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (v: T) => void
+}
+
+function PillToggle<T extends string>({ value, options, onChange }: PillToggleProps<T>) {
+  return (
+    <div className="flex rounded-control bg-[var(--surface-2)] p-0.5 gap-0.5 shrink-0">
+      {options.map(opt => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`
+            px-3 py-1 rounded-pill text-xs font-medium transition-all duration-150 whitespace-nowrap
+            ${value === opt.value
+              ? 'bg-white text-slate-800 shadow-sm'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'}
+          `}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default function ForestInsights() {
+  const [data, setData]               = useState<VisualizationData | null>(null)
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState<string | null>(null)
+  const [selectedYear, setSelectedYear] = useState(0)
+  const [selectedPlot, setSelectedPlot] = useState('all')
+  const [trendMetric, setTrendMetric]   = useState<TrendMetric>('carbon')
 
   useEffect(() => {
-    async function loadData() {
+    let cancelled = false
+    async function load() {
+      setLoading(true)
+      setError(null)
       try {
-        setLoading(true)
-        const years = await getAvailableYears()
-        setAvailableYears(years)
-        
-        if (years.length > 0) {
-          setSelectedYear(years[0])
-          const initialSummary = await getSummary(years[0])
-          setSummary(initialSummary)
-          
-          const timeSeries = []
-          for (const year of years) {
-            const yearSummary = await getSummary(year, 'baseline')
-            timeSeries.push({
-              years_ahead: year,
-              total_carbon: yearSummary.total_carbon_kgC,
-            })
-          }
-          setTimeSeriesData(timeSeries)
-        }
+        const result = await fetchVisualizationData('baseline')
+        if (!cancelled) setData(result)
       } catch (err: any) {
-        setError(err.message || 'Failed to load data')
+        if (!cancelled) setError(err.message ?? 'Failed to load data')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
-    loadData()
+    load()
+    return () => { cancelled = true }
   }, [])
 
-  useEffect(() => {
-    if (selectedYear !== null && availableYears.includes(selectedYear)) {
-      setLoading(true)
-      getSummary(selectedYear)
-        .then(setSummary)
-        .catch((err) => setError(err.message))
-        .finally(() => setLoading(false))
-    }
-  }, [selectedYear, availableYears])
+  const currentSnapshot = useMemo(
+    () => data?.snapshots.find(s => s.year === selectedYear),
+    [data, selectedYear],
+  )
 
-  const plotData = summary ? Object.entries(summary.plot_breakdown || {}).map(([plot, data]: [string, any]) => ({
-    plot,
-    carbon: data.carbon_at_time,
-    count: data.count,
-  })) : []
-
-  // Calculate Y-axis domain for Total Carbon vs Years chart
-  // Set minimum closer to actual smallest value
-  const calculateCarbonTimeSeriesDomain = () => {
-    if (!timeSeriesData || timeSeriesData.length === 0) return undefined
-    const values = timeSeriesData.map(d => d.total_carbon).filter(v => v != null && !isNaN(v))
-    if (values.length === 0) return undefined
-    const min = Math.min(...values)
-    const max = Math.max(...values)
-    const range = max - min
-    // Use very small padding (1%) to get very close to actual minimum
-    const padding = range * 0.01
-    // Start at 99% of minimum to get very close to actual smallest value
-    return [Math.max(0, min * 0.99), max + padding]
-  }
-
-  const carbonTimeSeriesDomain = calculateCarbonTimeSeriesDomain()
+  // ── Error ──────────────────────────────────────────────────────────────────
 
   if (error) {
-    const isBackendDown = error.includes('Cannot reach the backend')
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">Dashboard</h1>
-          <p className="text-[var(--text-muted)]">Carbon sequestration metrics from the simulation backend.</p>
-        </div>
-        <div className="card border-l-4 border-l-amber-400">
-          <div className="flex items-start gap-3">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-amber-500 mt-0.5 shrink-0" aria-hidden><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-1">{isBackendDown ? 'Backend Server Not Running' : 'Error Loading Data'}</h3>
-              <p className="text-sm text-gray-600 mb-3">{error}</p>
-              {isBackendDown && (
-                <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
-                  <p className="font-medium mb-1">To start the backend:</p>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded block mt-1">cd src && uvicorn api.app:app --reload</code>
-                </div>
-              )}
-            </div>
-          </div>
+        <PageHeader />
+        <ErrorBanner message={error} />
+      </div>
+    )
+  }
+
+  // ── Loading ────────────────────────────────────────────────────────────────
+
+  if (loading || !data) {
+    return (
+      <div className="space-y-6">
+        <PageHeader />
+        {/* Controls placeholder */}
+        <div className="h-9 w-64 rounded-control bg-slate-100 animate-pulse" />
+        <MetricRowSkeleton />
+        <SectionDivider title="Carbon Trends" subtitle="20-year baseline projection" />
+        <CardSkeleton height="h-[340px]" />
+        <SectionDivider title="Plot Analysis" subtitle="Breakdown and size distribution" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <CardSkeleton height="h-[280px]" />
+          <CardSkeleton height="h-[280px]" />
         </div>
       </div>
     )
   }
 
+  // ── Loaded ─────────────────────────────────────────────────────────────────
+
+  const trendTitle = trendMetric === 'carbon' ? 'Carbon Over Time' : 'Average DBH Over Time'
+  const trendDescription = trendMetric === 'carbon'
+    ? `Total carbon stored across all plots, 0–20 years. Dashed marker shows Year ${selectedYear}.${selectedPlot !== 'all' ? ` Filtered to ${selectedPlot} plot.` : ''}`
+    : `Mean diameter at breast height across the simulation horizon. Lower plot has many small-diameter trees that pull the average down.`
+
   return (
-    <div className="space-y-8">
-      {/* Year Selector */}
-      <div className="card">
-        <label className="block text-sm font-medium mb-3">
-          Time Horizon: <span className="font-semibold text-[var(--primary)]">{selectedYear} years ahead</span>
-        </label>
-        {availableYears.length > 0 && (
-          <div className="flex gap-2">
-            {availableYears.map((year) => (
-              <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={`btn ${selectedYear === year ? 'btn-primary' : 'btn-secondary'}`}
-              >
-                {year}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+    <div className="space-y-6">
+      <PageHeader />
 
-      {/* KPI Cards */}
-      {loading && !summary ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="card">
-              <div className="h-20 bg-gray-100 rounded animate-pulse" />
-            </div>
-          ))}
-        </div>
-      ) : summary ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="card border-t-4" style={{ borderTopColor: 'var(--teal-500)' }}>
-            <div className="text-sm text-[var(--text-muted)] mb-1">Total Carbon</div>
-            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--teal-600)' }}>
-              {summary.total_carbon_kgC.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-            <div className="text-sm text-[var(--text-muted)]">kg C</div>
-          </div>
+      {/* ── Controls ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <GraphSectionControls
+          selectedYear={selectedYear}
+          onYearChange={setSelectedYear}
+          selectedPlot={selectedPlot}
+          onPlotChange={setSelectedPlot}
+          plots={data.plots}
+        />
+      </motion.div>
 
-          <div className="card border-t-4" style={{ borderTopColor: 'var(--accent)' }}>
-            <div className="text-sm text-[var(--text-muted)] mb-1">Mean DBH</div>
-            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--accent)' }}>
-              {summary.mean_dbh_cm.toFixed(1)}
-            </div>
-            <div className="text-sm text-[var(--text-muted)]">cm</div>
-          </div>
+      {/* ── 1. Summary metrics ── */}
+      <GraphMetricCards
+        timeSeries={data.timeSeries}
+        snapshots={data.snapshots}
+        selectedYear={selectedYear}
+        selectedPlot={selectedPlot}
+      />
 
-          <div className="card border-t-4" style={{ borderTopColor: 'var(--secondary)' }}>
-            <div className="text-sm text-[var(--text-muted)] mb-1">Total Trees</div>
-            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--secondary)' }}>
-              {summary.num_trees.toLocaleString()}
-            </div>
-            <div className="text-sm text-[var(--text-muted)]">trees</div>
-          </div>
+      {/* ── All charts fade when year / plot changes ── */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`${selectedYear}-${selectedPlot}`}
+          initial={{ opacity: 0.7 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+          className="space-y-4"
+        >
 
-          <div className="card border-t-4" style={{ borderTopColor: 'var(--teal-500)' }}>
-            <div className="text-sm text-[var(--text-muted)] mb-1">CO₂ Equivalent</div>
-            <div className="text-2xl font-bold mb-1" style={{ color: 'var(--teal-600)' }}>
-              {(summary.total_carbon_kgC * 3.667).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-            <div className="text-sm text-[var(--text-muted)]">kg CO₂e</div>
-          </div>
-        </div>
-      ) : null}
+          {/* ── 2. Trends ── */}
+          <SectionDivider
+            title="Carbon Trends"
+            subtitle="How carbon and tree diameter change across the 20-year simulation."
+          />
 
-      {/* Charts */}
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Carbon Analysis</h2>
-        <p className="text-sm text-[var(--text-muted)] mb-6">Time series and breakdown visualizations</p>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card">
-            <h3 className="font-semibold mb-4">Total Carbon vs Years</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={timeSeriesData} margin={{ top: 10, right: 20, bottom: 40, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="years_ahead" 
-                  label={{ value: 'Years Ahead', position: 'outside', offset: 10 }} 
-                  stroke="#64748b"
-                  tick={{ fill: '#64748b' }}
+          <Card>
+            <CardHeader className="pb-1">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <CardTitle className="text-card-title">{trendTitle}</CardTitle>
+                  <CardDescription className="text-xs mt-0.5">
+                    {trendDescription}
+                  </CardDescription>
+                </div>
+                <PillToggle
+                  value={trendMetric}
+                  options={[
+                    { value: 'carbon', label: 'Carbon' },
+                    { value: 'dbh',    label: 'Avg DBH' },
+                  ]}
+                  onChange={setTrendMetric}
                 />
-                <YAxis 
-                  label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft', offset: -10 }} 
-                  stroke="#64748b"
-                  tick={{ fill: '#64748b' }}
-                  domain={carbonTimeSeriesDomain}
-                  tickFormatter={(value) => Math.round(value).toLocaleString()}
-                />
-                <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
-                <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                <Line type="monotone" dataKey="total_carbon" stroke="var(--teal-500)" strokeWidth={2} name="Total Carbon (kg C)" dot={{ fill: 'var(--teal-500)', r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={trendMetric}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {trendMetric === 'carbon' ? (
+                    <CarbonTrendChart
+                      timeSeries={data.timeSeries}
+                      selectedYear={selectedYear}
+                      selectedPlot={selectedPlot}
+                      plots={data.plots}
+                    />
+                  ) : (
+                    <DBHTrendChart
+                      timeSeries={data.timeSeries}
+                      selectedYear={selectedYear}
+                      selectedPlot={selectedPlot}
+                      plots={data.plots}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </CardContent>
+          </Card>
 
-          <div className="card">
-            <h3 className="font-semibold mb-4">Carbon by Plot</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={plotData} margin={{ top: 10, right: 20, bottom: 20, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="plot" 
-                  stroke="#64748b"
-                  tick={{ fill: '#64748b' }}
+          {/* ── 3. Plot analysis ── */}
+          <SectionDivider
+            title="Plot Analysis"
+            subtitle={`Carbon distribution and tree sizes across the three forest plots — Year ${selectedYear}.`}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+            {/* Carbon by plot */}
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-card-title">
+                  Carbon by Plot — Year {selectedYear}
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Carbon stored in each plot. Middle holds the most carbon despite
+                  having fewer trees than Lower, due to its larger-diameter trees.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <CarbonByPlotChart
+                  snapshots={data.snapshots}
+                  selectedYear={selectedYear}
+                  plots={data.plots}
                 />
-                <YAxis 
-                  label={{ value: 'Carbon (kg C)', angle: -90, position: 'insideLeft', offset: -10 }} 
-                  stroke="#64748b"
-                  tick={{ fill: '#64748b' }}
+              </CardContent>
+            </Card>
+
+            {/* Tree size distribution */}
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-card-title">
+                  Tree Size Distribution — Year {selectedYear}
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Trees per 10 cm DBH class. The large cohort of 0–20 cm trees
+                  reflects natural regeneration, concentrated in the Lower plot.
+                  {selectedPlot !== 'all' && ` Filtered to ${selectedPlot} plot.`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <DBHDistributionChart
+                  trees={currentSnapshot?.trees ?? []}
+                  selectedPlot={selectedPlot}
+                  plots={data.plots}
+                  selectedYear={selectedYear}
                 />
-                <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '8px' }} />
-                <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                <Bar dataKey="carbon" fill="var(--green-500)" name="Carbon (kg C)" />
-              </BarChart>
-            </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ── Shared sub-components ──────────────────────────────────────────────────────
+
+function PageHeader() {
+  return (
+    <div>
+      <h1 className="text-page-title">Forest Insights</h1>
+      <p className="text-meta text-[var(--text-muted)] mt-1">
+        Carbon analysis and forest data — Pomfret School Forest
+      </p>
     </div>
   )
 }

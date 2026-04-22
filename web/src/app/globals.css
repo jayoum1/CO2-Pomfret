@@ -13,49 +13,133 @@
   }
   
   :root {
-    /* Diverse Color Palette - Cloud Aesthetic with Teal & Green */
-    --bg: #e8f4f8;
-    --bg-alt: #ffffff;
-    --bg-card: #ffffff;
-    --text: #1e293b;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    
-    /* Primary - Teal */
-    --primary: #14b8a6;
-    --primary-hover: #0d9488;
-    --primary-light: #ccfbf1;
-    --primary-dark: #0d9488;
-    
-    /* Secondary - Green */
-    --secondary: #10b981;
-    --secondary-hover: #059669;
-    --secondary-light: #d1fae5;
-    
-    /* Accent - Blue */
-    --accent: #3b82f6;
-    --accent-hover: #2563eb;
-    --accent-light: #dbeafe;
-    
-    /* Additional Colors */
+    /* ── SPACING ─────────────────────────────────────────────────────────────
+     * Multiples of 4px. Reference these via Tailwind's default scale (p-1=4px,
+     * p-2=8px…) — the scale below is documented for custom one-offs only.
+     * xs:  4px   — tight icon gaps, inline badges
+     * sm:  8px   — control internal padding, small gaps
+     * md:  12px  — gap between cards in a row
+     * lg:  16px  — standard card padding (compact)
+     * xl:  24px  — card padding (comfortable), section gaps
+     * 2xl: 32px  — between major sections
+     * 3xl: 48px  — page-level vertical rhythm
+     */
+    --space-xs:  4px;
+    --space-sm:  8px;
+    --space-md:  12px;
+    --space-lg:  16px;
+    --space-xl:  24px;
+    --space-2xl: 32px;
+    --space-3xl: 48px;
+
+    /* ── BORDER RADIUS ───────────────────────────────────────────────────────
+     * Three-step hierarchy: large panels → standard cards → tight controls.
+     * --radius-panel  20px  Page-level containers, hero sections, forest canvas
+     * --radius-card   12px  Standard cards (shadcn Card, metric cards)  ← main
+     * --radius-control 6px  Buttons, inputs, selects, pill buttons
+     * --radius-pill    4px  Small badges, tags, code chips
+     */
+    --radius-panel:   20px;
+    --radius-card:    12px;
+    --radius-control: 6px;
+    --radius-pill:    4px;
+
+    /* ── TYPOGRAPHY ──────────────────────────────────────────────────────────
+     * Page title     : 24px / 700 / slate-900   (.text-page-title)
+     * Section title  : 16px / 600 / slate-800   (.text-section-title)
+     * Card title     : 13px / 600 / slate-700   (.text-card-title)
+     * Body           : 14px / 400 / slate-700   (default body)
+     * Secondary      : 12px / 400 / slate-500   (.text-meta)
+     * Micro / label  : 11px / 500 / slate-400   (.text-label)
+     */
+    --font-size-page:    24px;
+    --font-size-section: 16px;
+    --font-size-card:    13px;
+    --font-size-body:    14px;
+    --font-size-meta:    12px;
+    --font-size-label:   11px;
+
+    /* ── BACKGROUND & SURFACE ────────────────────────────────────────────────
+     * --bg        Page background (soft blue-tinted white)
+     * --surface   Card / panel surface (pure white)
+     * --surface-2 Recessed areas, pill-selector trays, code blocks
+     */
+    --bg:        #eef3f7;
+    --surface:   #ffffff;
+    --surface-2: #f1f5f9;
+    /* kept for legacy references */
+    --bg-alt:    #ffffff;
+    --bg-card:   #ffffff;
+    --panel:     #ffffff;
+    --panel2:    #f1f5f9;
+
+    /* ── TEXT ────────────────────────────────────────────────────────────────
+     * Use these instead of raw slate-* classes to keep colour changes global.
+     */
+    --text:       #1e293b;   /* slate-800 — headings, values */
+    --text-body:  #334155;   /* slate-700 — paragraph text  */
+    --text-muted: #64748b;   /* slate-500 — captions, meta  */
+    --text-faint: #94a3b8;   /* slate-400 — placeholders    */
+    --muted:      #64748b;
+
+    /* ── BORDER ──────────────────────────────────────────────────────────────
+     * --border       Standard card/input border
+     * --border-focus Border colour on focused inputs
+     */
+    --border:       #e2e8f0;   /* slate-200 */
+    --border-focus: rgba(13, 148, 136, 0.45);
+
+    /* ── PRIMARY (Forest Teal) ───────────────────────────────────────────────
+     * The signature colour of the app. Maps to Tailwind teal-600.
+     */
+    --primary:       #0d9488;   /* teal-600 — primary actions, active states */
+    --primary-hover: #0f766e;   /* teal-700 */
+    --primary-light: #ccfbf1;   /* teal-100 — icon backgrounds, highlights   */
+    --primary-dark:  #0f766e;
+    --primary-glow:  rgba(13, 148, 136, 0.25);
+
+    /* ── SECONDARY (Forest Green) ────────────────────────────────────────────
+     * Warmer green used for comparison series and growth indicators.
+     */
+    --secondary:       #059669;   /* emerald-600 */
+    --secondary-hover: #047857;
+    --secondary-light: #d1fae5;   /* emerald-100 */
+
+    /* ── CHART PALETTE ───────────────────────────────────────────────────────
+     * Fixed 7-colour sequence used by all Recharts components.
+     * Named semantically so components don't need to know index.
+     */
+    --chart-1: #0d9488;   /* teal-600    — primary / All Trees          */
+    --chart-2: #059669;   /* emerald-600 — Lower plot / growth          */
+    --chart-3: #2563eb;   /* blue-600    — Middle plot / structural     */
+    --chart-4: #7c3aed;   /* violet-600  — Upper plot / CO₂e            */
+    --chart-5: #d97706;   /* amber-600   — warning / disturbance        */
+    --chart-6: #db2777;   /* pink-600    — species accent               */
+    --chart-7: #0891b2;   /* cyan-600    — secondary structural         */
+
+    /* ── ECOLOGICAL STATE COLOURS ────────────────────────────────────────────
+     * Applied to vector forest trees and scenario overlays.
+     */
+    --eco-healthy:    #16a34a;   /* green-600   */
+    --eco-stressed:   #ca8a04;   /* yellow-600  */
+    --eco-disturbed:  #dc2626;   /* red-600     */
+    --eco-recovering: #0284c7;   /* sky-600     */
+
+    /* ── SEMANTIC ────────────────────────────────────────────────────────────*/
+    --success: #059669;
+    --error:   #dc2626;
+    --warning: #d97706;
+
+    /* Legacy aliases kept for backwards compat */
     --teal-500: #14b8a6;
     --teal-600: #0d9488;
     --green-500: #10b981;
     --green-600: #059669;
     --blue-500: #3b82f6;
     --blue-600: #2563eb;
-    
-    /* Success/Error */
-    --success: #10b981;
-    --error: #ef4444;
-    
-    /* Glow effects */
-    --primary-glow: rgba(20, 184, 166, 0.3);
-    
-    /* Panel colors */
-    --panel: #ffffff;
-    --panel2: #f9fafb;
-    --muted: #64748b;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-light: #dbeafe;
   }
   
   * {
@@ -63,15 +147,70 @@
   }
   
   body {
-    @apply bg-[var(--bg)] text-[var(--text)] antialiased;
+    @apply bg-[var(--bg)] text-[var(--text-body)] antialiased;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-    font-size: 14px;
+    font-size: var(--font-size-body);
     line-height: 1.6;
     position: relative;
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── Typography utility classes ─────────────────────────────────────────── */
+  /* Use these instead of ad-hoc text-* combos so hierarchy stays consistent  */
+
+  .text-page-title {
+    font-size: var(--font-size-page);
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .text-section-title {
+    font-size: var(--font-size-section);
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  .text-card-title {
+    font-size: var(--font-size-card);
+    font-weight: 600;
+    line-height: 1.4;
+    color: #334155; /* slate-700 */
+  }
+
+  .text-body {
+    font-size: var(--font-size-body);
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-body);
+  }
+
+  .text-meta {
+    font-size: var(--font-size-meta);
+    font-weight: 400;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Used in SectionHeader.tsx — was previously undefined */
+  .text-heading-2 {
+    font-size: var(--font-size-section);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* Used in SectionHeader.tsx — was previously undefined */
+  .text-label {
+    font-size: var(--font-size-label);
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   
   /* Smooth page transitions */
@@ -130,49 +269,113 @@
 }
 
 @layer components {
+  /* ── Buttons ─────────────────────────────────────────────────────────────
+   * Base + variants. These globals-layer classes are used by older pages
+   * (Dashboard, About, Scenarios). New pages prefer the <Button> component.
+   */
   .btn {
-    @apply px-5 py-2.5 rounded-2xl font-medium transition-all duration-200;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: var(--radius-control);
+    font-size: var(--font-size-body);
+    font-weight: 500;
+    line-height: 1;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    cursor: pointer;
+    white-space: nowrap;
   }
-  
+
   .btn-primary {
-    @apply bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-md;
+    background-color: var(--primary);
+    color: #ffffff;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 3px var(--primary-glow);
   }
-  
+
   .btn-primary:hover {
-    box-shadow: 0 4px 6px -1px rgba(20, 184, 166, 0.2), 0 2px 4px -1px rgba(20, 184, 166, 0.1);
+    background-color: var(--primary-hover);
+    box-shadow: 0 2px 6px var(--primary-glow);
   }
-  
+
   .btn-secondary {
-    @apply bg-[var(--bg-alt)] text-[var(--text)] border border-[var(--border)] hover:bg-gray-50 shadow-sm;
+    background-color: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
   }
-  
+
+  .btn-secondary:hover {
+    background-color: var(--surface-2);
+  }
+
+  /* ── Inputs ──────────────────────────────────────────────────────────────
+   * Shared by older pages. The shadcn <Input> component wraps these in
+   * its own className — keep both in sync.
+   */
   .input {
-    @apply w-full px-4 py-2.5 border border-[var(--border)] rounded-2xl bg-white focus:outline-none focus:ring-2 transition-all;
+    width: 100%;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background-color: var(--surface);
+    font-size: var(--font-size-body);
+    color: var(--text);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    outline: none;
   }
-  
+
   .input:focus {
-    --tw-ring-color: rgba(20, 184, 166, 0.3);
-    border-color: rgba(20, 184, 166, 0.5);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
   }
-  
+
+  /* ── Cards ───────────────────────────────────────────────────────────────
+   * The .card global class is used by Dashboard, About, and Scenarios.
+   * Aligned with the shadcn Card (rounded-xl) so both render identically.
+   */
   .card {
-    @apply bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-6 shadow-sm;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: var(--space-xl);   /* 24px */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   }
-  
+
+  /* ── Number input ────────────────────────────────────────────────────────*/
   .number-input {
     @apply flex items-center;
   }
-  
+
   .number-input input {
-    @apply w-full px-4 py-2.5 border border-[var(--border)] rounded-2xl bg-white text-center focus:outline-none focus:ring-2 transition-all;
+    width: 100%;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background-color: var(--surface);
+    text-align: center;
+    font-size: var(--font-size-body);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
-  
+
   .number-input input:focus {
-    --tw-ring-color: rgba(20, 184, 166, 0.3);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
   }
-  
+
   .number-input button {
-    @apply px-3 py-2 border border-[var(--border)] bg-white hover:bg-gray-50 rounded-2xl transition-all;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    border-radius: var(--radius-control);
+    transition: background-color 0.15s ease;
+  }
+
+  .number-input button:hover {
+    background-color: var(--surface-2);
   }
   
   /* Toggle Switch */

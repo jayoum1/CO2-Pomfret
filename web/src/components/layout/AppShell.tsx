@@ -7,12 +7,11 @@ import { Menu, X, Cloud, User, Settings } from 'lucide-react'
 import PageTransition from './PageTransition'
 
 const navItems = [
-  { href: '/', label: 'Dashboard' },
+  { href: '/', label: 'Forest Insights' },
   { href: '/scenarios', label: 'Forest Modification' },
   { href: '/area', label: 'Generalize Area' },
   { href: '/visualize', label: 'Visualize' },
   { href: '/vector-forest', label: 'Vector Forest' },
-  { href: '/visualizations', label: 'Visualizations' },
   { href: '/about', label: 'About' },
 ]
 

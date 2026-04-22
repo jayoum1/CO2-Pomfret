@@ -13,24 +13,24 @@ const config: Config = {
   			background: 'var(--bg)',
   			foreground: 'var(--text)',
   			card: {
-  				DEFAULT: 'var(--panel)',
+  				DEFAULT: 'var(--surface)',
   				foreground: 'var(--text)'
   			},
   			popover: {
-  				DEFAULT: 'var(--panel)',
+  				DEFAULT: 'var(--surface)',
   				foreground: 'var(--text)'
   			},
   			primary: {
   				DEFAULT: 'var(--primary)',
-  				foreground: '#0a0f14'
+  				foreground: '#ffffff'
   			},
   			secondary: {
-  				DEFAULT: 'var(--panel2)',
+  				DEFAULT: 'var(--surface-2)',
   				foreground: 'var(--text)'
   			},
   			muted: {
-  				DEFAULT: 'var(--muted)',
-  				foreground: 'var(--text)'
+  				DEFAULT: 'var(--surface-2)',
+  				foreground: 'var(--text-muted)'
   			},
   			accent: {
   				DEFAULT: 'var(--accent)',
@@ -38,16 +38,36 @@ const config: Config = {
   			},
   			destructive: {
   				DEFAULT: 'var(--error)',
-  				foreground: 'var(--text)'
+  				foreground: '#ffffff'
   			},
   			border: 'var(--border)',
-  			input: 'var(--panel2)',
+  			input: 'var(--surface)',
   			ring: 'var(--primary)',
+  			/* Chart tokens — usable as bg-chart-1 etc. */
+  			'chart-1': 'var(--chart-1)',
+  			'chart-2': 'var(--chart-2)',
+  			'chart-3': 'var(--chart-3)',
+  			'chart-4': 'var(--chart-4)',
+  			'chart-5': 'var(--chart-5)',
   		},
   		borderRadius: {
-  			lg: 'var(--radius-lg)',
-  			md: 'var(--radius-md)',
-  			sm: 'var(--radius-sm)'
+  			/* Wired to the design-system tokens defined in globals.css :root */
+  			panel:   'var(--radius-panel)',    /* 20px — large containers     */
+  			card:    'var(--radius-card)',     /* 12px — standard cards       */
+  			control: 'var(--radius-control)', /* 6px  — buttons, inputs      */
+  			pill:    'var(--radius-pill)',     /* 4px  — badges, chips        */
+  			/* Keep Tailwind's built-in shorthands pointing at sensible values */
+  			lg: 'var(--radius-card)',
+  			md: 'var(--radius-control)',
+  			sm: 'var(--radius-pill)',
+  		},
+  		fontSize: {
+  			'page-title':    ['var(--font-size-page)',    { fontWeight: '700', lineHeight: '1.25' }],
+  			'section-title': ['var(--font-size-section)', { fontWeight: '600', lineHeight: '1.35' }],
+  			'card-title':    ['var(--font-size-card)',    { fontWeight: '600', lineHeight: '1.4'  }],
+  			'body':          ['var(--font-size-body)',    { fontWeight: '400', lineHeight: '1.6'  }],
+  			'meta':          ['var(--font-size-meta)',    { fontWeight: '400', lineHeight: '1.5'  }],
+  			'label':         ['var(--font-size-label)',   { fontWeight: '500', lineHeight: '1.4'  }],
   		}
   	}
   },
