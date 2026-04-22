@@ -24,9 +24,10 @@ After changing the source, open the **Actions** tab, confirm the **Deploy Web Ap
 
 ## How updates work
 
-1. Make changes under `web/` (e.g. `web/src/app/`).
-2. Commit and push to `main`.
-3. The **Deploy Web App to GitHub Pages** workflow builds and redeploys automatically.
+1. **The published midterm site is built from** `web/src/app/midterm/page.tsx` (and its imports). The CI script `web/scripts/build-midterm-github-pages.sh` exports **only** that route; the rest of the app is stashed for the build.
+2. Make changes under `web/`, **commit** them, and **push to `main` on the same GitHub repo** that is connected to Pages (e.g. `git push origin main` or `git push school main` if `school` is your `github.com/jayoum1/CO2-Pomfret` remote).
+3. The **Deploy Web App to GitHub Pages** workflow runs on pushes to `main` that touch `web/**` or the workflow file. In Actions, wait until **Deploy to GitHub Pages** finishes; then do a **hard refresh** (cache) on the site URL.
+4. The workflow includes a **verify** step: the static `out/` bundle must contain the current “Coming next” copy. If the site looks stale but the job is green, you are almost certainly viewing a **cached** page or an **old commit** on GitHub.
 
 ## Notes
 

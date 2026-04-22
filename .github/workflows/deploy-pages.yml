@@ -58,6 +58,25 @@ jobs:
           # Trim unused static assets copied from public/ (midterm only needs midterm-data + tree-species)
           rm -rf out/Graphs out/disturbances out/figures 2>/dev/null || true
 
+      - name: Verify midterm page copy in static export
+        # Fails the deploy if the build is missing the current showcase (e.g. stale checkout or wrong source).
+        # Default working-directory is `web`, so `out/` is the Next export.
+        run: |
+          set -euo pipefail
+          if ! grep -rq "Finishing retouches" out/; then
+            echo "::error::Export is missing the updated 'Coming next' line from web/src/app/midterm/page.tsx"
+            exit 1
+          fi
+          if ! grep -rq "Google Apps Script" out/; then
+            echo "::error::Export is missing the Google Sheets/Forms 'Coming next' item"
+            exit 1
+          fi
+          if grep -rq "Screenshot coming soon" out/; then
+            echo "::error::Old screenshot gallery is still in the export — remove it from web/src/app/midterm/page.tsx and rebuild"
+            exit 1
+          fi
+          echo "Midterm static export copy checks passed."
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
