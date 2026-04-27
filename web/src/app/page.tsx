@@ -44,10 +44,10 @@ function MetricRowSkeleton() {
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
       {[0, 1, 2, 3].map(i => (
-        <div key={i} className="rounded-card border border-slate-200 bg-white p-4 animate-pulse">
-          <div className="h-3 w-20 rounded bg-slate-100 mb-4" />
-          <div className="h-7 w-24 rounded bg-slate-100 mb-2" />
-          <div className="h-2.5 w-12 rounded bg-slate-50" />
+        <div key={i} className="rounded-card border border-[var(--border)] bg-[var(--surface)] p-4 animate-pulse">
+          <div className="h-3 w-20 rounded bg-[var(--surface-2)] mb-4" />
+          <div className="h-7 w-24 rounded bg-[var(--surface-2)] mb-2" />
+          <div className="h-2.5 w-12 rounded bg-[var(--surface-2)]" />
         </div>
       ))}
     </div>
@@ -58,11 +58,11 @@ function CardSkeleton({ height = 'h-[340px]' }: { height?: string }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="h-4 w-36 rounded bg-slate-100 animate-pulse" />
-        <div className="h-3 w-52 rounded bg-slate-100 animate-pulse mt-1" />
+        <div className="h-4 w-36 rounded bg-[var(--surface-2)] animate-pulse" />
+        <div className="h-3 w-52 rounded bg-[var(--surface-2)] animate-pulse mt-1" />
       </CardHeader>
       <CardContent>
-        <div className={`${height} rounded-control bg-slate-50 animate-pulse`} />
+        <div className={`${height} rounded-control bg-[var(--surface-2)] animate-pulse`} />
       </CardContent>
     </Card>
   )
@@ -77,14 +77,14 @@ function ErrorBanner({ message }: { message: string }) {
       <div className="flex items-start gap-3">
         <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
         <div>
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">
+          <h3 className="text-sm font-semibold text-[var(--text)] mb-1">
             {isBackendDown ? 'Backend Not Running' : 'Error Loading Data'}
           </h3>
           <p className="text-meta text-[var(--text-muted)] mb-3">{message}</p>
           {isBackendDown && (
-            <div className="rounded-control bg-white border border-amber-200 px-3 py-2.5">
-              <p className="text-xs font-medium text-slate-600 mb-1.5">Start the backend:</p>
-              <code className="text-xs bg-slate-50 border border-slate-200 px-2 py-1 rounded block">
+            <div className="rounded-control bg-[var(--surface)] border border-amber-200/60 px-3 py-2.5">
+              <p className="text-xs font-medium text-[var(--text-muted)] mb-1.5">Start the backend:</p>
+              <code className="text-xs bg-[var(--surface-2)] border border-[var(--border)] px-2 py-1 rounded block text-[var(--text)]">
                 cd src && uvicorn api.app:app --reload
               </code>
             </div>
@@ -124,7 +124,7 @@ function PillToggle<T extends string>({ value, options, onChange }: PillTogglePr
           className={`
             px-3 py-1 rounded-pill text-xs font-medium transition-all duration-150 whitespace-nowrap
             ${value === opt.value
-              ? 'bg-[var(--accent)] text-white shadow-sm'
+              ? 'bg-[var(--accent)] text-white shadow-[0_1px_6px_var(--accent-glow)]'
               : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'}
           `}
         >
@@ -186,7 +186,7 @@ export default function ForestInsights() {
       <div className="space-y-6">
         <PageHeader />
         {/* Controls placeholder */}
-        <div className="h-9 w-64 rounded-control bg-slate-100 animate-pulse" />
+        <div className="h-9 w-64 rounded-control bg-[var(--surface-2)] animate-pulse" />
         <MetricRowSkeleton />
         <SectionDivider title="Carbon Trends" subtitle="20-year baseline projection" />
         <CardSkeleton height="h-[340px]" />

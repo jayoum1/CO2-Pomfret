@@ -30,8 +30,8 @@ function RadarTooltipContent({ active, payload }: { active?: boolean; payload?: 
   if (!active || !payload?.length) return null
   const subject = payload[0]?.payload?.subject as string
   return (
-    <div className="min-w-[10rem] rounded-lg border border-slate-200/60 bg-white px-3 py-2 text-xs shadow-xl">
-      <p className="mb-1.5 font-semibold text-slate-700">{subject}</p>
+    <div className="min-w-[10rem] rounded-lg border border-[var(--border)] dark:border-[var(--border-strong)] bg-[var(--surface)] dark:bg-[var(--surface-3)] px-3 py-2 text-xs shadow-xl dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
+      <p className="mb-1.5 font-semibold text-[var(--text)]">{subject}</p>
       <div className="grid gap-1.5">
         {payload.map((item: any) => (
           <div key={item.dataKey} className="flex items-center gap-2">
@@ -39,7 +39,7 @@ function RadarTooltipContent({ active, payload }: { active?: boolean; payload?: 
               className="h-2 w-2 shrink-0 rounded-sm"
               style={{ backgroundColor: PLOT_COLORS[item.dataKey] ?? '#94a3b8' }}
             />
-            <span className="text-slate-500">{item.dataKey}</span>
+            <span className="text-[var(--text-muted)]">{item.dataKey}</span>
             <span className="ml-auto font-mono font-semibold text-slate-800">
               {item.value}/100
             </span>

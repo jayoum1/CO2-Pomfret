@@ -38,7 +38,7 @@ export default function GraphSectionControls({
               className={`
                 px-3.5 py-1.5 rounded-pill text-sm font-medium transition-all duration-150
                 ${selectedYear === y
-                  ? 'bg-[var(--accent)] text-white shadow-sm'
+                  ? 'bg-[var(--accent)] text-white shadow-[0_1px_6px_var(--accent-glow)]'
                   : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'}
               `}
             >
@@ -55,7 +55,7 @@ export default function GraphSectionControls({
       <div className="flex items-center gap-2.5">
         <span className="text-sm font-medium text-[var(--text-muted)]">Plot</span>
         <Select value={selectedPlot} onValueChange={onPlotChange}>
-          <SelectTrigger className="h-8 w-[140px] bg-white text-sm">
+          <SelectTrigger className="h-8 w-[140px] bg-[var(--surface)] border-[var(--border)] text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

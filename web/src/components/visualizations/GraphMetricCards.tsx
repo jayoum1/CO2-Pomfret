@@ -99,7 +99,7 @@ export default function GraphMetricCards({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: i * 0.05 }}
-          className="rounded-card border border-[var(--border)] bg-white p-4 shadow-sm"
+          className="rounded-card border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"
         >
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-label text-[var(--text-muted)] uppercase tracking-wider">{c.label}</span>

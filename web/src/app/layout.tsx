@@ -14,6 +14,22 @@ export const metadata: Metadata = {
 }
 
 /**
+ * Inline script that runs before React hydrates — reads localStorage (or
+ * system preference) and applies the `dark` class to <html> immediately,
+ * preventing a flash of the wrong theme.
+ */
+const themeInitScript = `
+(function(){
+  try {
+    var s = localStorage.getItem('co2-pomfret-theme');
+    var prefer = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    var t = (s === 'light' || s === 'dark') ? s : prefer;
+    if (t === 'dark') document.documentElement.classList.add('dark');
+  } catch(e) {}
+})();
+`
+
+/**
  * Live full app: AppShell + all routes.
  * GitHub Pages (exportMidtermOnly): no shell — only the `/midterm` page exists in that export (see build script).
  */
@@ -24,14 +40,18 @@ export default function RootLayout({
 }) {
   if (exportMidtermOnly) {
     return (
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body className="min-h-screen antialiased">{children}</body>
       </html>
     )
   }
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
         <AppShell>
           {children}

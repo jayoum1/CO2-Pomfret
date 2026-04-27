@@ -60,18 +60,21 @@
     --font-size-label:   11px;
 
     /* ── BACKGROUND & SURFACE ────────────────────────────────────────────────
-     * --bg        Page background (soft blue-tinted white)
-     * --surface   Card / panel surface (pure white)
-     * --surface-2 Recessed areas, pill-selector trays, code blocks
+     * Elevation hierarchy (light):  bg < surface-2 < surface < surface-3
+     * --bg          Page canvas
+     * --surface     Card / panel lift (cards float above bg)
+     * --surface-2   Recessed areas: pill trays, input backs, tab lists
+     * --surface-3   Elevated sections: chart containers, featured panels
      */
-    --bg:        #eef3f7;
-    --surface:   #ffffff;
-    --surface-2: #f1f5f9;
+    --bg:        #e8eff5;   /* soft blue-gray canvas */
+    --surface:   #ffffff;   /* cards */
+    --surface-2: #f0f5f9;   /* recessed trays */
+    --surface-3: #eef7f2;   /* mint-tinted elevated panels */
     /* kept for legacy references */
     --bg-alt:    #ffffff;
     --bg-card:   #ffffff;
     --panel:     #ffffff;
-    --panel2:    #f1f5f9;
+    --panel2:    #f0f5f9;
 
     /* ── TEXT ────────────────────────────────────────────────────────────────
      * Use these instead of raw slate-* classes to keep colour changes global.
@@ -83,11 +86,13 @@
     --muted:      #64748b;
 
     /* ── BORDER ──────────────────────────────────────────────────────────────
-     * --border       Standard card/input border
-     * --border-focus Border colour on focused inputs
+     * --border        Standard card/input border
+     * --border-strong Prominent borders for panels, chart wrappers
+     * --border-focus  Input focus ring
      */
-    --border:       #e2e8f0;   /* slate-200 */
-    --border-focus: rgba(13, 148, 136, 0.45);
+    --border:        #c8d8e5;   /* visible but not harsh */
+    --border-strong: #96b4c8;   /* for chart containers, featured panels */
+    --border-focus:  rgba(13, 148, 136, 0.45);
 
     /* ── PRIMARY (Forest Teal) ───────────────────────────────────────────────
      * The signature colour of the app. Maps to Tailwind teal-600.
@@ -146,6 +151,15 @@
     --accent-light: #dcfce7;
     --accent-glow:  rgba(34, 197, 94, 0.20);
 
+    /* ── SHADOWS & GLOW ─────────────────────────────────────────────────────
+     * --shadow-soft  Standard card elevation (works on light or dark bg)
+     * --shadow-glow  Accent-tinted shadow for selected/active elements
+     * --outline-glow Focus bloom for interactive elements
+     */
+    --shadow-soft:  0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+    --shadow-glow:  0 0 0 2px var(--accent-glow);
+    --outline-glow: rgba(34, 197, 94, 0.22);
+
     /* Legacy teal/blue aliases — kept for chart components that reference them */
     --teal-500: #14b8a6;
     --teal-600: #0d9488;
@@ -154,7 +168,91 @@
     --blue-500: #3b82f6;
     --blue-600: #2563eb;
   }
-  
+
+  /* ── DARK THEME ──────────────────────────────────────────────────────────────
+   * Deep-forest charcoal with green-tinted surfaces.
+   * Activated by adding class="dark" to <html>. Tokens override :root values;
+   * every component using var(--*) automatically adapts.
+   */
+  .dark {
+    /* Backgrounds
+     * Elevation hierarchy: bg < surface-2 < surface < surface-3
+     * bg is the darkest; each step up is visibly lighter.
+     */
+    --bg:        #0c1710;   /* deep forest floor — darker anchor */
+    --surface:   #1b2d20;   /* cards clearly float above bg (~7% lightness gap) */
+    --surface-2: #152018;   /* recessed trays, pill selectors, tab lists */
+    --surface-3: #243a2a;   /* elevated panels, chart containers */
+    --bg-alt:    #1b2d20;
+    --bg-card:   #1b2d20;
+    --panel:     #1b2d20;
+    --panel2:    #152018;
+
+    /* Text — readable hierarchy on dark green-charcoal */
+    --text:       #e8f5ee;   /* near-white with faint green tint */
+    --text-body:  #c1d9cc;   /* comfortable reading text */
+    --text-muted: #7a9e8e;   /* captions, meta labels */
+    --text-faint: #4d6e60;   /* placeholders, disabled */
+    --muted:      #7a9e8e;
+
+    /* Borders */
+    --border:        #2a4234;   /* clearly visible green-tinted separator */
+    --border-strong: #3b5e47;   /* prominent — chart wrappers, active panels */
+    --border-focus:  rgba(34, 197, 94, 0.55);
+
+    /* Primary (Forest Teal) — slightly lighter for dark bg */
+    --primary:       #2dd4bf;   /* teal-400 */
+    --primary-hover: #14b8a6;   /* teal-500 */
+    --primary-light: rgba(45, 212, 191, 0.12);
+    --primary-dark:  #14b8a6;
+    --primary-glow:  rgba(45, 212, 191, 0.25);
+
+    /* Secondary */
+    --secondary:       #34d399;   /* emerald-400 */
+    --secondary-hover: #10b981;
+    --secondary-light: rgba(52, 211, 153, 0.12);
+
+    /* Charts — one step lighter for dark background legibility */
+    --chart-1: #2dd4bf;   /* teal-400   */
+    --chart-2: #34d399;   /* emerald-400*/
+    --chart-3: #60a5fa;   /* blue-400   */
+    --chart-4: #a78bfa;   /* violet-400 */
+    --chart-5: #fbbf24;   /* amber-400  */
+    --chart-6: #f472b6;   /* pink-400   */
+    --chart-7: #22d3ee;   /* cyan-400   */
+
+    /* Ecological states */
+    --eco-healthy:    #4ade80;   /* green-400   */
+    --eco-stressed:   #fbbf24;   /* amber-400   */
+    --eco-disturbed:  #f87171;   /* red-400     */
+    --eco-recovering: #38bdf8;   /* sky-400     */
+
+    /* Semantic */
+    --success: #34d399;
+    --error:   #f87171;
+    --warning: #fbbf24;
+
+    /* Accent — same green, brighter text alias for dark surfaces */
+    --accent:       #22c55e;
+    --accent-hover: #16a34a;
+    --accent-text:  #4ade80;   /* green-400 — bright enough on dark */
+    --accent-light: rgba(34, 197, 94, 0.12);
+    --accent-glow:  rgba(34, 197, 94, 0.28);
+
+    /* Shadows & glow — adapted for dark substrate */
+    --shadow-soft:  0 2px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    --shadow-glow:  0 0 0 1px rgba(34, 197, 94, 0.22), 0 4px 16px rgba(0,0,0,0.35);
+    --outline-glow: rgba(34, 197, 94, 0.20);
+
+    /* Legacy aliases */
+    --teal-500: #2dd4bf;
+    --teal-600: #14b8a6;
+    --green-500: #34d399;
+    --green-600: #10b981;
+    --blue-500: #60a5fa;
+    --blue-600: #3b82f6;
+  }
+
   * {
     @apply border-border;
   }
@@ -193,7 +291,7 @@
     font-size: var(--font-size-card);
     font-weight: 600;
     line-height: 1.4;
-    color: #334155; /* slate-700 */
+    color: var(--text-body);
   }
 
   .text-body {
@@ -231,7 +329,7 @@
     transition: color 0.15s ease-in-out;
   }
 
-  /* Soft ecological glow — single fixed gradient, very subtle */
+  /* Soft ecological glow — adapts to dark mode */
   body::before {
     content: '';
     position: fixed;
@@ -239,6 +337,11 @@
     background: radial-gradient(ellipse 90% 60% at 15% -5%, rgba(204, 251, 241, 0.18) 0%, transparent 65%);
     pointer-events: none;
     z-index: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .dark body::before {
+    background: radial-gradient(ellipse 90% 60% at 15% -5%, rgba(34, 197, 94, 0.05) 0%, transparent 65%);
   }
 }
 
@@ -315,7 +418,12 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
     padding: var(--space-xl);   /* 24px */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Dark mode cards: stronger border + inset highlight for elevation */
+  .dark .card {
+    border-color: var(--border-strong);
   }
 
   /* ── Number input ────────────────────────────────────────────────────────*/

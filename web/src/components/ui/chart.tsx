@@ -43,11 +43,11 @@ export const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerPro
           data-chart={chartId}
           className={cn(
             'w-full text-xs',
-            // Style Recharts internal SVG text via attribute selectors so charts
-            // pick up the app's muted palette without extra prop drilling.
-            '[&_.recharts-cartesian-axis-tick_text]:fill-slate-400',
-            '[&_.recharts-cartesian-grid_line]:stroke-slate-100',
-            '[&_.recharts-polar-grid_[stroke]]:stroke-slate-100',
+            // Style Recharts internal SVG text/grid via attribute selectors.
+            // CSS vars automatically switch in dark mode.
+            '[&_.recharts-cartesian-axis-tick_text]:fill-[var(--text-muted)]',
+            '[&_.recharts-cartesian-grid_line[stroke]]:stroke-[var(--border)]',
+            '[&_.recharts-polar-grid_[stroke]]:stroke-[var(--border)]',
             '[&_.recharts-sector]:outline-none',
             '[&_.recharts-surface]:outline-none',
             '[&_.recharts-layer]:outline-none',
@@ -137,12 +137,12 @@ export const ChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          'min-w-[9rem] rounded-lg border border-slate-200/60 bg-white px-3 py-2 text-xs shadow-xl',
+          'min-w-[9rem] rounded-lg border border-[var(--border)] dark:border-[var(--border-strong)] bg-[var(--surface)] dark:bg-[var(--surface-3)] px-3 py-2 text-xs shadow-xl dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)]',
           className,
         )}
       >
         {!hideLabel && (
-          <p className="mb-1.5 font-semibold text-slate-700">
+          <p className="mb-1.5 font-semibold text-[var(--text)]">
             {labelFormatter ? labelFormatter(label, payload) : label}
           </p>
         )}

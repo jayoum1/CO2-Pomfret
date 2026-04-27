@@ -101,14 +101,14 @@ function ErrorBanner({ message }: { message: string }) {
       <div className="flex items-start gap-3">
         <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
         <div>
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">
+          <h3 className="text-sm font-semibold text-[var(--text)] mb-1">
             {isBackendDown ? 'Backend Not Running' : 'Error Loading Data'}
           </h3>
           <p className="text-meta text-[var(--text-muted)] mb-3">{message}</p>
           {isBackendDown && (
-            <div className="rounded-control bg-white border border-amber-200 px-3 py-2.5">
-              <p className="text-xs font-medium text-slate-600 mb-1.5">Start the backend:</p>
-              <code className="text-xs bg-slate-50 border border-slate-200 px-2 py-1 rounded block">
+            <div className="rounded-control bg-[var(--surface)] border border-amber-200/60 px-3 py-2.5">
+              <p className="text-xs font-medium text-[var(--text-muted)] mb-1.5">Start the backend:</p>
+              <code className="text-xs bg-[var(--surface-2)] border border-[var(--border)] px-2 py-1 rounded block text-[var(--text)]">
                 cd src && uvicorn api.app:app --reload
               </code>
             </div>
@@ -269,7 +269,7 @@ export default function VectorForestPage() {
       {/* ── Visualization panel ─────────────────────────────────────────────── */}
       <div
         ref={fullscreenRef}
-        className="rounded-card border border-[var(--border)] bg-white shadow-sm overflow-hidden flex flex-col"
+        className="rounded-card border border-[var(--border)] bg-[var(--surface)] shadow-sm overflow-hidden flex flex-col"
       >
 
         {/* ── Top control bar ──────────────────────────────────────────────── */}
@@ -283,7 +283,7 @@ export default function VectorForestPage() {
                 value={scenarioId}
                 onValueChange={(v) => setScenarioId(v as ScenarioId)}
               >
-                <SelectTrigger className="h-7 w-[170px] bg-white text-xs">
+                <SelectTrigger className="h-7 w-[170px] bg-[var(--surface)] text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -303,7 +303,7 @@ export default function VectorForestPage() {
                 value={plotFilter}
                 onValueChange={(v) => { setPlotFilter(v); setSelection(null) }}
               >
-                <SelectTrigger className="h-7 w-[130px] bg-white text-xs">
+                <SelectTrigger className="h-7 w-[130px] bg-[var(--surface)] text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -391,7 +391,7 @@ export default function VectorForestPage() {
           {selection?.kind === 'tree' && inspectorState && (
             <div
               data-ui-overlay="true"
-              className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full rounded-l-xl shadow-lg z-[250] flex flex-col bg-white border-l border-[var(--border)] pointer-events-auto"
+              className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full rounded-l-xl shadow-lg z-[250] flex flex-col bg-[var(--surface)] border-l border-[var(--border)] pointer-events-auto"
             >
               <TreeInspectorPanel
                 tree={selection.tree}
@@ -406,7 +406,7 @@ export default function VectorForestPage() {
           {selection?.kind === 'regrowth' && (
             <div
               data-ui-overlay="true"
-              className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full rounded-l-xl shadow-lg z-[250] flex flex-col bg-white border-l border-[var(--border)] pointer-events-auto"
+              className="absolute right-0 top-0 w-full sm:w-[360px] max-w-full h-full rounded-l-xl shadow-lg z-[250] flex flex-col bg-[var(--surface)] border-l border-[var(--border)] pointer-events-auto"
             >
               <RegrowthInspectorPanel
                 item={selection.item}
@@ -437,7 +437,7 @@ export default function VectorForestPage() {
             <button
               type="button"
               onClick={handleResetScenario}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-control border border-[var(--border)] bg-white text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-control border border-[var(--border)] bg-[var(--surface)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0"
             >
               <RotateCcw className="w-3 h-3" />
               Reset
