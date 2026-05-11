@@ -480,7 +480,7 @@ export default function VectorForestPage() {
 
 function PageHeader() {
   return (
-    <div>
+    <div className="band-dark -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-8">
       <h1 className="text-page-title">Forest Simulation</h1>
       <p className="text-meta text-[var(--text-muted)] mt-1">
         Explore how the Pomfret campus forest evolves over a 20-year simulation horizon

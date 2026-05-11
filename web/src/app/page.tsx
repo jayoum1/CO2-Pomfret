@@ -207,147 +207,158 @@ export default function ForestInsights() {
     : `Mean diameter at breast height across the simulation horizon. Lower plot has many small-diameter trees that pull the average down.`
 
   return (
-    <div className="space-y-6">
-      <PageHeader />
+    <div>
+      {/* ── Band Dark: Header + Controls + Summary metrics ──────────────────── */}
+      <div className="band-dark -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="space-y-6">
+          <PageHeader />
 
-      {/* ── Controls ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <GraphSectionControls
-          selectedYear={selectedYear}
-          onYearChange={setSelectedYear}
-          selectedPlot={selectedPlot}
-          onPlotChange={setSelectedPlot}
-          plots={data.plots}
-        />
-      </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <GraphSectionControls
+              selectedYear={selectedYear}
+              onYearChange={setSelectedYear}
+              selectedPlot={selectedPlot}
+              onPlotChange={setSelectedPlot}
+              plots={data.plots}
+            />
+          </motion.div>
 
-      {/* ── 1. Summary metrics ── */}
-      <GraphMetricCards
-        timeSeries={data.timeSeries}
-        snapshots={data.snapshots}
-        selectedYear={selectedYear}
-        selectedPlot={selectedPlot}
-      />
+          <GraphMetricCards
+            timeSeries={data.timeSeries}
+            snapshots={data.snapshots}
+            selectedYear={selectedYear}
+            selectedPlot={selectedPlot}
+          />
+        </div>
+      </div>
 
-      {/* ── All charts fade when year / plot changes ── */}
+      {/* ── Charts — fade on year / plot change ─────────────────────────────── */}
       <AnimatePresence mode="wait">
         <motion.div
           key={`${selectedYear}-${selectedPlot}`}
           initial={{ opacity: 0.7 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.25 }}
-          className="space-y-4"
         >
 
-          {/* ── 2. Trends ── */}
-          <SectionDivider
-            title="Carbon Trends"
-            subtitle="How carbon and tree diameter change across the 20-year simulation."
-          />
+          {/* ── Band Light: Carbon Trends ────────────────────────────────────── */}
+          <div className="band-light -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8">
+            <div className="space-y-4">
+              <SectionDivider
+                title="Carbon Trends"
+                subtitle="How carbon and tree diameter change across the 20-year simulation."
+              />
 
-          <Card>
-            <CardHeader className="pb-1">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <CardTitle className="text-card-title">{trendTitle}</CardTitle>
-                  <CardDescription className="text-xs mt-0.5">
-                    {trendDescription}
-                  </CardDescription>
-                </div>
-                <PillToggle
-                  value={trendMetric}
-                  options={[
-                    { value: 'carbon', label: 'Carbon' },
-                    { value: 'dbh',    label: 'Avg DBH' },
-                  ]}
-                  onChange={setTrendMetric}
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={trendMetric}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {trendMetric === 'carbon' ? (
-                    <CarbonTrendChart
-                      timeSeries={data.timeSeries}
-                      selectedYear={selectedYear}
-                      selectedPlot={selectedPlot}
-                      plots={data.plots}
+              <Card>
+                <CardHeader className="pb-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <CardTitle className="text-card-title">{trendTitle}</CardTitle>
+                      <CardDescription className="text-xs mt-0.5">
+                        {trendDescription}
+                      </CardDescription>
+                    </div>
+                    <PillToggle
+                      value={trendMetric}
+                      options={[
+                        { value: 'carbon', label: 'Carbon' },
+                        { value: 'dbh',    label: 'Avg DBH' },
+                      ]}
+                      onChange={setTrendMetric}
                     />
-                  ) : (
-                    <DBHTrendChart
-                      timeSeries={data.timeSeries}
-                      selectedYear={selectedYear}
-                      selectedPlot={selectedPlot}
-                      plots={data.plots}
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </CardContent>
-          </Card>
-
-          {/* ── 3. Plot analysis ── */}
-          <SectionDivider
-            title="Plot Analysis"
-            subtitle={`Carbon distribution and tree sizes across the three forest plots — Year ${selectedYear}.`}
-          />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-            {/* Carbon by plot */}
-            <Card>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-card-title">
-                  Carbon by Plot — Year {selectedYear}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Carbon stored in each plot. Middle holds the most carbon despite
-                  having fewer trees than Lower, due to its larger-diameter trees.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <CarbonByPlotChart
-                  snapshots={data.snapshots}
-                  selectedYear={selectedYear}
-                  plots={data.plots}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Tree size distribution */}
-            <Card>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-card-title">
-                  Tree Size Distribution — Year {selectedYear}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Trees per 10 cm DBH class. The large cohort of 0–20 cm trees
-                  reflects natural regeneration, concentrated in the Lower plot.
-                  {selectedPlot !== 'all' && ` Filtered to ${selectedPlot} plot.`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <DBHDistributionChart
-                  trees={currentSnapshot?.trees ?? []}
-                  selectedPlot={selectedPlot}
-                  plots={data.plots}
-                  selectedYear={selectedYear}
-                />
-              </CardContent>
-            </Card>
-
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-2">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={trendMetric}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {trendMetric === 'carbon' ? (
+                        <CarbonTrendChart
+                          timeSeries={data.timeSeries}
+                          selectedYear={selectedYear}
+                          selectedPlot={selectedPlot}
+                          plots={data.plots}
+                        />
+                      ) : (
+                        <DBHTrendChart
+                          timeSeries={data.timeSeries}
+                          selectedYear={selectedYear}
+                          selectedPlot={selectedPlot}
+                          plots={data.plots}
+                        />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </CardContent>
+              </Card>
+            </div>
           </div>
+
+          {/* ── Band Dark: Plot Analysis ─────────────────────────────────────── */}
+          <div className="band-dark -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8">
+            <div className="space-y-4">
+              <SectionDivider
+                title="Plot Analysis"
+                subtitle={`Carbon distribution and tree sizes across the three forest plots — Year ${selectedYear}.`}
+              />
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                {/* Carbon by plot */}
+                <Card>
+                  <CardHeader className="pb-1">
+                    <CardTitle className="text-card-title">
+                      Carbon by Plot — Year {selectedYear}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Carbon stored in each plot. Middle holds the most carbon despite
+                      having fewer trees than Lower, due to its larger-diameter trees.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <CarbonByPlotChart
+                      snapshots={data.snapshots}
+                      selectedYear={selectedYear}
+                      plots={data.plots}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Tree size distribution */}
+                <Card>
+                  <CardHeader className="pb-1">
+                    <CardTitle className="text-card-title">
+                      Tree Size Distribution — Year {selectedYear}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Trees per 10 cm DBH class. The large cohort of 0–20 cm trees
+                      reflects natural regeneration, concentrated in the Lower plot.
+                      {selectedPlot !== 'all' && ` Filtered to ${selectedPlot} plot.`}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <DBHDistributionChart
+                      trees={currentSnapshot?.trees ?? []}
+                      selectedPlot={selectedPlot}
+                      plots={data.plots}
+                      selectedYear={selectedYear}
+                    />
+                  </CardContent>
+                </Card>
+
+              </div>
+            </div>
+          </div>
+
         </motion.div>
       </AnimatePresence>
     </div>

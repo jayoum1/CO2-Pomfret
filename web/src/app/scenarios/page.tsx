@@ -650,7 +650,7 @@ export default function Scenarios() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="band-dark -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-8">
         <h1 className="text-page-title">Forest Modification</h1>
         <p className="text-meta text-[var(--text-muted)] mt-1">Simulate tree planting and removal scenarios to understand their impact on carbon storage</p>
       </div>

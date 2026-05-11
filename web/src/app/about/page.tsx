@@ -22,8 +22,10 @@ export default function About() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-page-title">About &amp; Assumptions</h1>
-      <p className="text-meta text-[var(--text-muted)] mt-1">Project details and simulation assumptions</p>
+      <div className="band-dark -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-8">
+        <h1 className="text-page-title">About &amp; Assumptions</h1>
+        <p className="text-meta text-[var(--text-muted)] mt-1">Project details and simulation assumptions</p>
+      </div>
 
       <div className="card">
         <h2 className="font-semibold mb-4">Project Overview</h2>

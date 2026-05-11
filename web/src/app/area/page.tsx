@@ -129,7 +129,7 @@ export default function AreaGeneralizer() {
   if (isBackendDown) {
     return (
       <div className="space-y-6">
-        <div>
+        <div className="band-dark -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-8">
           <h1 className="text-page-title">Generalize to Any Area</h1>
           <p className="text-meta text-[var(--text-muted)] mt-1">
             Scale carbon sequestration results from measured plots to any target area
@@ -154,7 +154,7 @@ export default function AreaGeneralizer() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="band-dark -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-8">
         <h1 className="text-page-title">Generalize to Any Area</h1>
         <p className="text-meta text-[var(--text-muted)] mt-1">
           Scale carbon sequestration results from measured plots to any target area

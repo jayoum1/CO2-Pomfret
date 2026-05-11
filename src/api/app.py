@@ -64,11 +64,42 @@ app.add_middleware(
 )
 
 # ============================================================================
+# Admin routes (preview/publish pipeline)
+# ----------------------------------------------------------------------------
+# Mounted under /admin/* and protected by the X-Admin-Token header. See
+# src/api/admin_routes.py and docs/google_sheets_preview_pipeline.md.
+# ============================================================================
+from api.admin_routes import router as admin_router  # noqa: E402
+
+app.include_router(admin_router)
+
+# ============================================================================
 # Snapshot Caching
 # ============================================================================
 
 _snapshot_cache: Dict[tuple, pd.DataFrame] = {}
 _summary_cache: Dict[tuple, Dict] = {}
+
+
+def clear_runtime_caches() -> Dict[str, int]:
+    """Clear in-memory snapshot/summary caches.
+
+    Reserved for the future publish/regenerate workflow (Phase 2). The
+    Phase 1 preview pipeline does NOT call this — preview never mutates
+    production data, so cached values remain valid.
+
+    Returns
+    -------
+    Dict[str, int]
+        Number of entries cleared per cache, useful for admin logs.
+    """
+    cleared = {
+        "snapshot_cache": len(_snapshot_cache),
+        "summary_cache": len(_summary_cache),
+    }
+    _snapshot_cache.clear()
+    _summary_cache.clear()
+    return cleared
 
 
 def get_snapshot_dir(mode: str = "baseline") -> Path:

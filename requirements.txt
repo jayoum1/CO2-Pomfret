@@ -20,3 +20,10 @@ matplotlib>=3.6.0
 # - os
 # - re
 
+# Optional — only required to use the admin Google Sheets preview pipeline
+# (src/pipeline/sheets_reader.py + src/api/admin_routes.py). Not needed for
+# the public API, simulations, or the public-CSV fallback mode. See
+# docs/google_sheets_preview_pipeline.md.
+# gspread>=6.0.0
+# google-auth>=2.20.0
+

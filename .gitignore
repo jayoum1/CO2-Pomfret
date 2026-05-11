@@ -43,6 +43,14 @@ ENV/
 # Data/
 # *.csv
 
+# Phase 1 ingestion pipeline staging area — populated at runtime by the
+# admin preview routes (see docs/google_sheets_preview_pipeline.md).
+Data/Staging/
+
+# Phase 2 will populate Data/Revisions/ — pre-ignored so an early experiment
+# doesn't accidentally get committed.
+Data/Revisions/
+
 # Model files (large binary files)
 *.pkl
 *.joblib
