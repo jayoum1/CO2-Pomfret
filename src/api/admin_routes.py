@@ -31,6 +31,14 @@ from pipeline.diff_inventory import (  # noqa: E402
     compute_workbook_diff,
     load_current_workbook,
 )
+from pipeline.publish import (  # noqa: E402
+    PublishError,
+    PublishOptions,
+    current_revision_summary,
+    list_revisions_summary,
+    publish_sheet_sync,
+    revision_summary as get_revision_summary,
+)
 from pipeline.sheets_reader import (  # noqa: E402
     SheetsConfig,
     SheetsConfigError,
@@ -94,6 +102,21 @@ class PreviewSheetSyncRequest(BaseModel):
         "(e.g. {'Lower': 'Lower Plot 2026'}).",
     )
     public_csv: Optional[bool] = Field(default=None)
+
+
+class PublishSheetSyncRequest(PreviewSheetSyncRequest):
+    """Optional overrides for ``POST /admin/publish-sheet-sync``.
+
+    Extends preview overrides with publish-only flags. ``include_nn_epsilon``
+    triggers regeneration of the legacy NN epsilon snapshot directory used by
+    the older ``/snapshots`` route (off by default — slower).
+    """
+
+    include_nn_epsilon: Optional[bool] = Field(
+        default=False,
+        description="Also regenerate forest_snapshots_nn_epsilon/* "
+        "(legacy /snapshots route). Default: false.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -191,6 +214,98 @@ async def get_latest_preview(
             ),
         )
     return payload
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 — manual publish & revision inspection
+# ---------------------------------------------------------------------------
+
+
+def _build_publish_options(body: Optional[PublishSheetSyncRequest]) -> PublishOptions:
+    overrides: Dict[str, Any] = {}
+    include_nn = False
+    if body:
+        if body.spreadsheet_id:
+            overrides["spreadsheet_id"] = body.spreadsheet_id
+        if body.tabs:
+            overrides["tabs"] = body.tabs
+        if body.public_csv is not None:
+            overrides["public_csv"] = body.public_csv
+        include_nn = bool(body.include_nn_epsilon)
+    return PublishOptions(overrides=overrides, include_nn_epsilon=include_nn)
+
+
+@router.post("/publish-sheet-sync")
+async def publish_sheet_sync_route(
+    body: Optional[PublishSheetSyncRequest] = None,
+    _: None = Depends(require_admin_token),
+) -> Dict[str, Any]:
+    """Promote the current Google Sheet into the canonical dataset.
+
+    Re-reads the sheet, validates, builds a per-revision directory, and
+    atomically swaps the live raw/processed/snapshot CSVs. In-process
+    snapshot/summary caches are cleared after a successful promote.
+
+    Returns the full revision manifest.
+    """
+    options = _build_publish_options(body)
+
+    try:
+        from api.app import clear_runtime_caches  # type: ignore
+    except Exception:  # noqa: BLE001
+        clear_runtime_caches = None  # type: ignore[assignment]
+
+    try:
+        manifest = publish_sheet_sync(options, cache_clearer=clear_runtime_caches)
+    except PublishError as e:
+        detail = {"error": str(e), **(e.detail or {})}
+        status_code = 400 if detail.get("stage") in {"config", "validate"} else 500
+        raise HTTPException(status_code=status_code, detail=detail) from e
+    return manifest
+
+
+@router.get("/revisions")
+async def list_revisions(
+    _: None = Depends(require_admin_token),
+) -> Dict[str, Any]:
+    """List all known published-or-attempted revisions (newest first)."""
+    revisions = list_revisions_summary()
+    return {
+        "count": len(revisions),
+        "revisions": revisions,
+    }
+
+
+@router.get("/current-revision")
+async def get_current_revision(
+    _: None = Depends(require_admin_token),
+) -> Dict[str, Any]:
+    """Return the currently-active revision summary, or ``null`` if none."""
+    summary = current_revision_summary()
+    if summary is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "No revision is currently published. "
+                "POST /admin/publish-sheet-sync to create one."
+            ),
+        )
+    return summary
+
+
+@router.get("/revisions/{revision_id}")
+async def get_revision(
+    revision_id: str,
+    _: None = Depends(require_admin_token),
+) -> Dict[str, Any]:
+    """Return the manifest summary for ``revision_id``."""
+    summary = get_revision_summary(revision_id)
+    if summary is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Revision {revision_id!r} not found.",
+        )
+    return summary
 
 
 # ---------------------------------------------------------------------------

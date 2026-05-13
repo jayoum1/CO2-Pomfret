@@ -25,6 +25,7 @@ if str(REPO_ROOT) not in sys.path:
 TEST_MODULES = [
     "tests.test_validate_inventory",
     "tests.test_diff_inventory",
+    "tests.test_process_inventory",
 ]
 
 
