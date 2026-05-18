@@ -6,8 +6,7 @@ Next.js frontend for the CO2 Pomfret forest growth and carbon sequestration simu
 
 - **Dashboard**: View forest snapshots at different time horizons (0/5/10/20 years) with interactive charts
 - **Planting Scenarios**: Simulate the impact of planting new trees on carbon sequestration
-- **Visualize**: 2D plot view (placeholder for future 3D integration)
-- **About**: Project details and simulation assumptions
+- **Vector Forest**: SVG forest simulation with disturbance scenarios (see app routes)
 
 ## Prerequisites
 
@@ -59,10 +58,9 @@ The application will be available at `http://localhost:3000`
 web/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
-│   │   ├── page.tsx           # Dashboard
+│   │   ├── page.tsx           # Dashboard / Forest Insights
 │   │   ├── scenarios/         # Planting scenarios page
-│   │   ├── visualize/         # Visualization page (3D-ready)
-│   │   └── about/             # About/Assumptions page
+│   │   └── vector-forest/     # Vector forest simulation
 │   ├── components/            # React components
 │   │   └── Sidebar.tsx        # Navigation sidebar
 │   └── lib/

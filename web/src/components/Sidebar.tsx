@@ -7,9 +7,7 @@ import { useState } from 'react'
 const navItems = [
   { href: '/', label: 'Dashboard', icon: '📊' },
   { href: '/scenarios', label: 'Planting Scenarios', icon: '🌱' },
-  { href: '/visualize', label: 'Visualize', icon: '🌍' },
   { href: '/visualizations', label: 'R Visualizations', icon: '📈' },
-  { href: '/about', label: 'About / Assumptions', icon: 'ℹ️' },
 ]
 
 export default function Sidebar() {

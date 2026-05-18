@@ -1,11 +1,10 @@
 /**
  * Presentation scenario catalog for Vector Forest.
- * Images live in public/disturbances/ (e.g. add emerald_ash_borer.png, tornado.png, flood.png, fire.png, baseline.png).
+ * Images live in public/disturbances/ (e.g. tornado.png, flood.png, fire.png, baseline.png).
  */
 
 export type ScenarioId =
   | 'baseline'
-  | 'emerald_ash_borer'
   | 'tornado'
   | 'flood'
   | 'fire'
@@ -24,12 +23,6 @@ export const SCENARIOS: ScenarioCard[] = [
     title: 'Baseline',
     description: 'No disturbance; forest grows normally.',
     imageSrc: '/disturbances/baseline.png',
-  },
-  {
-    id: 'emerald_ash_borer',
-    title: 'Emerald Ash Borer',
-    description: 'Invasive pest outbreak; affected trees decline and fall.',
-    imageSrc: '/disturbances/emerald_ash_borer.png',
   },
   {
     id: 'tornado',

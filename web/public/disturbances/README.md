@@ -3,7 +3,6 @@
 Add PNG files here for the scenario carousel. Expected filenames:
 
 - `baseline.png` – no disturbance
-- `emerald_ash_borer.png` – invasive pest
 - `tornado.png` – wind damage
 - `flood.png` – flooding
 - `fire.png` – fire

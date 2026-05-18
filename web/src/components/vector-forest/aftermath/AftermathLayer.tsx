@@ -145,7 +145,7 @@ export default function AftermathLayer({
   onRegrowthSelect,
 }: AftermathLayerProps) {
   const allProps = useMemo(() => {
-    if (scenarioId === 'baseline' || scenarioId === 'emerald_ash_borer') return []
+    if (scenarioId === 'baseline') return []
     const rng = seededRandom(seed + scenarioId.charCodeAt(0))
     switch (scenarioId) {
       case 'fire': return generateFireProps(rng, containerWidth, containerHeight, groundY)

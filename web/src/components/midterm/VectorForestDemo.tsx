@@ -116,9 +116,9 @@ export default function VectorForestDemo() {
   const [year, setYear] = useState(0)
   const [dimensions, setDimensions] = useState({ width: 800, height: 500 })
   const [selection, setSelection] = useState<TreeSelection>(null)
-  const [scenarioId, setScenarioId] = useState<ScenarioId>('emerald_ash_borer')
+  const [scenarioId, setScenarioId] = useState<ScenarioId>('baseline')
   const [scenarioStartYear, setScenarioStartYear] = useState(
-    () => getScenarioTiming('emerald_ash_borer').startYear,
+    () => getScenarioTiming('baseline').startYear,
   )
   const [metaById, setMetaById] = useState<Record<string, TreeMeta>>({})
   const containerRef = useRef<HTMLDivElement>(null)

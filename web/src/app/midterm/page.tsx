@@ -518,7 +518,7 @@ export default function MidtermPage() {
                 </svg>
               }
               title="Carbon Simulation"
-              body="The app projects total forest carbon at key horizons (year 0, 5, 10, 20) and lets users explore how disturbances — fire, flood, invasive species — affect long-term sequestration."
+              body="The app projects total forest carbon at key horizons (year 0, 5, 10, 20) and lets users explore how disturbances — fire, flood, and tornado — affect long-term sequestration."
             />
           </div>
         </div>
@@ -788,7 +788,7 @@ export default function MidtermPage() {
                     'DBH growth model (baseline + stochastic mode)',
                     'Carbon estimation via allometric equations',
                     'Vector forest: interactive SVG visualization',
-                    'Scenario simulations: fire, flood, tornado, invasive species',
+                    'Scenario simulations: fire, flood, tornado',
                     'Multi-year snapshots (year 0, 5, 10, 20)',
                     'Recharts visualization dashboard (7 chart types)',
                     'FastAPI backend with live data endpoints',

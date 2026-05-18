@@ -369,7 +369,7 @@ export default function VectorForestScene({
           const fallDeg = meta && isDead ? meta.fallDir * 70 : 0
 
           let opacity = baseOpacity
-          const isDisturbanceScenario = scenarioId !== 'baseline' && scenarioId !== 'emerald_ash_borer'
+          const isDisturbanceScenario = scenarioId !== 'baseline'
           if (isDead && meta && isDisturbanceScenario) {
             const yearsDown = year - meta.deathYear
             if (yearsDown >= 15) return null

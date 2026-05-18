@@ -11,9 +11,7 @@ const navItems = [
   { href: '/', label: 'Forest Insights' },
   { href: '/scenarios', label: 'Forest Modification' },
   { href: '/area', label: 'Generalize Area' },
-  { href: '/visualize', label: 'Visualize' },
   { href: '/vector-forest', label: 'Vector Forest' },
-  { href: '/about', label: 'About' },
 ]
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
