@@ -7,27 +7,42 @@ Provides REST API endpoints for:
 - Snapshot data access
 """
 
+import logging
 import os
 import sys
 from pathlib import Path
 from typing import List, Dict, Optional, Union
 
+_logger = logging.getLogger("uvicorn.error")
+
 # ---------------------------------------------------------------------------
 # Optional .env loader (development only).
 # Loads <repo_root>/.env so CO2_ADMIN_TOKEN, CO2_SHEETS_*, and credentials
-# paths are available before any module reads them. Silently skipped if
-# python-dotenv isn't installed — production deployments inject env vars
-# through their platform of choice and don't need this.
+# paths are available before any module reads them. Production deployments
+# should inject env vars through their platform instead.
 # ---------------------------------------------------------------------------
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 try:
     from dotenv import load_dotenv  # type: ignore
-
-    _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-    for _candidate in (_REPO_ROOT / ".env.local", _REPO_ROOT / ".env"):
-        if _candidate.exists():
-            load_dotenv(_candidate, override=False)
-except Exception:  # noqa: BLE001 — dotenv is strictly optional
-    pass
+except ImportError:
+    _logger.warning(
+        "python-dotenv is not installed; root .env will not be loaded. "
+        "Install with: pip install python-dotenv "
+        "(or pip install -r requirements.txt). "
+        "Without it, CO2_SHEETS_* and CO2_ADMIN_TOKEN from .env are unset."
+    )
+    load_dotenv = None  # type: ignore
+else:
+    try:
+        for _candidate in (_REPO_ROOT / ".env.local", _REPO_ROOT / ".env"):
+            if _candidate.exists():
+                load_dotenv(_candidate, override=False)
+    except OSError as exc:
+        _logger.warning(
+            "Could not load .env from %s: %s",
+            _REPO_ROOT,
+            exc,
+        )
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware

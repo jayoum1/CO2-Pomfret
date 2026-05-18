@@ -17,6 +17,7 @@ Mounted by ``src/api/app.py`` via ``app.include_router(admin_router)``.
 from __future__ import annotations
 
 import hmac
+import logging
 import os
 import sys
 from pathlib import Path
@@ -29,6 +30,8 @@ from pydantic import BaseModel, Field
 _SRC_DIR = Path(__file__).resolve().parent.parent
 if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
+
+_logger = logging.getLogger("uvicorn.error")
 
 from pipeline.diff_inventory import (  # noqa: E402
     compute_workbook_diff,
@@ -184,12 +187,14 @@ async def preview_sheet_sync(
     try:
         config = SheetsConfig.from_env(overrides=overrides)
     except SheetsConfigError as e:
+        _logger.warning("POST /admin/preview-sheet-sync — %s", e)
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     fetch_errors: List[str] = []
     try:
         workbook = read_workbook(config)
     except SheetsConfigError as e:
+        _logger.warning("POST /admin/preview-sheet-sync — %s", e)
         raise HTTPException(status_code=400, detail=str(e)) from e
     except SheetsFetchError as e:
         # Partial-read isn't supported by the simple reader yet — surface
