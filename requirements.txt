@@ -2,6 +2,12 @@
 pandas>=1.5.0
 numpy>=1.23.0
 
+# Web API stack — required to serve src/api/app.py
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+pydantic>=2.0.0
+httpx>=0.24.0
+
 # Machine Learning
 scikit-learn>=1.2.0
 xgboost>=2.0.0
@@ -26,4 +32,9 @@ matplotlib>=3.6.0
 # docs/google_sheets_preview_pipeline.md.
 # gspread>=6.0.0
 # google-auth>=2.20.0
+
+# Optional — load <repo_root>/.env during local FastAPI development so
+# CO2_ADMIN_TOKEN, CO2_SHEETS_*, etc. are available without exporting them
+# by hand. Skipped silently in production if not installed.
+python-dotenv>=1.0.0
 

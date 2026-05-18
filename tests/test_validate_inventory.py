@@ -78,6 +78,20 @@ def test_normalize_tree_id_strips_dot_zero() -> None:
     assert normalize_tree_id(None) == ""
 
 
+def test_normalize_tree_id_strips_thousands_separator() -> None:
+    """Sheets formats integers >= 1000 with a comma; downstream code expects
+    a comma-free canonical id so int(float(...)) parses cleanly in the
+    /vector-forest/snapshot route.
+    """
+    assert normalize_tree_id("1,000") == "1000"
+    assert normalize_tree_id("12,345") == "12345"
+    assert normalize_tree_id("1,000.0") == "1000"
+    # Non-grouping commas in free-text ids must NOT be stripped.
+    assert normalize_tree_id("416, was 683") == "416, was 683"
+    # Numbers under 1000 are never affected.
+    assert normalize_tree_id("999") == "999"
+
+
 # ---------------------------------------------------------------------------
 # validate_plot
 # ---------------------------------------------------------------------------

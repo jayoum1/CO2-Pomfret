@@ -7,9 +7,28 @@ Provides REST API endpoints for:
 - Snapshot data access
 """
 
+import os
 import sys
 from pathlib import Path
 from typing import List, Dict, Optional, Union
+
+# ---------------------------------------------------------------------------
+# Optional .env loader (development only).
+# Loads <repo_root>/.env so CO2_ADMIN_TOKEN, CO2_SHEETS_*, and credentials
+# paths are available before any module reads them. Silently skipped if
+# python-dotenv isn't installed — production deployments inject env vars
+# through their platform of choice and don't need this.
+# ---------------------------------------------------------------------------
+try:
+    from dotenv import load_dotenv  # type: ignore
+
+    _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+    for _candidate in (_REPO_ROOT / ".env.local", _REPO_ROOT / ".env"):
+        if _candidate.exists():
+            load_dotenv(_candidate, override=False)
+except Exception:  # noqa: BLE001 — dotenv is strictly optional
+    pass
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -1199,6 +1218,15 @@ async def vector_forest_snapshot(
     for _, row in df.iterrows():
         raw_id = str(row["TreeID"]).strip()
         numeric_id = raw_id.split()[0] if raw_id else raw_id
+        # Sheets may emit integer ids with thousands separators ("1,000").
+        # The publish pipeline normalises new rows for us, but legacy rows
+        # already in the canonical CSVs may still carry the comma — strip it
+        # before int(float(...)) so we never fall back to the hash branch
+        # which would corrupt tree identity tracking on the dashboard.
+        if numeric_id and "," in numeric_id:
+            stripped = numeric_id.replace(",", "")
+            if stripped.replace("-", "").replace(".", "", 1).isdigit():
+                numeric_id = stripped
         try:
             tree_id = int(float(numeric_id))
         except (ValueError, TypeError):
@@ -1227,3 +1255,32 @@ async def vector_forest_snapshot(
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
+
+
+@app.get("/dataset-version")
+async def dataset_version() -> Dict:
+    """Return a compact "what dataset is live right now?" blob.
+
+    Public — no admin token required. The dashboard polls this so it can
+    detect a freshly-published revision and re-fetch the snapshot/summary
+    payloads without a manual hard reload. Compared to ``/admin/current-
+    revision`` this endpoint deliberately leaks only the revision id and
+    publish timestamp; everything else stays behind admin auth.
+    """
+    try:
+        from pipeline.publish import current_revision_summary  # noqa: WPS433
+        summary = current_revision_summary()
+    except Exception:  # noqa: BLE001 — dataset-version must never 500
+        summary = None
+
+    if summary is None:
+        return {
+            "revision_id": None,
+            "published_at": None,
+            "status": "no_revision",
+        }
+    return {
+        "revision_id": summary.get("revision_id"),
+        "published_at": summary.get("published_at"),
+        "status": summary.get("status", "unknown"),
+    }

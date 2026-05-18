@@ -25,7 +25,8 @@ Phase 2 deliberately does **not**:
 
 | Variable | Required | Description |
 |---|---|---|
-| `CO2_ADMIN_TOKEN` | yes | Bearer token. The admin routes return **503** until this is set. Compared with `hmac.compare_digest`. |
+| `CO2_ADMIN_TOKEN` | yes, unless bypass below | Secret compared with `X-Admin-Token` via `hmac.compare_digest`. If unset **and** admin auth is not disabled, admin routes return **503**. |
+| `CO2_DISABLE_ADMIN_AUTH` | no | When set to `true` / `1` / `yes`, **all** `/admin/*` routes skip the token check (local dev only). `/admin/health` includes `admin_auth_disabled` and a warning. **Never set on any publicly reachable server.** |
 | `CO2_SHEETS_SPREADSHEET_ID` | yes (or pass in body) | Google Sheets ID. |
 | `CO2_SHEETS_TAB_LOWER` | no | Override tab name. Default: `Lower`. |
 | `CO2_SHEETS_TAB_MIDDLE` | no | Override tab name. Default: `Middle`. |
@@ -49,29 +50,77 @@ The public-CSV fallback uses only the stdlib (`urllib`) plus `pandas`.
 
 ## 2. Running locally
 
-```bash
-# 1. Start the API normally — the admin router is auto-mounted.
-export CO2_ADMIN_TOKEN="dev-token-not-for-prod"
-export CO2_SHEETS_SPREADSHEET_ID="1AbCdEfGhIj..."
-export CO2_SHEETS_PUBLIC_CSV=true   # easiest for local testing
+### Option A — `.env` file (recommended)
 
+`src/api/app.py` auto-loads `<repo_root>/.env` at startup if `python-dotenv`
+is installed (it's in `requirements.txt`). Copy the template once:
+
+```bash
+cp .env.example .env
+# then edit .env and fill in real values
+```
+
+Minimum content for the service-account flow:
+
+```dotenv
+CO2_ADMIN_TOKEN=change-me-to-a-long-random-string
+CO2_DISABLE_ADMIN_AUTH=false
+CO2_SHEETS_SPREADSHEET_ID=1AbCdEfGhIj...
+CO2_SHEETS_TAB_LOWER=Lower
+CO2_SHEETS_TAB_MIDDLE=Middle
+CO2_SHEETS_TAB_UPPER=Upper
+CO2_SHEETS_CREDENTIALS_FILE=/absolute/path/to/secrets/google-service-account.json
+```
+
+For local testing without pasting a token in the browser or curl, you may set:
+
+```dotenv
+# LOCAL ONLY — never deploy with this
+CO2_DISABLE_ADMIN_AUTH=true
+```
+
+Service-account JSON stays backend-only via `CO2_SHEETS_CREDENTIALS_FILE` (or `CO2_SHEETS_CREDENTIALS_JSON` on the server).
+
+Both `.env` and `secrets/` are gitignored. **Never** paste the JSON content
+into the frontend or commit it.
+
+Start the API and frontend:
+
+```bash
+# backend
 cd src && uvicorn api.app:app --reload
 
-# 2. Sanity check the admin endpoints (separate terminal):
-curl -s -H "X-Admin-Token: dev-token-not-for-prod" \
+# frontend (in another terminal)
+cd web && npm run dev
+```
+
+### Option B — inline exports
+
+```bash
+export CO2_ADMIN_TOKEN="dev-token-not-for-prod"
+export CO2_SHEETS_SPREADSHEET_ID="1AbCdEfGhIj..."
+export CO2_SHEETS_PUBLIC_CSV=true   # easiest for first smoke test
+
+cd src && uvicorn api.app:app --reload
+```
+
+### Sanity check
+
+```bash
+curl -s -H "X-Admin-Token: $CO2_ADMIN_TOKEN" \
      http://127.0.0.1:8000/admin/health | jq .
 ```
 
 ### Service-account quickstart
 
 1. In Google Cloud, create a service account with **no project roles**.
-2. Generate a JSON key and download it.
+2. Generate a JSON key and download it into `secrets/` (gitignored).
 3. Share the Google Sheet with the service account's email
    (`...@<project>.iam.gserviceaccount.com`) as a **Viewer**.
-4. Point the API at the key:
-   ```bash
-   export CO2_SHEETS_CREDENTIALS_FILE=/path/to/key.json
-   unset CO2_SHEETS_PUBLIC_CSV
+4. Point the API at the key (in `.env`):
+   ```dotenv
+   CO2_SHEETS_CREDENTIALS_FILE=/Users/you/Desktop/Carbon DBH/secrets/key.json
+   # leave CO2_SHEETS_PUBLIC_CSV unset
    ```
 
 ---
@@ -342,28 +391,97 @@ python -m pipeline.cli revisions      # all known revisions, newest first
 python -m pipeline.cli current        # active revision only
 ```
 
-The CLI reads the same `CO2_SHEETS_*` env vars as the routes. It does
-**not** require `CO2_ADMIN_TOKEN` — but the admin HTTP routes still do.
+The CLI reads the same `CO2_SHEETS_*` env vars as the routes. Unlike HTTP
+clients, it does not send `X-Admin-Token`; admin **HTTP** routes still
+require a token **unless** `CO2_DISABLE_ADMIN_AUTH=true` is set on the
+backend (local dev only).
 
 ---
 
 ## 7. Admin token (temporary auth)
 
-This is intentionally minimal:
+By default:
 
 * Set `CO2_ADMIN_TOKEN` to a strong random value in any non-trivial
   environment.
-* Pass it on every request as `X-Admin-Token: <token>`.
+* Pass it on every HTTP request as `X-Admin-Token: <token>`.
 * Compared with `hmac.compare_digest` (constant time).
-* If unset, every admin endpoint returns **503** so endpoints can never be
-  accidentally exposed without an explicit token.
+* If `CO2_ADMIN_TOKEN` is unset **and** `CO2_DISABLE_ADMIN_AUTH` is not
+  truthy, every admin endpoint returns **503**.
 
-This will be replaced by a real auth layer in Phase 3 (see
+### Local development bypass (`CO2_DISABLE_ADMIN_AUTH`)
+
+For local preview/publish testing only, you may set:
+
+```dotenv
+CO2_DISABLE_ADMIN_AUTH=true
+```
+
+When truthy (`1`, `true`, `yes`, case-insensitive):
+
+* All `/admin/*` endpoints work **without** `X-Admin-Token`.
+* `GET /admin/health` includes `"admin_auth_disabled": true` and a
+  `"warning"` string so operators know auth is off.
+* Google Sheets credentials remain **server-side only** (`CO2_SHEETS_CREDENTIALS_FILE` / `_JSON`); this flag does not change sheet access rules.
+
+**Do not** enable this on a production host, VPS, cloud Run/Lambda URL, or
+any endpoint reachable from someone else's browser. Anyone who can reach
+the API could preview or publish data changes.
+
+The browser admin UI (`/admin`) supports a blank token field when the
+backend runs in this mode and shows a banner after a successful health
+check.
+
+This will be replaced by a real auth layer in a later phase (see
 `ARCHITECTURE_HANDOFF_DATA_PIPELINE.md` §9).
 
 ---
 
-## 8. Example curl commands
+## 8. Browser UI — `/admin`
+
+If you'd rather not paste curl commands, the Next.js app ships a minimal
+admin page that wraps every endpoint above.
+
+```bash
+cd web && npm run dev
+# then open http://localhost:3000/admin
+```
+
+The page is **not** linked from the main navigation. You access it by
+typing the URL. It is intentionally a Phase-3 development tool, not a
+production console:
+
+* It asks you for the API base URL (defaults to
+  `NEXT_PUBLIC_API_BASE_URL` or `http://127.0.0.1:8000`), an optional admin
+  token (leave blank when the backend has `CO2_DISABLE_ADMIN_AUTH=true`),
+  the spreadsheet id, and the three tab names.
+* After **Check admin health**, if the server reports
+  `admin_auth_disabled`, a warning banner appears at the top of the page.
+* The token is held in browser state + `localStorage` so reloads don't
+  wipe it. Treat this like any other dev cookie — clear browser data on
+  shared machines.
+* Service-account JSON is **never** entered or transmitted from the
+  browser. The backend reads it from disk via
+  `CO2_SHEETS_CREDENTIALS_FILE`.
+* The **Publish** action requires a confirmation step.
+
+Buttons → routes:
+
+| Button | Calls |
+|---|---|
+| Check admin health | `GET /admin/health` |
+| Preview sheet changes | `POST /admin/preview-sheet-sync` |
+| Load latest preview | `GET /admin/latest-preview` |
+| Publish sheet changes | `POST /admin/publish-sheet-sync` |
+| Load current revision | `GET /admin/current-revision` |
+| Load revision history | `GET /admin/revisions` |
+
+Real protection is still the backend's `X-Admin-Token` check — the UI
+is just a convenience client.
+
+---
+
+## 9. Example curl commands
 
 ```bash
 # Health check
@@ -426,7 +544,79 @@ curl -s \
 
 ---
 
-## 9. Phase 3 reuse notes
+## 10. Dashboard auto-refresh after publish
+
+The `/admin/publish-sheet-sync` route returns immediately after the
+canonical files are swapped and FastAPI's in-process snapshot/summary
+caches are cleared. The Next.js dashboard at `/` learns about new
+publishes through two complementary signals:
+
+1. **`BroadcastChannel('co2-publish-events')`** — the `/admin` page
+   posts a `{ type: 'publish-succeeded', revision_id, published_at }`
+   event when `POST /admin/publish-sheet-sync` returns
+   `status: "published"`. Any dashboard tab open in the same browser
+   receives it instantly and refetches.
+2. **`GET /dataset-version` polling** — a public, unauthenticated probe
+   that returns `{ revision_id, published_at, status }`. The dashboard
+   polls every 15 s as a fallback for browsers without
+   `BroadcastChannel`, or for the case where the user opened the
+   dashboard *after* a publish was already in flight.
+
+Both signals are wired up by `web/src/lib/usePublishSync.ts`. The hook
+returns a `refreshKey` integer that the dashboard uses as a `useEffect`
+dependency so the data fetch reruns whenever a new revision lands. A
+small "Live data" pill in the page header highlights when the data was
+just refreshed.
+
+The frontend also adds `cache: 'no-store'` to its dashboard fetches in
+`web/src/lib/api.ts`, so the browser HTTP cache cannot mask a
+freshly-published revision.
+
+### Post-publish audit (dev logging)
+
+Every publish now records an `added_tree_audits` array in the manifest
+(also surfaced on the `/admin` page under "Added tree audit"). For each
+tree the diff flagged as added it reports:
+
+* `found_in_canonical_raw` — was the row actually written to
+  `Data/Raw Data/CO2 Pomfret Raw Data - <Plot>.csv`?
+* `found_in_canonical_snapshot_year_0` — and into
+  `forest_snapshots_baseline_stochastic/forest_0_years.csv`?
+* `first_year_dbh_in` / `first_year_dbh_cm` — the value the user typed
+  into the **first** DBH year column (raw cell), and what that converts
+  to in cm under the inches→cm convention used by `carbon_calc.py`.
+* `year_0_dbh_cm` and `year_0_bin_label_cm` — the diameter the dashboard
+  ultimately bins on at Year 0, and which 10 cm histogram bin the tree
+  lands in (matches the half-open `[start, start+10)` convention in
+  `web/src/lib/visualizationData.ts`).
+* `plot_total_after_publish` — row count in the canonical raw CSV after
+  promote, useful as a quick before/after sanity check.
+
+This was added after a bug report where an added tree appeared to "not
+update" the Tree Size Distribution Year 0 card. The audit makes the
+two real causes obvious:
+
+* **Tree IDs with thousands separators** (`"1,000"`) used to be stored
+  verbatim in the canonical raw CSV. The `/vector-forest/snapshot`
+  route would then fall back to a hash-based id because
+  `int(float("1,000"))` fails. `normalize_tree_id` now strips digit-
+  grouping commas so the id round-trips as `1000` everywhere.
+* **The school's data convention treats raw DBH cells as inches.**
+  `carbon_calc.add_carbon_and_carbon_growth` multiplies by 2.54 to
+  produce `DBH_cm`, and the snapshot's "Year 0" diameter is the
+  **latest observed** raw DBH (not the first year column) converted
+  to cm. So a row entered as `85, 86, 87, 88` ends up at
+  `88 × 2.54 = 223.52 cm` and lands in the **220–230 cm bin**, not
+  the 80–90 cm bin you'd get if you assumed cm input.
+
+If the audit ever reports `found_in_canonical_raw: false` after a
+successful publish, **that** is a real promote bug. Compare the
+revision-dir CSV under `Data/Revisions/<rid>/raw/` against
+`Data/Raw Data/` to localise it.
+
+---
+
+## 11. Phase 3+ reuse notes
 
 * The `current.json` pointer is metadata-only today; Phase 3 can switch
   the FastAPI app to read it instead of canonical paths to make rollback

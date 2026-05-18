@@ -60,9 +60,11 @@ Data/Revisions/
 # Logs
 *.log
 
-# Environment variables
+# Environment variables and local secrets (never commit)
 .env
 .env.local
+.env.*.local
+secrets/
 
 # Temporary files
 *.tmp

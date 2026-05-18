@@ -142,6 +142,12 @@ def normalize_tree_id(value: Any) -> str:
 
     Google Sheets often delivers integer ids as ``"1.0"``; this strips the
     trailing zero while preserving non-numeric forms like ``"416 (was 683)"``.
+    Sheets also formats integers ``>= 1000`` with a thousands separator
+    (``"1,000"``) — without normalization those ids are saved verbatim into the
+    canonical raw CSVs and later break ``int(float(...))`` parsing in the
+    ``/vector-forest/snapshot`` route, which silently substitutes a hash-based
+    id and breaks tree identity. Strip the separator commas here so the same
+    user-typed id ``1000`` is represented identically everywhere downstream.
     """
     if value is None:
         return ""
@@ -151,6 +157,13 @@ def normalize_tree_id(value: Any) -> str:
     # Strip pandas-injected ".0" on otherwise-integer ids.
     if re.fullmatch(r"-?\d+\.0+", s):
         s = s.split(".")[0]
+    # Strip digit-grouping commas only when the id is otherwise purely numeric.
+    # We do *not* strip commas from free-text ids like ``"416, was 683"`` —
+    # only the simple "1,000" / "12,345" pattern that Sheets emits.
+    if re.fullmatch(r"-?\d{1,3}(,\d{3})+(\.\d+)?", s):
+        s = s.replace(",", "")
+        if re.fullmatch(r"-?\d+\.0+", s):
+            s = s.split(".")[0]
     return s
 
 

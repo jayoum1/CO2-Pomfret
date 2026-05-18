@@ -17,7 +17,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 import {
   Card,
   CardHeader,
@@ -35,6 +35,7 @@ import {
   fetchVisualizationData,
   type VisualizationData,
 } from '@/lib/visualizationData'
+import { usePublishSync } from '@/lib/usePublishSync'
 
 type TrendMetric = 'carbon' | 'dbh'
 
@@ -144,6 +145,11 @@ export default function ForestInsights() {
   const [selectedYear, setSelectedYear] = useState(0)
   const [selectedPlot, setSelectedPlot] = useState('all')
   const [trendMetric, setTrendMetric]   = useState<TrendMetric>('carbon')
+  // Bumps every time a new revision is published (admin/page.tsx broadcasts
+  // an event; we also poll /dataset-version as a fallback). Used as a
+  // refetch key so the dashboard never silently shows stale data.
+  const { version: datasetVersion, refreshKey, forceRefresh } = usePublishSync()
+  const [justRefreshed, setJustRefreshed] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -161,7 +167,16 @@ export default function ForestInsights() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [refreshKey])
+
+  // Briefly highlight the freshness badge when a new publish lands so the
+  // user can see the dashboard updated itself.
+  useEffect(() => {
+    if (refreshKey === 0) return
+    setJustRefreshed(true)
+    const t = window.setTimeout(() => setJustRefreshed(false), 2500)
+    return () => window.clearTimeout(t)
+  }, [refreshKey])
 
   const currentSnapshot = useMemo(
     () => data?.snapshots.find(s => s.year === selectedYear),
@@ -173,7 +188,11 @@ export default function ForestInsights() {
   if (error) {
     return (
       <div className="space-y-6">
-        <PageHeader />
+        <PageHeader
+          datasetVersion={datasetVersion}
+          justRefreshed={justRefreshed}
+          onRefresh={forceRefresh}
+        />
         <ErrorBanner message={error} />
       </div>
     )
@@ -184,7 +203,11 @@ export default function ForestInsights() {
   if (loading || !data) {
     return (
       <div className="space-y-6">
-        <PageHeader />
+        <PageHeader
+          datasetVersion={datasetVersion}
+          justRefreshed={justRefreshed}
+          onRefresh={forceRefresh}
+        />
         {/* Controls placeholder */}
         <div className="h-9 w-64 rounded-control bg-[var(--surface-2)] animate-pulse" />
         <MetricRowSkeleton />
@@ -211,7 +234,11 @@ export default function ForestInsights() {
       {/* ── Band Dark: Header + Controls + Summary metrics ──────────────────── */}
       <div className="band-dark -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pb-8">
         <div className="space-y-6">
-          <PageHeader />
+          <PageHeader
+            datasetVersion={datasetVersion}
+            justRefreshed={justRefreshed}
+            onRefresh={forceRefresh}
+          />
 
           <motion.div
             initial={{ opacity: 0, y: 4 }}
@@ -367,13 +394,73 @@ export default function ForestInsights() {
 
 // ── Shared sub-components ──────────────────────────────────────────────────────
 
-function PageHeader() {
+function PageHeader({
+  datasetVersion,
+  justRefreshed,
+  onRefresh,
+}: {
+  datasetVersion?: { revision_id: string | null; published_at: string | null } | null
+  justRefreshed?: boolean
+  onRefresh?: () => void
+}) {
   return (
-    <div>
-      <h1 className="text-page-title">Forest Insights</h1>
-      <p className="text-meta text-[var(--text-muted)] mt-1">
-        Carbon analysis and forest data — Pomfret School Forest
-      </p>
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <h1 className="text-page-title">Forest Insights</h1>
+        <p className="text-meta text-[var(--text-muted)] mt-1">
+          Carbon analysis and forest data — Pomfret School Forest
+        </p>
+      </div>
+      {datasetVersion?.revision_id && (
+        <div className="flex items-center gap-2">
+          <DatasetFreshnessBadge
+            revisionId={datasetVersion.revision_id}
+            publishedAt={datasetVersion.published_at}
+            highlight={justRefreshed}
+          />
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="inline-flex items-center gap-1 rounded-pill border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-body)] hover:border-[var(--accent)]/40 transition"
+              title="Re-fetch the latest published dataset"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Refresh
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DatasetFreshnessBadge({
+  revisionId,
+  publishedAt,
+  highlight,
+}: {
+  revisionId: string
+  publishedAt: string | null
+  highlight?: boolean
+}) {
+  return (
+    <div
+      title={`Revision ${revisionId}${publishedAt ? ` · published ${publishedAt}` : ''}`}
+      className={`inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[11px] font-medium transition-colors duration-300 ${
+        highlight
+          ? 'border-[var(--accent)] bg-[var(--accent-light)] text-[var(--accent-text)]'
+          : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          highlight ? 'bg-[var(--accent)]' : 'bg-[var(--text-faint)]'
+        }`}
+      />
+      {highlight ? 'Just updated' : 'Live data'}
+      <span className="text-[var(--text-faint)]">·</span>
+      <span className="font-mono">{revisionId.slice(0, 16)}…</span>
     </div>
   )
 }

@@ -84,6 +84,11 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   let response: Response
   try {
     response = await fetch(url, {
+      // Snapshot/summary payloads change after every publish — disable the
+      // browser HTTP cache so the dashboard never silently shows stale data
+      // post-publish. Individual callers can override by passing their own
+      // ``cache`` option.
+      cache: 'no-store',
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -103,6 +108,30 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   }
 
   return response.json()
+}
+
+// ============================================================================
+// Dataset version (live publish detection — no admin token required)
+// ============================================================================
+
+export interface DatasetVersion {
+  revision_id: string | null
+  published_at: string | null
+  status: string
+}
+
+/**
+ * Public probe the dashboard polls to detect a freshly-published revision.
+ * Cheap (a single JSON read on the backend) so we can poll on a short
+ * interval without hammering the API. Returns ``null`` if the backend is
+ * unreachable so callers can degrade gracefully.
+ */
+export async function getDatasetVersion(): Promise<DatasetVersion | null> {
+  try {
+    return await fetchAPI<DatasetVersion>('/dataset-version')
+  } catch {
+    return null
+  }
 }
 
 /**

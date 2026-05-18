@@ -3,10 +3,13 @@ Admin-only FastAPI router for the Phase 1 preview pipeline.
 
 These routes are intentionally **non-public**:
 
-- Every endpoint requires an ``X-Admin-Token`` header that matches the
-  ``CO2_ADMIN_TOKEN`` environment variable (compared in constant time).
+- By default every endpoint requires an ``X-Admin-Token`` header that matches
+  ``CO2_ADMIN_TOKEN`` (compared in constant time).
 - If ``CO2_ADMIN_TOKEN`` is unset, the routes return **503** rather than
   silently allowing access.
+- **Local development only:** set ``CO2_DISABLE_ADMIN_AUTH=true`` to skip the
+  token check so preview/publish can be tested without pasting a header. Never
+  use this on a deployed or network-reachable backend.
 
 Mounted by ``src/api/app.py`` via ``app.include_router(admin_router)``.
 """
@@ -54,6 +57,20 @@ from pipeline.staging import (  # noqa: E402
 from pipeline.validate_inventory import validate_workbook  # noqa: E402
 
 ADMIN_TOKEN_ENV = "CO2_ADMIN_TOKEN"
+ADMIN_AUTH_DISABLED_ENV = "CO2_DISABLE_ADMIN_AUTH"
+
+ADMIN_AUTH_DISABLED_WARNING = (
+    "Admin auth is disabled. Use only for local development."
+)
+
+
+def is_admin_auth_disabled() -> bool:
+    """Return True if token checks are bypassed (local dev only).
+
+    Truthy values: ``1``, ``true``, ``yes`` (case-insensitive).
+    """
+    v = os.environ.get(ADMIN_AUTH_DISABLED_ENV, "").strip().lower()
+    return v in {"1", "true", "yes"}
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -67,6 +84,8 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 def require_admin_token(
     x_admin_token: Optional[str] = Header(default=None, alias="X-Admin-Token"),
 ) -> None:
+    if is_admin_auth_disabled():
+        return
     expected = os.environ.get(ADMIN_TOKEN_ENV, "").strip()
     if not expected:
         raise HTTPException(
@@ -127,7 +146,7 @@ class PublishSheetSyncRequest(PreviewSheetSyncRequest):
 @router.get("/health")
 async def admin_health(_: None = Depends(require_admin_token)) -> Dict[str, Any]:
     """Lightweight liveness check for admin endpoints."""
-    return {
+    payload: Dict[str, Any] = {
         "status": "healthy",
         "sheets_configured": bool(os.environ.get("CO2_SHEETS_SPREADSHEET_ID")),
         "credentials_present": bool(
@@ -138,6 +157,10 @@ async def admin_health(_: None = Depends(require_admin_token)) -> Dict[str, Any]
             "CO2_SHEETS_PUBLIC_CSV", ""
         ).lower() in {"1", "true", "yes"},
     }
+    if is_admin_auth_disabled():
+        payload["admin_auth_disabled"] = True
+        payload["warning"] = ADMIN_AUTH_DISABLED_WARNING
+    return payload
 
 
 @router.post("/preview-sheet-sync")

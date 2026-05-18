@@ -27,8 +27,12 @@ scheduled or triggered by any user-facing route.
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import pandas as pd
 
 from .diff_inventory import compute_workbook_diff, load_current_workbook
 from .process_inventory import (
@@ -61,7 +65,12 @@ from .sheets_reader import (
     normalize_workbook_ids,
     read_workbook,
 )
-from .validate_inventory import validate_workbook
+from .validate_inventory import (
+    detect_dbh_year_columns,
+    detect_id_column,
+    normalize_tree_id,
+    validate_workbook,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -253,7 +262,14 @@ def publish_sheet_sync(
         except Exception as e:  # noqa: BLE001 — cache failure must not poison publish
             cache_cleared = {"error": str(e)}  # type: ignore[assignment]
 
-    # ── 8. Update current pointer and append to index
+    # ── 8. Post-publish audit — verifies that every "added tree" reported by
+    # the diff actually made it through to the canonical raw + snapshot
+    # files. This is the dev-logging hook called out in the bug report and
+    # it surfaces issues like row drops, id-formatting drift, or stale
+    # caches the same way for every publish.
+    added_tree_audits = _audit_added_trees(diff.to_dict(), workbook)
+
+    # ── 9. Update current pointer and append to index
     previous_revision_id = read_current_revision_id()
     write_current_pointer(revision_id)
 
@@ -267,6 +283,7 @@ def publish_sheet_sync(
         promoted_files=promoted,
         cache_cleared=cache_cleared,
         previous_revision_id=previous_revision_id,
+        added_tree_audits=added_tree_audits,
     )
     write_revision_manifest(revision_id, manifest)
     append_to_index(
@@ -277,6 +294,235 @@ def publish_sheet_sync(
         }
     )
     return manifest
+
+
+# ---------------------------------------------------------------------------
+# Post-publish audit
+# ---------------------------------------------------------------------------
+
+
+# DBH columns in the raw spreadsheet are recorded by the school in INCHES.
+# All downstream processing multiplies by this factor to produce DBH_cm
+# (see ``src/preprocessing/carbon_calc.py``). Keep the constant here so the
+# audit logs match exactly what the dashboard ultimately bins on.
+DBH_INCHES_TO_CM = 2.54
+DBH_HISTOGRAM_BIN_WIDTH_CM = 10
+
+
+def _audit_added_trees(
+    diff_dict: Dict[str, Any],
+    staged_workbook: Dict[str, "pd.DataFrame"],
+) -> List[Dict[str, Any]]:
+    """For each tree the diff flagged as added, verify it survived the publish.
+
+    Returns one record per (plot, added_tree_id) with:
+
+    * ``found_in_canonical_raw`` — was the row actually written to
+      ``Data/Raw Data/CO2 Pomfret Raw Data - <Plot>.csv``?
+    * ``found_in_canonical_snapshot_year_0`` — and into
+      ``forest_snapshots_baseline_stochastic/forest_0_years.csv``?
+    * ``year_columns`` — the DBH/year columns detected in the staged sheet
+    * ``first_year_dbh_in`` / ``year_0_dbh_cm`` — the value the user typed
+      into the **first** DBH column (in inches, as stored), versus the
+      DBH_cm that ends up at year 0 (which is the **last observed** DBH,
+      converted to cm). These two often differ — surfacing both makes the
+      "why isn't my tree in the 80–90 cm bin?" question debuggable.
+    * ``year_0_bin_label_cm`` — which 10 cm histogram bin the snapshot row
+      lands in. Matches ``computeDbhHistogram`` in the frontend.
+    * ``plot_total_after_publish`` — row count in the canonical raw CSV
+      after publish (cheap before/after sanity check).
+
+    The audit reads from the *canonical* paths only — i.e. it confirms the
+    promote step actually swapped files in. It deliberately does not read
+    from the per-revision directory because the bug we're chasing is about
+    canonical drift, not revision-dir contents.
+    """
+    out: List[Dict[str, Any]] = []
+
+    canonical_raw_dir = _resolve_raw_data_dir()
+    canonical_snapshot_dir = (
+        _resolve_processed_data_dir() / SNAPSHOTS_BASELINE_STOCH_SUBDIR
+    )
+    snapshot_path = canonical_snapshot_dir / "forest_0_years.csv"
+
+    snapshot_df: Optional["pd.DataFrame"]
+    try:
+        snapshot_df = pd.read_csv(snapshot_path)
+    except Exception:  # noqa: BLE001 — audit must never fail the publish
+        snapshot_df = None
+
+    per_plot = (diff_dict or {}).get("per_plot") or {}
+    for plot, plot_diff in per_plot.items():
+        added = (plot_diff or {}).get("added_trees") or []
+        if not added:
+            continue
+
+        canonical_raw_path = (
+            canonical_raw_dir / f"CO2 Pomfret Raw Data - {plot}.csv"
+        )
+        try:
+            canonical_df = pd.read_csv(canonical_raw_path)
+        except Exception:  # noqa: BLE001
+            canonical_df = None
+
+        plot_total = int(len(canonical_df)) if canonical_df is not None else None
+        canonical_id_set, year_cols, id_col = _index_canonical_for_audit(canonical_df)
+
+        staged_df = staged_workbook.get(plot)
+        staged_index = _index_staged_for_audit(staged_df)
+
+        for entry in added:
+            tree_id = normalize_tree_id(entry.get("tree_id"))
+            staged_row = staged_index.get(tree_id) if staged_index else None
+            first_year_dbh_in = staged_row.get("first_year_dbh") if staged_row else None
+            staged_year_columns = staged_row.get("year_columns") if staged_row else []
+            staged_first_year = staged_row.get("first_year") if staged_row else None
+
+            audit: Dict[str, Any] = {
+                "plot": plot,
+                "tree_id": tree_id,
+                "species": entry.get("species"),
+                "found_in_canonical_raw": tree_id in canonical_id_set,
+                "canonical_id_column": id_col,
+                "year_columns": staged_year_columns,
+                "first_year": staged_first_year,
+                "first_year_dbh_in": (
+                    None if first_year_dbh_in is None else float(first_year_dbh_in)
+                ),
+                "first_year_dbh_cm": (
+                    None
+                    if first_year_dbh_in is None
+                    else round(float(first_year_dbh_in) * DBH_INCHES_TO_CM, 4)
+                ),
+                "plot_total_after_publish": plot_total,
+                "raw_columns_present": (
+                    list(canonical_df.columns) if canonical_df is not None else []
+                ),
+                "raw_year_columns": list(year_cols.values()) if year_cols else [],
+            }
+
+            audit.update(
+                _augment_with_snapshot(
+                    snapshot_df=snapshot_df, plot=plot, tree_id=tree_id
+                )
+            )
+
+            out.append(audit)
+    return out
+
+
+def _index_canonical_for_audit(
+    df: Optional["pd.DataFrame"],
+) -> Tuple[set, Dict[int, str], Optional[str]]:
+    if df is None or df.empty:
+        return set(), {}, None
+    cols = list(df.columns)
+    id_col = detect_id_column(cols)
+    year_cols = detect_dbh_year_columns(cols)
+    if id_col is None:
+        return set(), year_cols, None
+    ids = {normalize_tree_id(v) for v in df[id_col].tolist()}
+    ids.discard("")
+    return ids, year_cols, id_col
+
+
+def _index_staged_for_audit(
+    df: Optional["pd.DataFrame"],
+) -> Dict[str, Dict[str, Any]]:
+    """Return ``{normalized_tree_id: row metadata}`` for the staged workbook."""
+    if df is None or df.empty:
+        return {}
+    cols = list(df.columns)
+    id_col = detect_id_column(cols)
+    year_cols = detect_dbh_year_columns(cols)
+    if id_col is None or not year_cols:
+        return {}
+    sorted_years = sorted(year_cols.keys())
+    first_year = sorted_years[0] if sorted_years else None
+    first_col = year_cols[first_year] if first_year is not None else None
+    out: Dict[str, Dict[str, Any]] = {}
+    for _, row in df.iterrows():
+        tid = normalize_tree_id(row.get(id_col))
+        if not tid:
+            continue
+        first_value: Optional[float] = None
+        if first_col is not None:
+            try:
+                cell = row.get(first_col)
+                if cell is not None and str(cell).strip() not in ("", "nan", "NaN"):
+                    first_value = float(cell)
+            except (TypeError, ValueError):
+                first_value = None
+        out[tid] = {
+            "first_year": first_year,
+            "first_year_dbh": first_value,
+            "year_columns": [year_cols[y] for y in sorted_years],
+        }
+    return out
+
+
+def _augment_with_snapshot(
+    *,
+    snapshot_df: Optional["pd.DataFrame"],
+    plot: str,
+    tree_id: str,
+) -> Dict[str, Any]:
+    if snapshot_df is None or snapshot_df.empty:
+        return {
+            "found_in_canonical_snapshot_year_0": False,
+            "year_0_dbh_cm": None,
+            "year_0_bin_label_cm": None,
+        }
+    # Normalise both sides — snapshot rows that came from a legacy publish may
+    # still carry the thousands-separator form ("1,000"), but the diff entry
+    # is already comma-free thanks to ``normalize_tree_id``.
+    normalised_ids = snapshot_df["TreeID"].astype(str).map(normalize_tree_id)
+    plot_match = snapshot_df["Plot"].astype(str).str.lower() == plot.lower()
+    matches = snapshot_df[plot_match & (normalised_ids == tree_id)]
+    if matches.empty:
+        return {
+            "found_in_canonical_snapshot_year_0": False,
+            "year_0_dbh_cm": None,
+            "year_0_bin_label_cm": None,
+        }
+    row = matches.iloc[0]
+    try:
+        dbh_cm = float(row["DBH_cm"])
+    except (TypeError, ValueError):
+        dbh_cm = None
+    bin_label = _bin_label_for_dbh_cm(dbh_cm) if dbh_cm is not None else None
+    return {
+        "found_in_canonical_snapshot_year_0": True,
+        "year_0_dbh_cm": dbh_cm,
+        "year_0_bin_label_cm": bin_label,
+    }
+
+
+def _bin_label_for_dbh_cm(
+    dbh_cm: float, *, bin_width: int = DBH_HISTOGRAM_BIN_WIDTH_CM
+) -> str:
+    """Match the convention in ``web/src/lib/visualizationData.ts``.
+
+    Bins are half-open ``[start, start+bin_width)`` so 80 lands in
+    ``80–90`` and 90 lands in ``90–100``.
+    """
+    start = int(dbh_cm // bin_width) * bin_width
+    end = start + bin_width
+    return f"{start}–{end}"
+
+
+def _resolve_raw_data_dir() -> Path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from config import RAW_DATA_DIR  # type: ignore  # noqa: E402
+
+    return RAW_DATA_DIR
+
+
+def _resolve_processed_data_dir() -> Path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from config import PROCESSED_DATA_DIR  # type: ignore  # noqa: E402
+
+    return PROCESSED_DATA_DIR
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +542,7 @@ def _build_manifest(
     cache_cleared: Optional[Dict[str, int]],
     error: Optional[str] = None,
     previous_revision_id: Optional[str] = None,
+    added_tree_audits: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     from datetime import datetime, timezone
 
@@ -311,14 +558,16 @@ def _build_manifest(
     overall_diff = (diff or {}).get("overall", {})
     totals = overall_diff.get("totals", {})
 
+    now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    published_at = now_iso if status == "published" else None
+
     return {
         "revision_id": revision_id,
         "status": status,
-        "schema_version": 2,
-        "published_at": datetime.now(timezone.utc).isoformat(timespec="seconds")
-        if status == "published"
-        else None,
-        "recorded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "schema_version": 3,
+        "published_at": published_at,
+        "recorded_at": now_iso,
+        "dataset_version": _build_dataset_version(revision_id, published_at),
         "previous_revision_id": previous_revision_id,
         "source": source,
         "plots_processed": plots_processed,
@@ -337,7 +586,18 @@ def _build_manifest(
         "build_log": build_log,
         "promoted_files": promoted_files,
         "cache_cleared": cache_cleared,
+        "added_tree_audits": added_tree_audits or [],
         "error": error,
+    }
+
+
+def _build_dataset_version(
+    revision_id: str, published_at: Optional[str]
+) -> Dict[str, Any]:
+    """Compact dataset-version blob the dashboard polls to detect new publishes."""
+    return {
+        "revision_id": revision_id,
+        "published_at": published_at,
     }
 
 
