@@ -1,8 +1,4 @@
 Plot,TreeID,Species,Year,DBH,GapYears,PrevDBH,GrowthRate,GrowthType
-Middle,1000,Sugar Maple,2022,30.0,,,,initial
-Middle,1000,Sugar Maple,2023,30.1,1.0,30.0,0.003333333333333381,normal
-Middle,1000,Sugar Maple,2024,30.2,1.0,30.1,0.0033222591362125535,normal
-Middle,1000,Sugar Maple,2025,30.3,1.0,30.2,0.0033112582781457426,normal
 Middle,401,Beech,2024,3.19,,,,initial
 Middle,401,Beech,2025,3.2,1.0,3.19,0.0031347962382445864,normal
 Middle,416 (was 683),Sugar Maple,2022,2.25,,,,initial
