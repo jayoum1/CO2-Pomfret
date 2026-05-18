@@ -254,11 +254,16 @@ export default function AdminPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-2">
+        <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--text-faint)]">
+          Data station · restricted
+        </p>
         <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-[var(--accent)]" />
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--primary)_40%,var(--border))] bg-[var(--primary-light)]">
+            <Shield className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.5} />
+          </span>
           <h1 className="text-page-title">Admin / Sheet Sync</h1>
         </div>
-        <p className="text-[var(--text-muted)] max-w-2xl">
+        <p className="text-[var(--text-muted)] max-w-2xl leading-relaxed">
           Local-only tool for previewing and publishing Google Sheets data
           through the FastAPI admin routes. Leave the token blank if the
           backend is running with{' '}
@@ -272,13 +277,13 @@ export default function AdminPage() {
       {authDisabledBanner.show && (
         <div
           role="status"
-          className="rounded-card border border-[var(--accent)]/50 bg-[var(--accent-light)]/40 px-4 py-3 text-sm text-[var(--accent-text)]"
+          className="rounded-card border border-[color-mix(in_srgb,var(--warning)_55%,var(--border))] border-l-[3px] border-l-[var(--warning)] bg-[color-mix(in_srgb,var(--warning)_10%,var(--surface))] px-4 py-3 text-sm text-[var(--text)]"
         >
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--warning)]" strokeWidth={1.5} />
             <div>
-              <div className="font-semibold">Admin auth is disabled on this backend</div>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">
+              <div className="font-display font-semibold text-[var(--text)]">Admin auth is disabled on this backend</div>
+              <p className="mt-1 text-xs text-[var(--text-muted)] leading-relaxed">
                 {authDisabledBanner.warning ||
                   'Use only for local development. Never expose this setting on a public deployment.'}
               </p>

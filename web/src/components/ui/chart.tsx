@@ -46,7 +46,7 @@ export const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerPro
             // Style Recharts internal SVG text/grid via attribute selectors.
             // CSS vars automatically switch in dark mode.
             '[&_.recharts-cartesian-axis-tick_text]:fill-[var(--text-muted)]',
-            '[&_.recharts-cartesian-grid_line[stroke]]:stroke-[var(--border)]',
+            '[&_.recharts-cartesian-grid_line[stroke]]:stroke-[var(--chart-grid)] [&_.recharts-cartesian-grid_line[stroke]]:opacity-90',
             '[&_.recharts-polar-grid_[stroke]]:stroke-[var(--border)]',
             '[&_.recharts-sector]:outline-none',
             '[&_.recharts-surface]:outline-none',
@@ -150,7 +150,7 @@ export const ChartTooltipContent = React.forwardRef<
           {payload.map((item, index) => {
             const key = String(item.dataKey)
             const cfg = config[key]
-            const color = cfg?.color ?? item.color ?? item.fill ?? '#14b8a6'
+            const color = cfg?.color ?? item.color ?? item.fill ?? '#4d7264'
             const name = cfg?.label ?? item.name
 
             const [displayValue, displayName] = formatter
@@ -170,8 +170,8 @@ export const ChartTooltipContent = React.forwardRef<
                     style={{ backgroundColor: color }}
                   />
                 )}
-                <span className="text-slate-500">{displayName}</span>
-                <span className="ml-auto font-mono font-semibold tabular-nums text-slate-800">
+                <span className="text-[var(--text-muted)]">{displayName}</span>
+                <span className="ml-auto font-mono font-semibold tabular-nums text-[var(--text)]">
                   {displayValue}
                 </span>
               </div>
@@ -222,7 +222,7 @@ export const ChartLegendContent = React.forwardRef<
               className="h-2 w-2 shrink-0 rounded-sm"
               style={{ backgroundColor: color }}
             />
-            <span className="text-slate-500">{label}</span>
+            <span className="text-[var(--text-muted)]">{label}</span>
           </div>
         )
       })}

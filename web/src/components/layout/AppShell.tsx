@@ -27,20 +27,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      {/* Header */}
-      <header className="bg-[var(--surface)]/95 backdrop-blur-md border-b border-[var(--border)] dark:border-[var(--border-strong)] shadow-[0_1px_3px_rgba(0,0,0,0.07)] dark:shadow-[0_1px_8px_rgba(0,0,0,0.35)] sticky top-0 z-50">
+    <div className="relative z-[1] min-h-screen bg-[var(--bg)]">
+      {/* Header — field station strip */}
+      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] backdrop-blur-md dark:border-[var(--border-strong)] dark:bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] shadow-[0_1px_0_color-mix(in_srgb,var(--border)_55%,transparent),0_8px_24px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_0_color-mix(in_srgb,var(--border)_40%,transparent),0_8px_28px_rgba(0,0,0,0.35)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-stretch h-14">
+          <div className="flex justify-between items-stretch min-h-[3.5rem]">
 
-            {/* Logo */}
-            <div className="flex items-center gap-2.5 mr-8">
-              <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-card flex items-center justify-center shrink-0">
-                <Leaf className="w-4 h-4 text-[var(--primary)]" />
+            {/* Logo + catalog line */}
+            <div className="flex items-center gap-3 mr-8 py-2">
+              <div className="w-9 h-9 rounded-full border border-[color-mix(in_srgb,var(--primary)_45%,var(--border))] bg-[var(--primary-light)] flex items-center justify-center shrink-0 ring-2 ring-[color-mix(in_srgb,var(--surface)_100%,transparent)]">
+                <Leaf className="w-4 h-4 text-[var(--primary)]" strokeWidth={1.5} />
               </div>
-              <Link href="/" className="text-[15px] font-semibold text-[var(--text)] no-underline focus:outline-none tracking-tight">
-                CO₂ Pomfret
-              </Link>
+              <div className="flex flex-col justify-center min-w-0">
+                <Link href="/" className="font-display text-[15px] sm:text-[16px] font-semibold text-[var(--text)] no-underline focus:outline-none tracking-[-0.02em] leading-tight">
+                  CO₂ Pomfret
+                </Link>
+                <span className="hidden sm:block text-[10px] font-mono uppercase tracking-[0.12em] text-[var(--text-faint)] mt-0.5">
+                  Pomfret School · Forest Observatory
+                </span>
+              </div>
             </div>
 
             {/* Desktop Navigation */}
@@ -51,10 +56,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center px-3 text-sm font-medium border-b-2 transition-colors duration-150 no-underline focus:outline-none whitespace-nowrap ${
+                    className={`flex items-center px-3 text-sm font-medium border-b-[3px] transition-colors duration-150 no-underline focus:outline-none whitespace-nowrap ${
                       isActive
-                        ? 'text-[var(--accent-text)] border-[var(--accent)]'
-                        : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-body)] hover:border-[var(--border)]'
+                        ? 'text-[var(--text)] border-[var(--primary)]'
+                        : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-body)] hover:border-[color-mix(in_srgb,var(--border)_80%,var(--primary))]'
                     }`}
                   >
                     {item.label}
@@ -94,17 +99,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[var(--border)] bg-[var(--surface)]">
+          <div className="md:hidden border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_96%,transparent)] backdrop-blur-md">
             <div className="px-3 py-2 space-y-0.5">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-3 py-2.5 rounded-card text-sm font-medium no-underline focus:outline-none transition-colors ${
+                  className={`block px-3 py-2.5 rounded-card text-sm font-medium no-underline focus:outline-none transition-colors border-l-[3px] ${
                     pathname === item.href
-                      ? 'bg-[var(--primary-light)] text-[var(--primary)]'
-                      : 'text-[var(--text-body)] hover:bg-[var(--surface-2)]'
+                      ? 'border-[var(--primary)] bg-[var(--primary-light)] text-[var(--text)]'
+                      : 'border-transparent text-[var(--text-body)] hover:bg-[var(--surface-2)]'
                   }`}
                 >
                   {item.label}
@@ -116,17 +121,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative z-[1] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <PageTransition>
           {children}
         </PageTransition>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border)] mt-auto">
+      <footer className="relative z-[1] border-t border-[var(--border)] mt-auto bg-[color-mix(in_srgb,var(--surface)_35%,transparent)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="text-center text-meta text-[var(--text-faint)]">
-            <p>Pomfret School · Forest Carbon Project · {new Date().getFullYear()}</p>
+          <div className="text-center text-meta font-mono text-[var(--text-faint)] tracking-wide">
+            <p>Pomfret School · Field records & carbon observatory · {new Date().getFullYear()}</p>
           </div>
         </div>
       </footer>

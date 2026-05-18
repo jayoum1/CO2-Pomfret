@@ -45,7 +45,10 @@ function MetricRowSkeleton() {
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
       {[0, 1, 2, 3].map(i => (
-        <div key={i} className="rounded-card border border-[var(--border)] bg-[var(--surface)] p-4 animate-pulse">
+        <div
+          key={i}
+          className="rounded-card border border-[var(--border)] border-l-[3px] border-l-[color-mix(in_srgb,var(--primary)_35%,var(--border))] bg-[var(--surface)] p-4 animate-pulse shadow-[var(--shadow-soft)]"
+        >
           <div className="h-3 w-20 rounded bg-[var(--surface-2)] mb-4" />
           <div className="h-7 w-24 rounded bg-[var(--surface-2)] mb-2" />
           <div className="h-2.5 w-12 rounded bg-[var(--surface-2)]" />
@@ -74,18 +77,21 @@ function CardSkeleton({ height = 'h-[340px]' }: { height?: string }) {
 function ErrorBanner({ message }: { message: string }) {
   const isBackendDown = message.includes('Cannot reach the backend')
   return (
-    <div className="rounded-card border border-amber-200 bg-amber-50/60 p-5 border-l-4 border-l-amber-400">
+    <div
+      role="alert"
+      className="rounded-card border border-[color-mix(in_srgb,var(--warning)_45%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_08%,var(--surface))] p-5 border-l-[3px] border-l-[var(--warning)] dark:bg-[color-mix(in_srgb,var(--warning)_12%,var(--surface-2))]"
+    >
       <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+        <AlertTriangle className="w-5 h-5 text-[var(--warning)] mt-0.5 shrink-0" strokeWidth={1.5} />
         <div>
-          <h3 className="text-sm font-semibold text-[var(--text)] mb-1">
+          <h3 className="text-sm font-display font-semibold text-[var(--text)] mb-1">
             {isBackendDown ? 'Backend Not Running' : 'Error Loading Data'}
           </h3>
           <p className="text-meta text-[var(--text-muted)] mb-3">{message}</p>
           {isBackendDown && (
-            <div className="rounded-control bg-[var(--surface)] border border-amber-200/60 px-3 py-2.5">
-              <p className="text-xs font-medium text-[var(--text-muted)] mb-1.5">Start the backend:</p>
-              <code className="text-xs bg-[var(--surface-2)] border border-[var(--border)] px-2 py-1 rounded block text-[var(--text)]">
+            <div className="rounded-control bg-[var(--surface)] border border-[var(--border)] px-3 py-2.5">
+              <p className="text-[10px] font-mono uppercase tracking-wide text-[var(--text-muted)] mb-1.5">Start the backend</p>
+              <code className="text-xs font-mono bg-[var(--surface-2)] border border-[var(--border)] px-2 py-1 rounded block text-[var(--text)]">
                 cd src && uvicorn api.app:app --reload
               </code>
             </div>
@@ -100,9 +106,14 @@ function ErrorBanner({ message }: { message: string }) {
 
 function SectionDivider({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="border-t border-[var(--border)] pt-2">
-      <h2 className="text-section-title mt-4">{title}</h2>
-      {subtitle && <p className="text-meta text-[var(--text-muted)] mt-0.5">{subtitle}</p>}
+    <div className="section-field-rule mt-2">
+      <div className="flex items-baseline gap-3 mt-3 flex-wrap">
+        <h2 className="text-section-title">{title}</h2>
+        <span className="hidden sm:inline text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--text-faint)]">
+          Field log
+        </span>
+      </div>
+      {subtitle && <p className="text-meta text-[var(--text-muted)] mt-1 max-w-3xl">{subtitle}</p>}
     </div>
   )
 }
@@ -117,15 +128,16 @@ interface PillToggleProps<T extends string> {
 
 function PillToggle<T extends string>({ value, options, onChange }: PillToggleProps<T>) {
   return (
-    <div className="flex rounded-control bg-[var(--surface-2)] p-0.5 gap-0.5 shrink-0">
+    <div className="flex rounded-control border border-[color-mix(in_srgb,var(--border)_70%,transparent)] bg-[var(--surface-2)] p-0.5 gap-0.5 shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)]">
       {options.map(opt => (
         <button
           key={opt.value}
+          type="button"
           onClick={() => onChange(opt.value)}
           className={`
             px-3 py-1 rounded-pill text-xs font-medium transition-all duration-150 whitespace-nowrap
             ${value === opt.value
-              ? 'bg-[var(--accent)] text-white shadow-[0_1px_6px_var(--accent-glow)]'
+              ? 'bg-[var(--primary)] text-[var(--on-primary)] shadow-[0_1px_8px_var(--primary-glow)]'
               : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'}
           `}
         >
@@ -405,10 +417,13 @@ function PageHeader({
 }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-[var(--text-faint)] mb-1">
+          Baseline simulation · observatory index
+        </p>
         <h1 className="text-page-title">Forest Insights</h1>
-        <p className="text-meta text-[var(--text-muted)] mt-1">
-          Carbon analysis and forest data — Pomfret School Forest
+        <p className="text-meta text-[var(--text-muted)] mt-1 max-w-2xl">
+          Carbon storage, diameter structure, and plot-scale dynamics for the Pomfret School forest — grounded in inventory and growth projections.
         </p>
       </div>
       {datasetVersion?.revision_id && (
@@ -422,11 +437,11 @@ function PageHeader({
             <button
               type="button"
               onClick={onRefresh}
-              className="inline-flex items-center gap-1 rounded-pill border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-body)] hover:border-[var(--accent)]/40 transition"
+              className="inline-flex items-center gap-1 rounded-pill border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11px] font-mono uppercase tracking-wide text-[var(--text-muted)] hover:text-[var(--text-body)] hover:border-[color-mix(in_srgb,var(--primary)_50%,var(--border))] transition"
               title="Re-fetch the latest published dataset"
             >
-              <RefreshCw className="h-3 w-3" />
-              Refresh
+              <RefreshCw className="h-3 w-3" strokeWidth={1.5} />
+              Sync
             </button>
           )}
         </div>
@@ -447,20 +462,20 @@ function DatasetFreshnessBadge({
   return (
     <div
       title={`Revision ${revisionId}${publishedAt ? ` · published ${publishedAt}` : ''}`}
-      className={`inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[11px] font-medium transition-colors duration-300 ${
+      className={`inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[11px] font-mono uppercase tracking-wide transition-colors duration-300 ${
         highlight
-          ? 'border-[var(--accent)] bg-[var(--accent-light)] text-[var(--accent-text)]'
-          : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'
+          ? 'border-[var(--primary)] bg-[var(--primary-light)] text-[var(--text)]'
+          : 'border-[var(--border)] bg-[color-mix(in_srgb,var(--surface)_85%,var(--surface-2))] text-[var(--text-muted)]'
       }`}
     >
       <span
-        className={`h-1.5 w-1.5 rounded-full ${
-          highlight ? 'bg-[var(--accent)]' : 'bg-[var(--text-faint)]'
+        className={`h-1.5 w-1.5 rounded-full ring-2 ring-[color-mix(in_srgb,var(--surface)_100%,transparent)] ${
+          highlight ? 'bg-[var(--primary)] shadow-[0_0_8px_var(--primary-glow)]' : 'bg-[var(--text-faint)]'
         }`}
       />
-      {highlight ? 'Just updated' : 'Live data'}
-      <span className="text-[var(--text-faint)]">·</span>
-      <span className="font-mono">{revisionId.slice(0, 16)}…</span>
+      {highlight ? 'Revised' : 'Dataset'}
+      <span className="text-[var(--text-faint)] normal-case tracking-normal">·</span>
+      <span className="font-mono normal-case tracking-normal">{revisionId.slice(0, 16)}…</span>
     </div>
   )
 }

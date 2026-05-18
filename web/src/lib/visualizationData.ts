@@ -24,12 +24,12 @@ export const KEYFRAME_YEARS = [0, 5, 10, 20] as const
 export type KeyframeYear = (typeof KEYFRAME_YEARS)[number]
 
 export const PLOT_COLORS: Record<string, string> = {
-  Upper: '#0d9488',   // teal-600
-  Middle: '#059669',  // emerald-600
-  Lower: '#2563eb',   // blue-600
+  Upper: '#4a6b62',
+  Middle: '#5f7d5a',
+  Lower: '#526e80',
 }
 
-export const TOTAL_COLOR = '#14b8a6'   // teal-500
+export const TOTAL_COLOR = '#4d7264'
 export const CO2E_FACTOR = 3.667       // kgC → kg CO₂e
 
 // ── Core types ────────────────────────────────────────────────────────────────

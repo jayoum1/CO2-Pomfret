@@ -1,16 +1,38 @@
 import type { Metadata } from 'next'
+import { Fraunces, Source_Sans_3, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import AppShell from '@/components/layout/AppShell'
 
 const exportMidtermOnly = process.env.NEXT_PUBLIC_EXPORT_MIDTERM_SITE === 'true'
 
+const fontDisplay = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+})
+
+const fontSans = Source_Sans_3({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const fontMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-mono',
+  display: 'swap',
+})
+
+const fontVariables = `${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable}`
+
 export const metadata: Metadata = {
   title: exportMidtermOnly
     ? 'CO₂ Pomfret — Project showcase'
-    : 'CO2 Pomfret - Forest Simulation & Analysis',
+    : 'CO₂ Pomfret — Pomfret School Forest Observatory',
   description: exportMidtermOnly
     ? 'Pomfret School forest carbon project — midterm showcase'
-    : 'Forest growth and carbon sequestration simulation for Pomfret School',
+    : 'Scientific and educational platform for forest carbon, tree growth, and ecological projections at Pomfret School.',
 }
 
 /**
@@ -40,19 +62,19 @@ export default function RootLayout({
 }) {
   if (exportMidtermOnly) {
     return (
-      <html lang="en" suppressHydrationWarning>
-        <body className="min-h-screen antialiased">{children}</body>
+      <html lang="en" suppressHydrationWarning className={fontVariables}>
+        <body className="min-h-screen antialiased font-sans">{children}</body>
       </html>
     )
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={fontVariables}>
       <head>
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body>
+      <body className="font-sans">
         <AppShell>
           {children}
         </AppShell>

@@ -59,97 +59,72 @@
     --font-size-meta:    12px;
     --font-size-label:   11px;
 
-    /* ── BACKGROUND & SURFACE ────────────────────────────────────────────────
+    /* ── BACKGROUND & SURFACE (field journal — warm parchment) ─────────────
      * Elevation hierarchy (light):  bg < surface-2 < surface < surface-3
-     * --bg          Page canvas
-     * --surface     Card / panel lift (cards float above bg)
-     * --surface-2   Recessed areas: pill trays, input backs, tab lists
-     * --surface-3   Elevated sections: chart containers, featured panels
      */
-    --bg:        #e8eff5;   /* soft blue-gray canvas */
-    --surface:   #ffffff;   /* cards */
-    --surface-2: #f0f5f9;   /* recessed trays */
-    --surface-3: #f1f5f9;   /* elevated panels — neutral slate (no green cast) */
-    /* kept for legacy references */
-    --bg-alt:    #ffffff;
-    --bg-card:   #ffffff;
-    --panel:     #ffffff;
-    --panel2:    #f0f5f9;
+    --bg:        #f4f0e6;   /* warm off-white canvas */
+    --surface:   #faf7ef;   /* lifted cards — near-parchment */
+    --surface-2: #ebe6da;   /* recessed trays, controls */
+    --surface-3: #e2dbd0;   /* chart wells, elevated panels */
+    --bg-alt:    #faf7ef;
+    --bg-card:   #faf7ef;
+    --panel:     #faf7ef;
+    --panel2:    #ebe6da;
 
-    /* ── TEXT ────────────────────────────────────────────────────────────────
-     * Use these instead of raw slate-* classes to keep colour changes global.
-     */
-    --text:       #1e293b;   /* slate-800 — headings, values */
-    --text-body:  #334155;   /* slate-700 — paragraph text  */
-    --text-muted: #64748b;   /* slate-500 — captions, meta  */
-    --text-faint: #94a3b8;   /* slate-400 — placeholders    */
-    --muted:      #64748b;
+    /* ── TEXT ──────────────────────────────────────────────────────────────── */
+    --text:       #2a2824;   /* soft charcoal */
+    --text-body:  #3f3c36;
+    --text-muted: #6a655b;
+    --text-faint: #938c80;
+    --muted:      #6a655b;
 
-    /* ── BORDER ──────────────────────────────────────────────────────────────
-     * --border        Standard card/input border
-     * --border-strong Prominent borders for panels, chart wrappers
-     * --border-focus  Input focus ring
-     */
-    --border:        #c8d8e5;   /* visible but not harsh */
-    --border-strong: #96b4c8;   /* for chart containers, featured panels */
-    --border-focus:  rgba(13, 148, 136, 0.45);
+    /* ── BORDER ────────────────────────────────────────────────────────────── */
+    --border:        #cfc6b6;
+    --border-strong: #b0a590;
+    --border-focus:  rgba(77, 114, 100, 0.45);
 
-    /* ── PRIMARY (Forest Teal) ───────────────────────────────────────────────
-     * The signature colour of the app. Maps to Tailwind teal-600.
-     */
-    --primary:       #0d9488;   /* teal-600 — primary actions, active states */
-    --primary-hover: #0f766e;   /* teal-700 */
-    --primary-light: #ccfbf1;   /* teal-100 — icon backgrounds, highlights   */
-    --primary-dark:  #0f766e;
-    --primary-glow:  rgba(13, 148, 136, 0.25);
+    /* ── PRIMARY (muted sage) ────────────────────────────────────────────── */
+    --primary:       #4d7264;
+    --primary-hover: #3d5c50;
+    --primary-light: rgba(77, 114, 100, 0.11);
+    --primary-dark:  #3d5c50;
+    --primary-glow:  rgba(77, 114, 100, 0.22);
+    --on-primary:    #faf7ef;
 
-    /* ── SECONDARY (Forest Green) ────────────────────────────────────────────
-     * Warmer green used for comparison series and growth indicators.
-     */
-    --secondary:       #059669;   /* emerald-600 */
-    --secondary-hover: #047857;
-    --secondary-light: #d1fae5;   /* emerald-100 */
+    /* ── SECONDARY (moss) ──────────────────────────────────────────────────── */
+    --secondary:       #5f7d5a;
+    --secondary-hover: #4d6848;
+    --secondary-light: rgba(95, 125, 90, 0.12);
 
-    /* ── CHART PALETTE ───────────────────────────────────────────────────────
-     * Fixed 7-colour sequence used by all Recharts components.
-     * Named semantically so components don't need to know index.
-     */
-    --chart-1: #0d9488;   /* teal-600    — primary / All Trees          */
-    --chart-2: #059669;   /* emerald-600 — Lower plot / growth          */
-    --chart-3: #2563eb;   /* blue-600    — Middle plot / structural     */
-    --chart-4: #7c3aed;   /* violet-600  — Upper plot / CO₂e            */
-    --chart-5: #d97706;   /* amber-600   — warning / disturbance        */
-    --chart-6: #db2777;   /* pink-600    — species accent               */
-    --chart-7: #0891b2;   /* cyan-600    — secondary structural         */
+    /* ── CHART PALETTE (ecological, desaturated, data-first) ─────────────── */
+    --chart-grid:    color-mix(in srgb, var(--border) 70%, transparent);
+    --chart-1: #4a6b62;   /* primary / total — sage */
+    --chart-2: #5f7d5a;   /* moss / growth */
+    --chart-3: #526e80;   /* slate-lichen — structural */
+    --chart-4: #8b6f4e;   /* bark / earth */
+    --chart-5: #9c6b43;   /* disturbance amber */
+    --chart-6: #756883;   /* muted violet — accent species */
+    --chart-7: #4f7f78;   /* shallow water green */
 
     /* ── ECOLOGICAL STATE COLOURS ────────────────────────────────────────────
      * Applied to vector forest trees and scenario overlays.
      */
-    --eco-healthy:    #16a34a;   /* green-600   */
-    --eco-stressed:   #ca8a04;   /* yellow-600  */
-    --eco-disturbed:  #dc2626;   /* red-600     */
-    --eco-recovering: #0284c7;   /* sky-600     */
+    --eco-healthy:    #3f6f4f;
+    --eco-stressed:   #9a7326;
+    --eco-disturbed:  #b03a32;
+    --eco-recovering: #3a6d86;
 
     /* ── SEMANTIC ────────────────────────────────────────────────────────────*/
-    --success: #059669;
-    --error:   #dc2626;
-    --warning: #d97706;
+    --success: #5f7d5a;
+    --error:   #b03a32;
+    --warning: #9c6b43;
 
-    /* ── ACCENT (Vibrant Forest Green) ─────────────────────────────────────────
-     * Layered ON TOP of primary teal — used sparingly for high-impact emphasis.
-     * CTAs, active selections, key stat highlights. NOT for body text or borders.
-     *
-     *   --accent       Vivid green-500 — button bg, active pill fill
-     *   --accent-hover Green-600       — pressed / hover state
-     *   --accent-text  Green-700       — when accent IS the text (AA contrast ✓)
-     *   --accent-light Green-100       — icon bg tints, subtle panel washes
-     *   --accent-glow  Alpha green     — button shadow, focus bloom
-     */
-    --accent:       #22c55e;
-    --accent-hover: #16a34a;
-    --accent-text:  #15803d;
-    --accent-light: #dcfce7;
-    --accent-glow:  rgba(34, 197, 94, 0.20);
+    /* ── ACCENT (ink + deep moss — scholarly emphasis) ───────────────────── */
+    --accent:       #3d5c50;
+    --accent-hover: #324a40;
+    --accent-text:  #2a4038;
+    --accent-light: rgba(61, 92, 80, 0.12);
+    --accent-glow:  rgba(61, 92, 80, 0.18);
 
     /* ── SECTION BANDS (legacy token) ─────────────────────────────────────────
      * Full-bleed wrappers (.band-dark / .band-light) no longer paint a
@@ -162,17 +137,17 @@
      * --shadow-glow  Accent-tinted shadow for selected/active elements
      * --outline-glow Focus bloom for interactive elements
      */
-    --shadow-soft:  0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+    --shadow-soft:  0 1px 3px rgba(42, 40, 36, 0.06), 0 0 0 1px rgba(42, 40, 36, 0.04);
     --shadow-glow:  0 0 0 2px var(--accent-glow);
-    --outline-glow: rgba(34, 197, 94, 0.22);
+    --outline-glow: rgba(77, 114, 100, 0.22);
 
-    /* Legacy teal/blue aliases — kept for chart components that reference them */
-    --teal-500: #14b8a6;
-    --teal-600: #0d9488;
-    --green-500: #10b981;
-    --green-600: #059669;
-    --blue-500: #3b82f6;
-    --blue-600: #2563eb;
+    /* Legacy aliases — aligned with ecological palette */
+    --teal-500: #5a8578;
+    --teal-600: #4d7264;
+    --green-500: #6a8f64;
+    --green-600: #5f7d5a;
+    --blue-500: #5e7a8c;
+    --blue-600: #526e80;
   }
 
   /* ── DARK THEME ──────────────────────────────────────────────────────────────
@@ -181,85 +156,76 @@
    * every component using var(--*) automatically adapts.
    */
   .dark {
-    /* Backgrounds
-     * Elevation hierarchy: bg < surface-2 < surface < surface-3
-     * bg is the darkest; each step up is visibly lighter.
-     */
-    --bg:        #0c1710;   /* deep forest floor — darker anchor */
-    --surface:   #1b2d20;   /* cards clearly float above bg (~7% lightness gap) */
-    --surface-2: #152018;   /* recessed trays, pill selectors, tab lists */
-    --surface-3: #243a2a;   /* elevated panels, chart containers */
-    --bg-alt:    #1b2d20;
-    --bg-card:   #1b2d20;
-    --panel:     #1b2d20;
-    --panel2:    #152018;
+    --bg:        #0a0e0c;
+    --surface:   #121a16;
+    --surface-2: #0d1411;
+    --surface-3: #1a2620;
+    --bg-alt:    #121a16;
+    --bg-card:   #121a16;
+    --panel:     #121a16;
+    --panel2:    #0d1411;
 
-    /* Text — readable hierarchy on dark green-charcoal */
-    --text:       #e8f5ee;   /* near-white with faint green tint */
-    --text-body:  #c1d9cc;   /* comfortable reading text */
-    --text-muted: #7a9e8e;   /* captions, meta labels */
-    --text-faint: #4d6e60;   /* placeholders, disabled */
-    --muted:      #7a9e8e;
+    --text:       #e8ece9;
+    --text-body:  #c5d0c8;
+    --text-muted: #7f968a;
+    --text-faint: #4f6b5e;
+    --muted:      #7f968a;
 
-    /* Borders */
-    --border:        #2a4234;   /* clearly visible green-tinted separator */
-    --border-strong: #3b5e47;   /* prominent — chart wrappers, active panels */
-    --border-focus:  rgba(34, 197, 94, 0.55);
+    --border:        #24352c;
+    --border-strong: #334a3d;
+    --border-focus:  rgba(154, 212, 176, 0.45);
 
-    /* Primary (Forest Teal) — slightly lighter for dark bg */
-    --primary:       #2dd4bf;   /* teal-400 */
-    --primary-hover: #14b8a6;   /* teal-500 */
-    --primary-light: rgba(45, 212, 191, 0.12);
-    --primary-dark:  #14b8a6;
-    --primary-glow:  rgba(45, 212, 191, 0.25);
+    --primary:       #9ad4b0;
+    --primary-hover: #7fc099;
+    --primary-light: rgba(154, 212, 176, 0.14);
+    --primary-dark:  #7fc099;
+    --primary-glow:  rgba(154, 212, 176, 0.28);
+    --on-primary:    #0a0e0c;
 
-    /* Secondary */
-    --secondary:       #34d399;   /* emerald-400 */
-    --secondary-hover: #10b981;
-    --secondary-light: rgba(52, 211, 153, 0.12);
+    --secondary:       #8bc49a;
+    --secondary-hover: #6da87e;
+    --secondary-light: rgba(139, 196, 154, 0.12);
 
-    /* Charts — one step lighter for dark background legibility */
-    --chart-1: #2dd4bf;   /* teal-400   */
-    --chart-2: #34d399;   /* emerald-400*/
-    --chart-3: #60a5fa;   /* blue-400   */
-    --chart-4: #a78bfa;   /* violet-400 */
-    --chart-5: #fbbf24;   /* amber-400  */
-    --chart-6: #f472b6;   /* pink-400   */
-    --chart-7: #22d3ee;   /* cyan-400   */
+    --chart-grid:    color-mix(in srgb, var(--border) 75%, transparent);
+    --chart-1: #9ad4b0;
+    --chart-2: #8bc49a;
+    --chart-3: #8fb3c2;
+    --chart-4: #c4a574;
+    --chart-5: #d4a574;
+    --chart-6: #b9a8c4;
+    --chart-7: #8fc4b8;
 
     /* Ecological states */
-    --eco-healthy:    #4ade80;   /* green-400   */
-    --eco-stressed:   #fbbf24;   /* amber-400   */
-    --eco-disturbed:  #f87171;   /* red-400     */
-    --eco-recovering: #38bdf8;   /* sky-400     */
+    --eco-healthy:    #7dd89a;
+    --eco-stressed:   #e0b45c;
+    --eco-disturbed:  #e8938f;
+    --eco-recovering: #7ec8e8;
 
     /* Semantic */
-    --success: #34d399;
-    --error:   #f87171;
-    --warning: #fbbf24;
+    --success: #8bc49a;
+    --error:   #e8938f;
+    --warning: #d4a574;
 
-    /* Accent — same green, brighter text alias for dark surfaces */
-    --accent:       #22c55e;
-    --accent-hover: #16a34a;
-    --accent-text:  #4ade80;   /* green-400 — bright enough on dark */
-    --accent-light: rgba(34, 197, 94, 0.12);
-    --accent-glow:  rgba(34, 197, 94, 0.28);
+    --accent:       #b8e8c8;
+    --accent-hover: #9ad4b0;
+    --accent-text:  #d4f0dd;
+    --accent-light: rgba(184, 232, 200, 0.12);
+    --accent-glow:  rgba(184, 232, 200, 0.22);
 
     /* Section bands — legacy token; bands no longer use a distinct fill */
     --band-alt: #17231a;   /* reserved */
 
     /* Shadows & glow — adapted for dark substrate */
     --shadow-soft:  0 2px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
-    --shadow-glow:  0 0 0 1px rgba(34, 197, 94, 0.22), 0 4px 16px rgba(0,0,0,0.35);
-    --outline-glow: rgba(34, 197, 94, 0.20);
+    --shadow-glow:  0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent), 0 4px 16px rgba(0,0,0,0.35);
+    --outline-glow: rgba(154, 212, 176, 0.22);
 
-    /* Legacy aliases */
-    --teal-500: #2dd4bf;
-    --teal-600: #14b8a6;
-    --green-500: #34d399;
-    --green-600: #10b981;
-    --blue-500: #60a5fa;
-    --blue-600: #3b82f6;
+    --teal-500: #9ad4b0;
+    --teal-600: #7fc099;
+    --green-500: #8bc49a;
+    --green-600: #6da87e;
+    --blue-500: #8fb3c2;
+    --blue-600: #6e9aab;
   }
 
   * {
@@ -268,7 +234,7 @@
   
   body {
     @apply bg-[var(--bg)] text-[var(--text-body)] antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: var(--font-sans), system-ui, sans-serif;
     font-size: var(--font-size-body);
     line-height: 1.6;
     position: relative;
@@ -278,29 +244,63 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Substrate: very light paper grain (light) · layered contours (dark) */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  }
+
+  .dark body::before {
+    opacity: 0.55;
+    background-image:
+      radial-gradient(ellipse 100% 60% at 50% -5%, rgba(110, 168, 130, 0.12), transparent 55%),
+      repeating-linear-gradient(
+        108deg,
+        transparent 0 28px,
+        rgba(0, 0, 0, 0.16) 28px 29px
+      ),
+      repeating-linear-gradient(
+        -18deg,
+        transparent 0 47px,
+        rgba(90, 130, 108, 0.07) 47px 48px
+      ),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.2'/%3E%3C/svg%3E");
+  }
+
   /* ── Typography utility classes ─────────────────────────────────────────── */
   /* Use these instead of ad-hoc text-* combos so hierarchy stays consistent  */
 
   .text-page-title {
+    font-family: var(--font-display), Georgia, ui-serif, serif;
     font-size: var(--font-size-page);
-    font-weight: 700;
-    line-height: 1.25;
+    font-weight: 650;
+    font-variation-settings: 'SOFT' 40, 'WONK' 10;
+    line-height: 1.2;
     color: var(--text);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
 
   .text-section-title {
+    font-family: var(--font-display), Georgia, ui-serif, serif;
     font-size: var(--font-size-section);
     font-weight: 600;
-    line-height: 1.35;
+    line-height: 1.3;
     color: var(--text);
+    letter-spacing: -0.015em;
   }
 
   .text-card-title {
+    font-family: var(--font-display), Georgia, ui-serif, serif;
     font-size: var(--font-size-card);
     font-weight: 600;
     line-height: 1.4;
     color: var(--text-body);
+    letter-spacing: -0.01em;
   }
 
   .text-body {
@@ -319,18 +319,28 @@
 
   /* Used in SectionHeader.tsx — was previously undefined */
   .text-heading-2 {
+    font-family: var(--font-display), Georgia, ui-serif, serif;
     font-size: var(--font-size-section);
     font-weight: 600;
     color: var(--text);
+    letter-spacing: -0.015em;
   }
 
-  /* Used in SectionHeader.tsx — was previously undefined */
+  .text-heading-3 {
+    font-family: var(--font-display), Georgia, ui-serif, serif;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text);
+  }
+
   .text-label {
     font-size: var(--font-size-label);
+    font-family: var(--font-mono), ui-monospace, monospace;
     font-weight: 500;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
   }
   
   /* Smooth link transitions */
@@ -347,6 +357,24 @@
 .band-dark,
 .band-light {
   background-color: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+/* Specimen-style section rule — subtle field-grid tick */
+.section-field-rule {
+  border-top: 1px solid var(--border);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 7px,
+    color-mix(in srgb, var(--border) 45%, transparent) 7px,
+    color-mix(in srgb, var(--border) 45%, transparent) 8px
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  padding-top: 10px;
 }
 
 @layer components {
@@ -370,15 +398,15 @@
   }
 
   .btn-primary {
-    background-color: var(--accent);
-    color: #ffffff;
-    border: 1px solid transparent;
-    box-shadow: 0 1px 4px var(--accent-glow);
+    background-color: var(--primary);
+    color: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--primary) 65%, var(--border));
+    box-shadow: 0 1px 4px var(--primary-glow);
   }
 
   .btn-primary:hover {
-    background-color: var(--accent-hover);
-    box-shadow: 0 2px 8px var(--accent-glow);
+    background-color: var(--primary-hover);
+    box-shadow: 0 2px 8px var(--primary-glow);
   }
 
   .btn-secondary {
@@ -410,7 +438,7 @@
 
   .input:focus {
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
   }
 
   /* ── Cards ───────────────────────────────────────────────────────────────
@@ -418,16 +446,27 @@
    * Aligned with the shadcn Card (rounded-xl) so both render identically.
    */
   .card {
+    position: relative;
     background-color: var(--surface);
+    background-image: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--surface) 97%, var(--primary) 3%) 0%,
+      var(--surface) 42%
+    );
     border: 1px solid var(--border);
+    border-left: 3px solid color-mix(in srgb, var(--primary) 42%, var(--border));
     border-radius: var(--radius-card);
     padding: var(--space-xl);   /* 24px */
     box-shadow: var(--shadow-soft);
   }
 
-  /* Dark mode cards: stronger border + inset highlight for elevation */
   .dark .card {
     border-color: var(--border-strong);
+    background-image: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--surface) 92%, var(--primary) 8%) 0%,
+      var(--surface) 45%
+    );
   }
 
   /* ── Number input ────────────────────────────────────────────────────────*/
@@ -449,7 +488,7 @@
 
   .number-input input:focus {
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
   }
 
   .number-input button {

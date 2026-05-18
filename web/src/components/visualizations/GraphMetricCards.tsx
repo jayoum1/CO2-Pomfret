@@ -75,7 +75,7 @@ export default function GraphMetricCards({
       unit: selectedPlot === 'all' ? 'across all plots' : selectedPlot + ' plot',
       icon: Trees,
       iconColor: 'var(--chart-3)',
-      iconBg: 'rgba(37,99,235,0.10)',
+      iconBg: 'color-mix(in srgb, var(--chart-3) 14%, transparent)',
       valueColor: 'var(--text)',
       change: null,
     },
@@ -85,7 +85,7 @@ export default function GraphMetricCards({
       unit: 'kg CO₂e',
       icon: Wind,
       iconColor: 'var(--chart-4)',
-      iconBg: 'rgba(124,58,237,0.10)',
+      iconBg: 'color-mix(in srgb, var(--chart-4) 14%, transparent)',
       valueColor: 'var(--chart-4)',
       change: null,
     },
@@ -99,8 +99,11 @@ export default function GraphMetricCards({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: i * 0.05 }}
-          className="rounded-card border bg-[var(--surface)] p-4 shadow-[var(--shadow-soft)]"
-          style={{ borderColor: `color-mix(in srgb, ${c.iconColor} 45%, transparent)` }}
+          className="rounded-card border bg-[var(--surface)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--surface)_96%,var(--primary)_4%)_0%,var(--surface)_40%)] p-4 shadow-[var(--shadow-soft)] border-l-[3px]"
+          style={{
+            borderColor: `color-mix(in srgb, ${c.iconColor} 38%, var(--border))`,
+            borderLeftColor: `color-mix(in srgb, ${c.iconColor} 55%, var(--border))`,
+          }}
         >
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-label text-[var(--text-muted)] uppercase tracking-wider">{c.label}</span>
