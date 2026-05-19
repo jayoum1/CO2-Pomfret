@@ -1,4 +1,8 @@
 Plot,TreeID,Species,Year,DBH,GapYears,PrevDBH,GrowthRate,GrowthType
+Middle,1000,Red Oak,2022,10.0,,,,initial
+Middle,1000,Red Oak,2023,10.1,1.0,10.0,0.009999999999999964,normal
+Middle,1000,Red Oak,2024,10.2,1.0,10.1,0.009900990099009866,normal
+Middle,1000,Red Oak,2025,10.3,1.0,10.2,0.009803921568627591,normal
 Middle,401,Beech,2024,3.19,,,,initial
 Middle,401,Beech,2025,3.2,1.0,3.19,0.0031347962382445864,normal
 Middle,416 (was 683),Sugar Maple,2022,2.25,,,,initial
